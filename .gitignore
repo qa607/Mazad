@@ -1,0 +1,17 @@
+node_modules/
+
+# Test output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/allure-results/
+/allure-report/
+/reports/
+
+# Local overrides and secrets
+.env
+.env.*
+!.env.example
+
+.DS_Store
