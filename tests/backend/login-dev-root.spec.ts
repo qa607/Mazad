@@ -1,4 +1,3 @@
-import { wrongPasswordLanguage } from '@config/credentials.config';
 import { expect, test } from '@fixtures/test.fixture';
 import { backendLoginData, backendLoginText, backendUrls } from '@test-data/backend-login.data';
 
@@ -39,7 +38,6 @@ test.describe('Backend login - Dev Root account', () => {
 
     await expect(page).toHaveURL(backendUrls.dashboard);
     await expect(page).toHaveTitle(backendLoginText.dashboardTitle);
-    await expect(mazadDashboardPage.documentRoot).toHaveAttribute('lang', 'en');
     await expect(mazadDashboardPage.pageHeading).toHaveText(backendLoginText.dashboardTitle);
     await expect(mazadDashboardPage.welcomeText).toHaveText(backendLoginText.devRootWelcome);
     await expect(mazadDashboardPage.sidebar).toBeVisible();
@@ -57,14 +55,9 @@ test.describe('Backend login - Dev Root account', () => {
   });
 
   test.describe('wrong password', () => {
-    // Exactly one wrong attempt per execution, to avoid locking the account: no retries
-    // (also in CI), one language project only, and no repeats under --repeat-each.
+    // Exactly one wrong attempt per execution, to avoid locking the account: the Backend
+    // project runs each test once, with no retries (also in CI) and no --repeat-each repeats.
     test.describe.configure({ retries: 0 });
-    // eslint-disable-next-line playwright/no-skipped-test -- conditional: lockout protection
-    test.skip(
-      ({ language }) => language !== wrongPasswordLanguage(),
-      `Runs once per execution, in the "${wrongPasswordLanguage()}" project (WRONG_PASSWORD_LANGUAGE), to avoid account lockout.`,
-    );
 
     test('Dev Root phone with a wrong password is rejected', async ({
       page,

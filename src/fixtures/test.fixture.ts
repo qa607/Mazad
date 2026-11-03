@@ -28,11 +28,11 @@ export const test = base.extend<LanguageOptions & MazadFixtures>({
   t: async ({ language }, use) => {
     await use(getTranslator(language));
   },
-  mazadLoginPage: async ({ page, language }, use) => {
-    await use(new MazadLoginPage(page, language));
+  mazadLoginPage: async ({ page }, use) => {
+    await use(new MazadLoginPage(page));
   },
-  mazadDashboardPage: async ({ page, language }, use) => {
-    await use(new MazadDashboardPage(page, language));
+  mazadDashboardPage: async ({ page }, use) => {
+    await use(new MazadDashboardPage(page));
   },
   // eslint-disable-next-line no-empty-pattern
   devRoot: async ({}, use, testInfo) => {

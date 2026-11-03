@@ -1,14 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
+import { BackendPage } from '@pages/backend/backend.page';
 import type { BackendAccount } from '@config/credentials.config';
-import { BasePage } from '@pages/base.page';
-import type { Language } from '@typings';
 import { fillSecret } from '@utils/secret-input';
 
-/**
- * Mazad back-office login (/backend/authentication/login). The Backend serves English only,
- * whatever the browser locale, so navigation here skips the language step of BasePage.
- */
-export class MazadLoginPage extends BasePage {
+/** Mazad back-office login (/backend/authentication/login). */
+export class MazadLoginPage extends BackendPage {
   static readonly path = '/backend/authentication/login';
 
   readonly form: Locator;
@@ -20,8 +16,8 @@ export class MazadLoginPage extends BasePage {
   readonly phoneError: Locator;
   readonly passwordError: Locator;
 
-  constructor(page: Page, language: Language) {
-    super(page, language);
+  constructor(page: Page) {
+    super(page);
     this.form = page.locator('#login-form');
     this.phoneInput = page.locator('#loginform-phone');
     this.passwordInput = page.locator('#loginform-password');

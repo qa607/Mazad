@@ -1,17 +1,14 @@
 import { expect, test } from '@fixtures/test.fixture';
 import { backendLoginData, backendLoginText, backendUrls } from '@test-data/backend-login.data';
 
-// Runs in every language project. The Backend is English only, so the expected text is the
-// same in both; the Arabic project checks the Backend behaves the same under an ar-SA browser.
 test.describe('Backend login - form validation', () => {
   test.beforeEach(async ({ page, mazadLoginPage }) => {
     await mazadLoginPage.goto();
     await expect(page).toHaveURL(backendUrls.login);
   });
 
-  test('Login page shows the login form in English', async ({ page, mazadLoginPage }) => {
+  test('Login page shows the login form', async ({ page, mazadLoginPage }) => {
     await expect(page).toHaveTitle(backendLoginText.loginPageTitle);
-    await expect(mazadLoginPage.documentRoot).toHaveAttribute('lang', 'en');
     await expect(mazadLoginPage.phoneInput).toBeVisible();
     await expect(mazadLoginPage.passwordInput).toBeVisible();
     await expect(mazadLoginPage.passwordInput).toHaveAttribute('type', 'password');

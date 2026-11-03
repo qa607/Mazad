@@ -1,9 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
-import { BasePage } from '@pages/base.page';
-import type { Language } from '@typings';
+import { BackendPage } from '@pages/backend/backend.page';
 
-/** Mazad back-office home (/backend/), shown after a successful login. English only. */
-export class MazadDashboardPage extends BasePage {
+/** Mazad back-office home (/backend/), shown after a successful login. */
+export class MazadDashboardPage extends BackendPage {
   static readonly path = '/backend/';
 
   readonly pageHeading: Locator;
@@ -15,8 +14,8 @@ export class MazadDashboardPage extends BasePage {
   readonly accountDetails: Locator;
   readonly signOutLink: Locator;
 
-  constructor(page: Page, language: Language) {
-    super(page, language);
+  constructor(page: Page) {
+    super(page);
     this.pageHeading = page.locator('.app-page-title .page-title-head');
     const header = page.locator('.app-header-right');
     this.welcomeText = header.locator('.user-welcome-text');

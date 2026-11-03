@@ -9,6 +9,9 @@ import type { Language } from './src/types';
 // number), so it is turned off to keep credentials out of reports.
 process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
 
+/** Mazad Backend (back office) specs. The Backend has no localization. */
+const BACKEND_SPECS = '**/backend/**/*.spec.ts';
+
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
   fullyParallel: true,
@@ -43,13 +46,22 @@ export default defineConfig<LanguageOptions>({
     video: 'retain-on-failure',
   },
 
-  // One project per language: every spec runs once in English and once in Arabic.
-  projects: (Object.keys(LANGUAGES) as Language[]).map((language) => ({
-    name: language,
-    use: {
-      ...devices['Desktop Chrome'],
-      language,
-      locale: LANGUAGES[language].locale,
+  projects: [
+    // Customer website: one project per language, so every spec runs in English and in Arabic.
+    ...(Object.keys(LANGUAGES) as Language[]).map((language) => ({
+      name: language,
+      testIgnore: BACKEND_SPECS,
+      use: {
+        ...devices['Desktop Chrome'],
+        language,
+        locale: LANGUAGES[language].locale,
+      },
+    })),
+    // Back office: no localization, so its specs run once, with no language settings.
+    {
+      name: 'backend',
+      testMatch: BACKEND_SPECS,
+      use: { ...devices['Desktop Chrome'] },
     },
-  })),
+  ],
 });

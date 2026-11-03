@@ -12,6 +12,7 @@
     "test": "playwright test",
     "test:en": "playwright test --project=en",
     "test:ar": "playwright test --project=ar",
+    "test:backend": "playwright test --project=backend",
     "test:headless": "cross-env HEADLESS=true playwright test",
     "typecheck": "tsc",
     "lint": "eslint .",

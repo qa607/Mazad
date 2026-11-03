@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { inspect } from 'node:util';
 import dotenv from 'dotenv';
-import type { Language } from '../src/types';
 
 /**
  * Test account credentials. They are read from the local .env file only: shell and CI
@@ -55,17 +54,4 @@ export function getDevRootAccount(): BackendAccount | null {
   const phone = localEnv.DEV_ROOT_PHONE?.trim();
   const password = localEnv.DEV_ROOT_PASSWORD;
   return phone && password ? new BackendAccount(phone, password) : null;
-}
-
-/**
- * The single language project that runs the Dev Root wrong-password case, so each execution
- * makes one wrong attempt instead of one per language. Default "en"; set
- * WRONG_PASSWORD_LANGUAGE=ar (shell or .env) to run it under the Arabic project instead.
- */
-export function wrongPasswordLanguage(): Language {
-  const value = process.env.WRONG_PASSWORD_LANGUAGE || localEnv.WRONG_PASSWORD_LANGUAGE || 'en';
-  if (value !== 'en' && value !== 'ar') {
-    throw new Error(`WRONG_PASSWORD_LANGUAGE must be "en" or "ar", got "${value}".`);
-  }
-  return value;
 }

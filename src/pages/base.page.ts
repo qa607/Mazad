@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { getTranslator, type Translator } from '@locales';
 import type { Language } from '@typings';
 
@@ -14,11 +14,6 @@ export abstract class BasePage {
     protected readonly language: Language,
   ) {
     this.t = getTranslator(language);
-  }
-
-  /** The <html> element, for checking the document's lang and dir attributes. */
-  get documentRoot(): Locator {
-    return this.page.locator('html');
   }
 
   /** Navigates to a path relative to the environment baseURL, in the active language. */

@@ -1,7 +1,6 @@
 /**
- * Mazad Backend login test data. The Backend is English only (it ignores the browser locale),
- * so its strings live here rather than in src/locales, and are the same in both language
- * projects. Credentials are never stored here: see config/credentials.config.ts.
+ * Mazad Backend login test data. The Backend has no localization, so its UI text lives here
+ * rather than in src/locales. Credentials are never stored here: see config/credentials.config.ts.
  */
 export const backendLoginText = {
   phoneRequired: 'Phone cannot be blank.',

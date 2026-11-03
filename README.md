@@ -13,12 +13,13 @@ Before running tests, set `baseURL` in `config/environments/<env>.json`. Runs st
 
 ## Running tests
 
-| Command                               | What it does                                            |
-| ------------------------------------- | ------------------------------------------------------- |
-| `npm test`                            | All tests, English and Arabic, headed                   |
-| `npm run test:en` / `npm run test:ar` | One language only                                       |
-| `npm run test:headless`               | All tests, headless                                     |
-| `TEST_ENV=staging npm test`           | Use `config/environments/staging.json` (default: `dev`) |
+| Command                               | What it does                                                   |
+| ------------------------------------- | -------------------------------------------------------------- |
+| `npm test`                            | All tests (website in English and Arabic, back office), headed |
+| `npm run test:en` / `npm run test:ar` | Customer website, one language only                            |
+| `npm run test:backend`                | Back office only                                               |
+| `npm run test:headless`               | All tests, headless                                            |
+| `TEST_ENV=staging npm test`           | Use `config/environments/staging.json` (default: `dev`)        |
 
 Local overrides go in `.env` (copy `.env.example`). Supported variables:
 
@@ -79,10 +80,10 @@ tests/              specs and assertions, grouped by feature
 
 Login tests for the back office live in `tests/backend/`, with page objects in `src/pages/backend/`.
 
-- **English only.** The Backend ignores the browser locale and has no language switch, so its expected text is in `test-data/backend-login.data.ts` rather than `src/locales`. Its specs still run in both language projects.
+- **No localization.** The Backend has no Arabic UI or language switch. Its specs run once, in their own `backend` project (`npm run test:backend`), not in the `en`/`ar` language projects. Backend page objects extend `BackendPage`, which has no language or translator, and their UI text lives in `test-data/backend-login.data.ts` rather than `src/locales`.
 - **Credentials** come from `.env` only (`DEV_ROOT_PHONE`, `DEV_ROOT_PASSWORD`; see `.env.example`). Without them, the Dev Root tests are skipped.
 - **Keeping credentials out of output.** Credentials are entered with `fillSecret()`, so report steps never show them. The Dev Root spec records no trace or video and masks credential fields in failure screenshots. Playwright's failure page snapshot (`error-context.md`) is turned off in `playwright.config.ts`.
-- **One wrong-password attempt per execution**, to avoid locking the account. It runs in the `en` project only (set `WRONG_PASSWORD_LANGUAGE=ar` to switch) and never retries.
+- **One wrong-password attempt per execution**, to avoid locking the account: the test runs once and never retries.
 
 ## Pending
 
