@@ -46,6 +46,13 @@ export class BackendAccount {
   }
 }
 
+/**
+ * Signed-in Dev Root browser session (cookies), written once per run by
+ * tests/backend/auth.setup.ts and reused by specs that only need to be logged in.
+ * It is a live session token: .auth/ is gitignored and must never be shared.
+ */
+export const DEV_ROOT_SESSION_FILE = path.resolve(__dirname, '..', '.auth', 'dev-root.json');
+
 export const DEV_ROOT_MISSING_REASON =
   'Dev Root credentials are not set: add DEV_ROOT_PHONE and DEV_ROOT_PASSWORD to the local .env file.';
 

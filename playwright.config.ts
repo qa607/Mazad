@@ -11,6 +11,8 @@ process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
 
 /** Mazad Backend (back office) specs. The Backend has no localization. */
 const BACKEND_SPECS = '**/backend/**/*.spec.ts';
+/** Signs in once per run and saves the session (see config/credentials.config.ts). */
+const BACKEND_SETUP = '**/backend/**/*.setup.ts';
 
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
@@ -57,10 +59,17 @@ export default defineConfig<LanguageOptions>({
         locale: LANGUAGES[language].locale,
       },
     })),
+    // Back office: signs in as Dev Root once per run; signed-in specs reuse that session.
+    {
+      name: 'backend-setup',
+      testMatch: BACKEND_SETUP,
+      use: { ...devices['Desktop Chrome'] },
+    },
     // Back office: no localization, so its specs run once, with no language settings.
     {
       name: 'backend',
       testMatch: BACKEND_SPECS,
+      dependencies: ['backend-setup'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],
