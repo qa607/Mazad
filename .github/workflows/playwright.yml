@@ -8,6 +8,13 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      # The config needs an environment with a baseURL; only staging has one so far.
+      # Override with the TEST_ENV / BASE_URL repository variables.
+      TEST_ENV: ${{ vars.TEST_ENV || 'staging' }}
+      BASE_URL: ${{ vars.BASE_URL }}
+      # Dev Root credentials are read from a local .env only (never from CI variables),
+      # so specs that need them are skipped here.
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
