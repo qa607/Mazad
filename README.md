@@ -26,6 +26,7 @@ Local overrides go in `.env` (copy `.env.example`). Supported variables:
 - `TEST_ENV`: environment name
 - `BASE_URL`: overrides the file's `baseURL`
 - `HEADLESS`: `true` to run headless
+- `SLOW_MO`: milliseconds to pause before each browser action, to watch a headed run (e.g. `SLOW_MO=700 npx playwright test <spec> --workers=1 --headed`)
 - `CI`: `true` for headless, 2 retries, 1 worker, and `test.only` is rejected
 
 Local runs use 2 parallel workers.
@@ -84,6 +85,11 @@ Login tests for the back office live in `tests/backend/`, with page objects in `
 - **Credentials** come from `.env` only (`DEV_ROOT_PHONE`, `DEV_ROOT_PASSWORD`; see `.env.example`). Without them, the Dev Root tests are skipped.
 - **Keeping credentials out of output.** Credentials are entered with `fillSecret()`, so report steps never show them. The Dev Root spec records no trace or video and masks credential fields in failure screenshots. Playwright's failure page snapshot (`error-context.md`) is turned off in `playwright.config.ts`.
 - **One wrong-password attempt per execution**, to avoid locking the account: the test runs once and never retries.
+- **Sign in once per run.** The `backend-setup` project (`tests/backend/auth.setup.ts`) logs in as Dev Root once and saves the session to `.auth/dev-root.json` (gitignored: it is a live session cookie). The `backend` project depends on it, so it runs first automatically, even when you run a single spec. Specs that only need to be signed in use `test.use({ signedInAs: 'devRoot' })`. The login specs keep starting signed out, since they test the login itself.
+- **Suspended Vehicles** (`tests/backend/suspended-vehicles.spec.ts`, `/backend/auction/suspend/index`): read-only checks of the grid, search, filters, reset, paging and the activate confirmation, plus one round-trip test (no retries): it activates a suspended vehicle from the "Requested by Supplie" reason group, checks that it moved to **Ready For Pricing**, then suspends it again with the same reason, so staging ends as it started. If the test fails midway, its `afterEach` re-suspends the vehicle. Vehicles suspended for "Inactive supplier" cannot be activated. The file's tests run in order in one worker so the activation never races the read-only checks.
+- **Ready For Pricing** (`tests/backend/ready-for-pricing.spec.ts`, `/backend/auction/ready-for-pricing/index`): read-only checks of the grid, VIN/title search, city and year filters, year sorting, reset, paging, bulk Suspend and the suspend modal validation, plus a round trip (no retries) that suspends the oldest vehicle with "The car is pending to be sold", checks it in the Suspended list, then activates it back into Ready For Pricing. Both list page objects share `BackendListPage`.
+- **Running both specs together:** each round trip uses its own reason group, and the read-only tests avoid comparing list totals, so the two specs can run in parallel.
+- **Known bug (both lists):** the default order is unstable, so some vehicles repeat across pages and others never appear. The tests for it are marked `test.fail()`; remove that once the bug is fixed.
 
 ## Pending
 
