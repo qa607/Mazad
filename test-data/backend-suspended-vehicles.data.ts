@@ -43,12 +43,6 @@ export const suspendedVehiclesData = {
   pageSize: 20,
 } as const;
 
-/** Ready For Pricing list: where an activated vehicle goes (checked 2026-11-05). */
-export const readyForPricingText = {
-  suspendModalTitle: 'Suspend Vehicle Reason',
-  suspended: 'Items have been Suspended',
-} as const;
-
 /** URL patterns, matched against the full page URL. */
 export const suspendedVehiclesUrls = {
   list: /\/backend\/auction\/suspend\/index(\?|$)/,

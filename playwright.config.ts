@@ -41,6 +41,8 @@ export default defineConfig<LanguageOptions>({
   use: {
     baseURL: envConfig.baseURL,
     headless,
+    // SLOW_MO=<ms> pauses before every browser action, to watch a headed run step by step.
+    launchOptions: { slowMo: Number(process.env.SLOW_MO) || 0 },
     // Mazad serves the Saudi market only.
     timezoneId: 'Asia/Riyadh',
     trace: 'retain-on-failure',

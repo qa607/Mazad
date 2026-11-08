@@ -1,6 +1,6 @@
 import { expect, test } from '@fixtures/test.fixture';
+import { readyForPricingText } from '@test-data/backend-ready-for-pricing.data';
 import {
-  readyForPricingText,
   suspendedVehiclesData,
   suspendedVehiclesText,
   suspendedVehiclesUrls,
@@ -62,7 +62,9 @@ test.describe('Backend - Suspended Vehicles list', () => {
     });
 
     test('Searching by VIN shows only that vehicle', async ({ page, suspendedVehiclesPage }) => {
-      const vin = (await suspendedVehiclesPage.vinCells.first().innerText()).trim();
+      // A locked ("Inactive supplier") vehicle, which no other test activates meanwhile.
+      const row = suspendedVehiclesPage.lockedRows.first();
+      const vin = (await suspendedVehiclesPage.rowVin(row).innerText()).trim();
 
       await suspendedVehiclesPage.searchByVin(vin);
 
@@ -100,16 +102,19 @@ test.describe('Backend - Suspended Vehicles list', () => {
       page,
       suspendedVehiclesPage,
     }) => {
-      const fullTotal = await suspendedVehiclesPage.totalCount();
       await suspendedVehiclesPage.searchByVin(suspendedVehiclesData.unknownVin);
       await expect(suspendedVehiclesPage.emptyMessage).toBeVisible();
 
       await suspendedVehiclesPage.reset();
 
+      // The total itself is not compared: the Ready For Pricing spec may suspend or
+      // reactivate a vehicle at the same time.
       await expect(page).toHaveURL(/\/backend\/auction\/suspend\/index$/);
       await expect(suspendedVehiclesPage.vinInput).toHaveValue('');
       await expect(suspendedVehiclesPage.rows).toHaveCount(suspendedVehiclesData.pageSize);
-      expect(await suspendedVehiclesPage.totalCount()).toBe(fullTotal);
+      await expect(suspendedVehiclesPage.summary).toHaveText(
+        new RegExp(`^Showing 1-${suspendedVehiclesData.pageSize} of [\\d,]+ items\\.$`),
+      );
     });
 
     test('Page 2 shows the next 20 vehicles', async ({ page, suspendedVehiclesPage }) => {
