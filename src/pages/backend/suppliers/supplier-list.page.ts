@@ -1,5 +1,5 @@
 import type { Download, Locator, Page } from '@playwright/test';
-import { BackendListPage } from '@pages/backend/backend-list.page';
+import { BackendListPage } from '@pages/backend/base/backend-list.page';
 import { selectOption, selectedOption } from '@utils/widgets';
 import { escapeRegExp } from '@utils/text';
 import {

@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendListPage } from '@pages/backend/backend-list.page';
+import { BackendListPage } from '@pages/backend/base/backend-list.page';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {

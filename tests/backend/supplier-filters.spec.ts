@@ -1,6 +1,6 @@
 import { devRootSession, expect, test } from '@fixtures/test.fixture';
 import { shownOption } from '@utils/widgets';
-import type { SupplierListPage, SupplierRow } from '@pages/backend/supplier-list.page';
+import type { SupplierListPage, SupplierRow } from '@pages/backend/suppliers/supplier-list.page';
 import {
   statusOptions,
   supplierFormats,

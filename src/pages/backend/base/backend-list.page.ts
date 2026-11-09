@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 import { exactText } from '@utils/text';
 
 /** Counts parsed from a grid summary such as "Showing 1-20 of 63 items." */

@@ -13,18 +13,19 @@ rules every change must follow.
 
 ## Layout and path aliases
 
-| Folder                    | Holds                                                       | Alias          |
-| ------------------------- | ----------------------------------------------------------- | -------------- |
-| `config/`                 | environment loading, credentials (`.env` only)              | `@config/*`    |
-| `src/pages/`              | page objects (website pages extend `BasePage`)              | `@pages/*`     |
-| `src/pages/backend/`      | back-office page objects (extend `BackendPage`)             | `@pages/*`     |
-| `src/pages/components/`   | reusable parts shared by pages (header, modals, grids)      | `@pages/*`     |
-| `src/fixtures/`           | extended `test`: options, translator, page-object fixtures  | `@fixtures/*`  |
-| `src/locales/`            | `en.ts` / `ar.ts` UI strings                                | `@locales`     |
-| `src/types/`              | shared types                                                | `@typings`     |
-| `src/utils/`              | generic helpers, no app knowledge                           | `@utils/*`     |
-| `test-data/`              | static input data and expected values, one file per feature | `@test-data/*` |
-| `tests/<area>/<feature>/` | specs and assertions only                                   | n/a            |
+| Folder                          | Holds                                                             | Alias          |
+| ------------------------------- | ----------------------------------------------------------------- | -------------- |
+| `config/`                       | environment loading, credentials (`.env` only)                    | `@config/*`    |
+| `src/pages/frontend/`           | customer website page objects; `base/` holds `BasePage`           | `@pages/*`     |
+| `src/pages/backend/`            | back-office page objects, one folder per feature (below)          | `@pages/*`     |
+| `src/pages/backend/base/`       | `BackendPage`, `BackendListPage` (every Backend page extends one) | `@pages/*`     |
+| `src/pages/backend/components/` | reusable parts shared by Backend pages (dialogs, grids)           | `@pages/*`     |
+| `src/fixtures/`                 | extended `test`: options, translator, page-object fixtures        | `@fixtures/*`  |
+| `src/locales/`                  | `en.ts` / `ar.ts` UI strings                                      | `@locales`     |
+| `src/types/`                    | shared types                                                      | `@typings`     |
+| `src/utils/`                    | generic helpers, no app knowledge                                 | `@utils/*`     |
+| `test-data/`                    | static input data and expected values, one file per feature       | `@test-data/*` |
+| `tests/<area>/`                 | specs and assertions only, `<feature>.spec.ts`                    | n/a            |
 
 Always import through the aliases, never with long relative paths.
 
@@ -42,7 +43,9 @@ Always import through the aliases, never with long relative paths.
 - No `page.waitForTimeout()`. Wait on a locator, URL, response or load event.
 - Shared behaviour goes up into a base class (`BasePage`, `BackendPage`, `BackendListPage`) or a
   component object, not copied between pages.
-- One class per file, named `<feature>.page.ts` / `<Feature>Page`.
+- One class per file, named `<feature>.page.ts` / `<Feature>Page`, in the folder of its feature
+  (`src/pages/backend/suppliers/supplier-list.page.ts`). Backend feature folders:
+  `auth`, `dashboard`, `auctions`, `suppliers`, `access`.
 
 **Fixtures (`src/fixtures/**`)**
 

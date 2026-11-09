@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 import { selectOption, selectedOption, setSwitch } from '@utils/widgets';
 import type { SupplierData } from '@test-data/supplier.data';
 

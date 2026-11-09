@@ -43,10 +43,11 @@ ALLOW_PRODUCTION=true TEST_ENV=prod npm test
 
 ## Reports
 
-| Command                                          | Output                                               |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `npx playwright show-report`                     | Playwright HTML report (`playwright-report/`)        |
-| `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required) |
+| Command                                          | Output                                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `npx playwright show-report`                     | Playwright HTML report (`playwright-report/`)                                |
+| `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required)                         |
+| `npm run allure:clean`                           | Delete old `allure-results/` before a run, so the report shows only that run |
 
 JUnit XML is written to `reports/junit.xml` for CI.
 
@@ -57,13 +58,16 @@ config/
   environments/     one JSON file per environment (baseURL, no secrets)
   env.config.ts     loads and validates the selected environment
 src/
-  pages/            page objects: locators and actions only (extend BasePage)
+  pages/            page objects: locators and actions only
+    frontend/base/  BasePage for the customer website
+    backend/        BackendPage and BackendListPage in base/, shared parts in components/,
+                    then one folder per feature (auth, suppliers, ...)
   fixtures/         extended `test` providing language, translator and page objects
   locales/          en.ts / ar.ts UI strings; ar.ts is type-checked against en.ts
   types/            shared types
   utils/            generic helpers
 test-data/          static test input data
-tests/              specs and assertions, grouped by feature
+tests/              specs and assertions: tests/backend/<feature>.spec.ts
 ```
 
 ## Conventions
@@ -79,7 +83,7 @@ tests/              specs and assertions, grouped by feature
 
 ## Backend (back office)
 
-Login tests for the back office live in `tests/backend/`, with page objects in `src/pages/backend/`.
+Back-office specs live in `tests/backend/` (one `<feature>.spec.ts` each), with page objects in `src/pages/backend/<feature>/` and the shared base classes in `src/pages/backend/base/`.
 
 - **No localization.** The Backend has no Arabic UI or language switch. Its specs run once, in their own `backend` project (`npm run test:backend`), not in the `en`/`ar` language projects. Backend page objects extend `BackendPage`, which has no language or translator, and their UI text lives in `test-data/backend-login.data.ts` rather than `src/locales`.
 - **Credentials** come from `.env` only (`DEV_ROOT_PHONE`, `DEV_ROOT_PASSWORD`; see `.env.example`). Without them, the Dev Root tests are skipped.
@@ -90,7 +94,7 @@ Login tests for the back office live in `tests/backend/`, with page objects in `
 - **Suspended Vehicles** (`tests/backend/suspended-vehicles.spec.ts`, `/backend/auction/suspend/index`): read-only checks of the grid, search, filters, reset, paging and the activate confirmation, plus one round-trip test (no retries): it activates a suspended vehicle from the "Requested by Supplie" reason group, checks that it moved to **Ready For Pricing**, then suspends it again with the same reason, so staging ends as it started. If the test fails midway, its `afterEach` re-suspends the vehicle. Vehicles suspended for "Inactive supplier" cannot be activated. The file's tests run in order in one worker so the activation never races the read-only checks.
 - **Ready For Pricing** (`tests/backend/ready-for-pricing.spec.ts`, `/backend/auction/ready-for-pricing/index`): read-only checks of the grid, VIN/title search, city and year filters, year sorting, reset, paging, bulk Suspend and the suspend modal validation, plus a round trip (no retries) that suspends the oldest vehicle with "The car is pending to be sold", checks it in the Suspended list, then activates it back into Ready For Pricing. Both list page objects share `BackendListPage`.
 - **Running both specs together:** each round trip uses its own reason group, and the read-only tests avoid comparing list totals, so the two specs can run in parallel.
-- **Known bugs** are tagged `@known-bug` and marked `test.fail(true, '<ticket>: ...')`, so the run passes while the bug exists and fails once it is fixed (then remove `test.fail()`). Tickets not yet filed use `BUG-PENDING`. Open: the unstable default order of both vehicle lists (vehicles repeat across pages, others never appear), PRM-02 and PRM-03 (`tests/backend/permissions/`).
+- **Known bugs** are tagged `@known-bug` and marked `test.fail(true, '<ticket>: ...')`, so the run passes while the bug exists and fails once it is fixed (then remove `test.fail()`). Tickets not yet filed use `BUG-PENDING`. Open: the unstable default order of both vehicle lists (vehicles repeat across pages, others never appear), PRM-02 and PRM-03 (`tests/backend/supplier-permission-bugs.spec.ts`).
 - **Tags:** every test has a type tag (`@smoke`, `@functional`, `@negative`, `@ui`) and every `describe` has `@regression`; see `CLAUDE.md` for the full list. Example: `npm run test:backend -- --grep @smoke`, or `--grep-invert @mutates` for a read-only run.
 
 ## Pending

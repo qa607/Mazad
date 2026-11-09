@@ -1,6 +1,6 @@
 import { devRootSession, expect, test } from '@fixtures/test.fixture';
 import { shownOption } from '@utils/widgets';
-import type { SupplierField } from '@pages/backend/supplier-form.page';
+import type { SupplierField } from '@pages/backend/suppliers/supplier-form.page';
 import {
   invalidSupplierFieldCases,
   newTestSupplier,

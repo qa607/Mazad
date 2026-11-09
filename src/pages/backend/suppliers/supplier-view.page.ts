@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 import { exactText } from '@utils/text';
 
 /** Supplier details (/backend/users/supplier/view?id=N): read-only fields grouped in sections. */

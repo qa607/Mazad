@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 import type { BackendAccount } from '@config/credentials.config';
 import { fillSecret } from '@utils/secret-input';
 

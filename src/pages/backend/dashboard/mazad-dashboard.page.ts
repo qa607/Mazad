@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 
 /** Mazad back-office home (/backend/), shown after a successful login. */
 export class MazadDashboardPage extends BackendPage {

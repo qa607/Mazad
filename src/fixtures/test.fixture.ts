@@ -7,15 +7,15 @@ import {
   getDevRootAccount,
 } from '@config/credentials.config';
 import { getTranslator, type Translator } from '@locales';
-import { MazadDashboardPage } from '@pages/backend/mazad-dashboard.page';
-import { MazadLoginPage } from '@pages/backend/mazad-login.page';
-import { PermissionListPage } from '@pages/backend/permission-list.page';
-import { ReadyForPricingPage } from '@pages/backend/ready-for-pricing.page';
-import { RolePermissionsPage } from '@pages/backend/role-permissions.page';
-import { SupplierFormPage } from '@pages/backend/supplier-form.page';
-import { SupplierListPage } from '@pages/backend/supplier-list.page';
-import { SupplierViewPage } from '@pages/backend/supplier-view.page';
-import { SuspendedVehiclesPage } from '@pages/backend/suspended-vehicles.page';
+import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
+import { PermissionListPage } from '@pages/backend/access/permission-list.page';
+import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
+import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
+import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
+import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
+import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
+import { SuspendedVehiclesPage } from '@pages/backend/auctions/suspended-vehicles.page';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
