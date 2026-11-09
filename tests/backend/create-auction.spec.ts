@@ -1,6 +1,7 @@
 import { DEV_ROOT_SESSION_FILE } from '@config/credentials.config';
 import { expect, test } from '@fixtures/test.fixture';
 import { AwaitingPage } from '@pages/backend/awaiting.page';
+import { type BidType, SupplierAuctionInfoPage } from '@pages/backend/supplier-auction-info.page';
 import {
   createAuctionDateFormat,
   createAuctionText,
@@ -401,6 +402,101 @@ test.describe('Backend - Create Auction wizard', () => {
       await expect(upcomingPage.rowStartingPrice(upcomingPage.row(itemId))).toHaveText(
         startingPrice,
       );
+    });
+  });
+
+  test.describe('supplier bid type', () => {
+    // Sets the supplier's Bid Type to Price Offering, creates an auction with one of its
+    // vehicles (two months ahead), checks the auction takes that bid type, then moves the vehicle
+    // back to Upcoming and restores the supplier's Bid Type. Never retried.
+    test.describe.configure({ retries: 0 });
+
+    /** What to put back if the test stops midway. */
+    let restore: { supplierId: string; bidType: BidType; vin: string | null } | null = null;
+
+    // Runs in its own browser context, so it still works if the test's page was closed.
+    test.afterEach(async ({ browser, baseURL }) => {
+      if (!restore) return;
+      const { supplierId, bidType, vin } = restore;
+      restore = null;
+      const context = await browser.newContext({ baseURL, storageState: DEV_ROOT_SESSION_FILE });
+      try {
+        const page = await context.newPage();
+        if (vin) {
+          const awaitingPage = new AwaitingPage(page);
+          await awaitingPage.goto();
+          if ((await awaitingPage.rowByVin(vin).count()) > 0)
+            await awaitingPage.backToUpcoming(vin);
+        }
+        await new SupplierAuctionInfoPage(page).setBidType(supplierId, bidType);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('A supplier set to Price Offering gets Price Offering auctions', async ({
+      page,
+      upcomingPage,
+      supplierAuctionInfoPage,
+      createAuctionPage,
+      awaitingPage,
+    }) => {
+      test.slow();
+
+      // A priced Upcoming vehicle and its supplier ("شركة تجريبية-35271" -> ID 35271).
+      await upcomingPage.gotoSortedByStartingPriceDesc();
+      const row = upcomingPage.rows.first();
+      await expect(row, 'No vehicle in the Upcoming list to build an auction from.').toBeVisible();
+      const vin = baseVin(await upcomingPage.rowVin(row).innerText());
+      const supplier = (await upcomingPage.rowSupplier(row).innerText()).trim();
+      const supplierId = supplier.match(/-(\d+)$/)?.[1];
+      expect(supplierId, `No supplier ID in "${supplier}".`).toBeTruthy();
+
+      // 1. Supplier -> Auction Info -> Bid Type: Price Offering.
+      await supplierAuctionInfoPage.goto(supplierId!);
+      const originalBidType = await supplierAuctionInfoPage.bidType();
+      restore = { supplierId: supplierId!, bidType: originalBidType, vin: null };
+      await supplierAuctionInfoPage.chooseBidType('Price Offering');
+      await supplierAuctionInfoPage.save();
+      await expect(supplierAuctionInfoPage.alertTitle).toHaveText(
+        createAuctionText.supplierAuctionSaved,
+      );
+      await supplierAuctionInfoPage.alertOkButton.click();
+      await supplierAuctionInfoPage.goto(supplierId!);
+      expect(await supplierAuctionInfoPage.bidType()).toBe('Price Offering');
+
+      // 2. Create an auction with that supplier's vehicle.
+      const title = `${createAuctionText.realAuctionTitle} ${Date.now()}`;
+      await createAuctionPage.goto();
+      await createAuctionPage.fillConfiguration({
+        title,
+        supplier,
+        monthsAhead: createAuctionText.realAuctionMonthsAhead,
+        startDay: 10,
+        endDay: 11,
+      });
+      await createAuctionPage.goToSelectCars();
+      await createAuctionPage.selectVehicle(vin);
+      await createAuctionPage.createAuctionButton.click();
+      await expect(createAuctionPage.alert).toContainText(createAuctionText.created);
+      restore.vin = vin;
+      await expect(page).toHaveURL(upcomingUrls.list);
+
+      // 3. The auction takes the supplier's bid type.
+      await awaitingPage.goto();
+      const awaitingRow = awaitingPage.rowByVin(vin);
+      await expect(awaitingRow).toContainText(title);
+      await expect(awaitingRow).toContainText(createAuctionText.priceOffering);
+      await expect(awaitingRow).not.toContainText(createAuctionText.standardBid);
+
+      // 4. Undo: the vehicle back to Upcoming, the supplier back to its bid type.
+      await awaitingPage.backToUpcoming(vin);
+      await expect(awaitingPage.rowByVin(vin)).toHaveCount(0);
+      restore.vin = null;
+      await supplierAuctionInfoPage.setBidType(supplierId!, originalBidType);
+      await supplierAuctionInfoPage.goto(supplierId!);
+      expect(await supplierAuctionInfoPage.bidType()).toBe(originalBidType);
+      restore = null;
     });
   });
 });

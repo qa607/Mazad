@@ -19,6 +19,7 @@ import { MazadDashboardPage } from '@pages/backend/mazad-dashboard.page';
 import { MazadLoginPage } from '@pages/backend/mazad-login.page';
 import { PricingDonePage } from '@pages/backend/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/ready-for-pricing.page';
+import { SupplierAuctionInfoPage } from '@pages/backend/supplier-auction-info.page';
 import { SuspendedVehiclesPage } from '@pages/backend/suspended-vehicles.page';
 import { UpcomingPage } from '@pages/backend/upcoming.page';
 import type { Language } from '@typings';
@@ -51,6 +52,7 @@ interface MazadFixtures {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  supplierAuctionInfoPage: SupplierAuctionInfoPage;
   /** Dev Root staging account from .env. Tests using it are skipped when it is not set. */
   devRoot: BackendAccount;
 }
@@ -115,6 +117,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   failedPage: async ({ page }, use) => {
     await use(new FailedPage(page));
+  },
+  supplierAuctionInfoPage: async ({ page }, use) => {
+    await use(new SupplierAuctionInfoPage(page));
   },
   // eslint-disable-next-line no-empty-pattern
   devRoot: async ({}, use, testInfo) => {

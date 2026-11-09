@@ -1,9 +1,11 @@
 import { expect, test } from '@fixtures/test.fixture';
+import type { BidType } from '@pages/backend/supplier-auction-info.page';
 import { auctionLiveData, auctionLiveText } from '@test-data/backend-auction-live.data';
 import { upcomingUrls } from '@test-data/backend-upcoming.data';
 
 // Full auction lifecycle on staging, with a REAL auction that goes live:
-//   Pricing Done -> Move to upcoming -> Create Auction (starts in a few minutes)
+//   Pricing Done -> supplier set to Price Offering -> Move to upcoming -> Create Auction
+//   (starts in a few minutes; the supplier is put back right after)
 //   -> Awaiting -> Live (Price Offering: no Auto Extend, so it ends on time) -> ends with no
 //   bids -> Failed.
 // Each run permanently uses up one priced Pricing Done vehicle: it ends in Failed with a
@@ -11,7 +13,15 @@ import { upcomingUrls } from '@test-data/backend-upcoming.data';
 // live. It runs only when asked for by name, never as part of the normal suite:
 //   RUN_LIVE_AUCTION=true npx playwright test tests/backend/auction-live.spec.ts --project=backend
 
-test.use({ signedInAs: 'devRoot', trace: 'off', video: 'off', screenshot: 'off' });
+// The test waits minutes for the scheduler, so its timeout is long; a bounded action timeout
+// makes a stuck click fail within seconds instead of using up the whole test timeout.
+test.use({
+  signedInAs: 'devRoot',
+  trace: 'off',
+  video: 'off',
+  screenshot: 'off',
+  actionTimeout: 30_000,
+});
 
 // Never retried: a retry would take and burn a second vehicle.
 test.describe.configure({ retries: 0 });
@@ -57,6 +67,16 @@ test.describe('Backend - Auction lifecycle (real live auction)', () => {
 
   /** Where the test's vehicle is, so a failure can put it back where possible. */
   let vehicle: { vin: string; stage: 'upcoming' | 'awaiting' | 'live' | 'done' } | null = null;
+  /** The supplier's Bid Type before the test set it to Price Offering. */
+  let supplierRestore: { supplierId: string; bidType: BidType } | null = null;
+
+  // Always put the supplier's Bid Type back.
+  test.afterEach(async ({ supplierAuctionInfoPage }) => {
+    if (!supplierRestore) return;
+    const { supplierId, bidType } = supplierRestore;
+    supplierRestore = null;
+    await supplierAuctionInfoPage.setBidType(supplierId, bidType);
+  });
 
   // On failure before the auction goes live, return the vehicle to Pricing Done. Once live it
   // cannot be taken back: it ends on its own and goes to Failed.
@@ -80,6 +100,7 @@ test.describe('Backend - Auction lifecycle (real live auction)', () => {
   test('A new auction waits in Awaiting, goes Live, and ends in Failed with no bids', async ({
     page,
     pricingDonePage,
+    supplierAuctionInfoPage,
     createAuctionPage,
     awaitingPage,
     livePage,
@@ -107,7 +128,16 @@ test.describe('Backend - Auction lifecycle (real live auction)', () => {
     expect(picked, 'No priced Pricing Done vehicle with a known supplier.').not.toBeNull();
     const { id, vin, supplier } = picked!;
 
-    // 2. Move it to Upcoming.
+    // 1b. An auction takes its supplier's Bid Type, so set the supplier to Price Offering
+    // (put back right after the auction is created, and by afterEach on failure).
+    const supplierId = supplier.match(/-(\d+)$/)![1];
+    await supplierAuctionInfoPage.goto(supplierId);
+    supplierRestore = { supplierId, bidType: await supplierAuctionInfoPage.bidType() };
+    await supplierAuctionInfoPage.setBidType(supplierId, 'Price Offering');
+
+    // 2. Back on Pricing Done, move it to Upcoming.
+    await pricingDonePage.goto();
+    await pricingDonePage.searchByVin(vin);
     await pricingDonePage.openMoveToUpcomingConfirmation(id);
     await pricingDonePage.confirmYesButton.click();
     await expect(pricingDonePage.resultAlertTitle).toHaveText(auctionLiveText.movedToUpcoming);
@@ -152,6 +182,11 @@ test.describe('Backend - Auction lifecycle (real live auction)', () => {
     await expect(awaitingRow).toContainText(title);
     await expect(awaitingRow).toContainText(`${start.date} ${start.time24}`);
     await expect(awaitingRow).toContainText(`${end.date} ${end.time24}`);
+    await expect(awaitingRow).toContainText(auctionLiveText.priceOffering);
+
+    // The auction kept Price Offering; the supplier goes back to its own Bid Type now.
+    await supplierAuctionInfoPage.setBidType(supplierRestore.supplierId, supplierRestore.bidType);
+    supplierRestore = null;
 
     // 5. At the start time, the scheduler moves it to Live.
     await expect
