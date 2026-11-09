@@ -22,6 +22,7 @@ import { ReadyForPricingPage } from '@pages/backend/ready-for-pricing.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/supplier-auction-info.page';
 import { SuspendedVehiclesPage } from '@pages/backend/suspended-vehicles.page';
 import { UpcomingPage } from '@pages/backend/upcoming.page';
+import { WaitingApprovalPage } from '@pages/backend/waiting-approval.page';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -53,6 +54,7 @@ interface MazadFixtures {
   livePage: LivePage;
   failedPage: FailedPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
+  waitingApprovalPage: WaitingApprovalPage;
   /** Dev Root staging account from .env. Tests using it are skipped when it is not set. */
   devRoot: BackendAccount;
 }
@@ -120,6 +122,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  waitingApprovalPage: async ({ page }, use) => {
+    await use(new WaitingApprovalPage(page));
   },
   // eslint-disable-next-line no-empty-pattern
   devRoot: async ({}, use, testInfo) => {

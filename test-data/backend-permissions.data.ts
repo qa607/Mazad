@@ -84,6 +84,14 @@ export const expectedAccess: Record<AccessProfile, ExpectedAccess> = {
   // images), so an account with only this role can open none of the auction lists.
   operation: { label: 'operation', pages: [], actions: [] },
   noAuctionAccess: { label: 'Marketing (no auction access)', pages: [], actions: [] },
+  // A supplier's own account: its own vehicles in the pricing lists, but not the Suspended list
+  // (403, seen 2026-11-09). It may suspend, move to upcoming and delete its vehicles
+  // (/vehicle/ajax/* and /vehicle/vehicle/*); the delete is never sent, being irreversible.
+  supplier: {
+    label: 'Supplier (supplierAdmin)',
+    pages: ['readyForPricing', 'pricingDone', 'upcoming'],
+    actions: ['suspend', 'moveToUpcoming', 'deleteVehicle'],
+  },
 };
 
 /** HTTP status the Backend returns for a route the signed-in role may not use. */
