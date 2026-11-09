@@ -7,6 +7,10 @@ import {
   getDevRootAccount,
 } from '@config/credentials.config';
 import { getTranslator, type Translator } from '@locales';
+import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
+import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
+import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
+import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
 import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
@@ -55,6 +59,10 @@ export interface BackendPages {
   supplierViewPage: SupplierViewPage;
   rolePermissionsPage: RolePermissionsPage;
   permissionListPage: PermissionListPage;
+  customerGroupListPage: CustomerGroupListPage;
+  customerGroupFormPage: CustomerGroupFormPage;
+  customerGroupViewPage: CustomerGroupViewPage;
+  customerGroupMembersPage: CustomerGroupMembersPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
@@ -68,6 +76,10 @@ function createBackendPages(page: Page): BackendPages {
     supplierViewPage: new SupplierViewPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
     permissionListPage: new PermissionListPage(page),
+    customerGroupListPage: new CustomerGroupListPage(page),
+    customerGroupFormPage: new CustomerGroupFormPage(page),
+    customerGroupViewPage: new CustomerGroupViewPage(page),
+    customerGroupMembersPage: new CustomerGroupMembersPage(page),
   };
 }
 
@@ -83,6 +95,11 @@ interface MazadFixtures extends BackendPages {
    * account details), a failing test attaches a screenshot with those areas masked.
    */
   maskedFailureScreenshot: void;
+  /**
+   * Records the names of customer groups a test creates; after the test (passed or failed) every
+   * group with one of those names is deleted through the list page.
+   */
+  customerGroupCleanup: { track: (name: string) => void };
 }
 
 export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures>({
@@ -130,6 +147,23 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   permissionListPage: async ({ page }, use) => {
     await use(new PermissionListPage(page));
+  },
+  customerGroupListPage: async ({ page }, use) => {
+    await use(new CustomerGroupListPage(page));
+  },
+  customerGroupFormPage: async ({ page }, use) => {
+    await use(new CustomerGroupFormPage(page));
+  },
+  customerGroupViewPage: async ({ page }, use) => {
+    await use(new CustomerGroupViewPage(page));
+  },
+  customerGroupMembersPage: async ({ page }, use) => {
+    await use(new CustomerGroupMembersPage(page));
+  },
+  customerGroupCleanup: async ({ customerGroupListPage }, use) => {
+    const names = new Set<string>();
+    await use({ track: (name) => names.add(name) });
+    for (const name of names) await customerGroupListPage.deleteGroupsNamed(name);
   },
   // eslint-disable-next-line no-empty-pattern
   pagesOn: async ({}, use) => {

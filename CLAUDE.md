@@ -44,8 +44,8 @@ Always import through the aliases, never with long relative paths.
 - Shared behaviour goes up into a base class (`BasePage`, `BackendPage`, `BackendListPage`) or a
   component object, not copied between pages.
 - One class per file, named `<feature>.page.ts` / `<Feature>Page`, in the folder of its feature
-  (`src/pages/backend/suppliers/supplier-list.page.ts`). Backend feature folders:
-  `auth`, `dashboard`, `auctions`, `suppliers`, `access`.
+  (`src/pages/backend/customer-group/customer-group-list.page.ts`). Backend feature folders:
+  `auth`, `dashboard`, `auctions`, `suppliers`, `access`, `customer-group`.
 
 **Fixtures (`src/fixtures/**`)**
 
