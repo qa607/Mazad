@@ -13,6 +13,7 @@
     "test:en": "playwright test --project=en",
     "test:ar": "playwright test --project=ar",
     "test:backend": "playwright test --project=backend",
+    "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
     "test:headless": "cross-env HEADLESS=true playwright test",
     "typecheck": "tsc",
     "lint": "eslint .",
@@ -20,6 +21,7 @@
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check",
     "erp:compare": "node tools/erp-compare/compare-erp.mjs",
+    "allure:clean": "node -e \"require('fs').rmSync('allure-results', { recursive: true, force: true })\"",
     "allure:generate": "allure generate allure-results --clean -o allure-report",
     "allure:open": "allure open allure-report"
   },

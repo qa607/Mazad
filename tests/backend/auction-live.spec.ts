@@ -1,5 +1,5 @@
 import { expect, test } from '@fixtures/test.fixture';
-import type { BidType } from '@pages/backend/supplier-auction-info.page';
+import type { BidType } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { auctionLiveData, auctionLiveText } from '@test-data/backend-auction-live.data';
 import { upcomingUrls } from '@test-data/backend-upcoming.data';
 

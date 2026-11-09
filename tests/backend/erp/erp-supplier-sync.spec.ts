@@ -6,8 +6,8 @@ import {
 import { envConfig } from '@config/env.config';
 import { expect, test } from '@fixtures/supplier.fixture';
 import { ErpDeskPage, type ErpRecord } from '@pages/erp/erp-desk.page';
-import { SupplierListPage } from '@pages/backend/supplier-list.page';
-import { SupplierViewPage } from '@pages/backend/supplier-view.page';
+import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
+import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
 import { buyerLists, buyerSampleSize, erpMazad } from '@test-data/erp.data';
 
 /**

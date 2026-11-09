@@ -46,5 +46,9 @@ export const suspendedVehiclesData = {
 /** URL patterns, matched against the full page URL. */
 export const suspendedVehiclesUrls = {
   list: /\/backend\/auction\/suspend\/index(\?|$)/,
+  /** The list with no filter, sort or page in the URL. */
+  unfiltered: /\/backend\/auction\/suspend\/index$/,
+  vinSearch: /SuspendSearch%5Bvin_number%5D=/,
+  reasonSearch: /SuspendSearch%5Bsuspend_reason_id%5D=\d+/,
   activateEndpoint: '/auction/ajax/activate-auction-item',
 } as const;

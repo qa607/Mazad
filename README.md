@@ -43,10 +43,12 @@ ALLOW_PRODUCTION=true TEST_ENV=prod npm test
 
 ## Reports
 
-| Command                                          | Output                                               |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `npx playwright show-report`                     | Playwright HTML report (`playwright-report/`)        |
-| `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required) |
+| Command                                          | Output                                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `npx playwright show-report`                     | Playwright HTML report (`playwright-report/`)                                |
+| `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required)                         |
+| `npm run allure:clean`                           | Delete old `allure-results/` before a run, so the report shows only that run |
+| `npm run test:customer-group`                    | Run only the Customer Group specs (signs in first)                           |
 
 JUnit XML is written to `reports/junit.xml` for CI.
 
@@ -57,13 +59,16 @@ config/
   environments/     one JSON file per environment (baseURL, no secrets)
   env.config.ts     loads and validates the selected environment
 src/
-  pages/            page objects: locators and actions only (extend BasePage)
+  pages/            page objects: locators and actions only
+    frontend/base/  BasePage for the customer website
+    backend/        BackendPage and BackendListPage in base/, shared parts in components/,
+                    then one folder per feature (auth, suppliers, customer-group, ...)
   fixtures/         extended `test` providing language, translator and page objects
   locales/          en.ts / ar.ts UI strings; ar.ts is type-checked against en.ts
   types/            shared types
   utils/            generic helpers
 test-data/          static test input data
-tests/              specs and assertions, grouped by feature
+tests/              specs and assertions: tests/backend/<feature>.spec.ts
 ```
 
 ## Conventions
@@ -79,13 +84,14 @@ tests/              specs and assertions, grouped by feature
 
 ## Backend (back office)
 
-Login tests for the back office live in `tests/backend/`, with page objects in `src/pages/backend/`.
+Back-office specs live in `tests/backend/` (one `<feature>.spec.ts` each), with page objects in `src/pages/backend/<feature>/` and the shared base classes in `src/pages/backend/base/`.
 
 - **No localization.** The Backend has no Arabic UI or language switch. Its specs run once, in their own `backend` project (`npm run test:backend`), not in the `en`/`ar` language projects. Backend page objects extend `BackendPage`, which has no language or translator, and their UI text lives in `test-data/backend-login.data.ts` rather than `src/locales`.
 - **Credentials** come from `.env` only (`DEV_ROOT_PHONE`, `DEV_ROOT_PASSWORD`; see `.env.example`). Without them, the Dev Root tests are skipped.
 - **Keeping credentials out of output.** Credentials are entered with `fillSecret()`, so report steps never show them. The Dev Root spec records no trace or video and masks credential fields in failure screenshots. Playwright's failure page snapshot (`error-context.md`) is turned off in `playwright.config.ts`.
 - **One wrong-password attempt per execution**, to avoid locking the account: the test runs once and never retries.
-- **Sign in once per run.** The `backend-setup` project (`tests/backend/auth.setup.ts`) logs in as Dev Root once and saves the session to `.auth/dev-root.json` (gitignored: it is a live session cookie). The `backend` project depends on it, so it runs first automatically, even when you run a single spec. Specs that only need to be signed in use `test.use({ signedInAs: 'devRoot' })`. The login specs keep starting signed out, since they test the login itself.
+- **Sign in once per run.** The `backend-setup` project (`tests/backend/auth.setup.ts`) logs in as Dev Root once and saves the session to `.auth/dev-root.json` (gitignored: it is a live session cookie). The `backend` project depends on it, so it runs first automatically, even when you run a single spec. Specs that only need to be signed in use `test.use(devRootSession)` from `@fixtures/test.fixture`: it signs in through the saved session and turns off trace, video and automatic screenshots, and the automatic `maskedFailureScreenshot` fixture then attaches a failure screenshot with account details masked. The login specs keep starting signed out, since they test the login itself; a `describe` can switch back with `test.use({ signedInAs: 'none' })`.
+- **Page objects in specs** always come from fixtures. For a tab opened by a row action, use the `pagesOn(tab)` fixture (e.g. `pagesOn(tab).supplierViewPage`).
 - **Suspended Vehicles** (`tests/backend/suspended-vehicles.spec.ts`, `/backend/auction/suspend/index`): read-only checks of the grid, search, filters, reset, paging and the activate confirmation, plus one round-trip test (no retries): it activates a suspended vehicle from the "Requested by Supplie" reason group, checks that it moved to **Ready For Pricing**, then suspends it again with the same reason, so staging ends as it started. If the test fails midway, its `afterEach` re-suspends the vehicle. Vehicles suspended for "Inactive supplier" cannot be activated. The file's tests run in order in one worker so the activation never races the read-only checks.
 - **Ready For Pricing** (`tests/backend/ready-for-pricing.spec.ts`, `/backend/auction/ready-for-pricing/index`): read-only checks of the grid, VIN/title search, city and year filters, year sorting, reset, paging, bulk Suspend and the suspend modal validation, plus a round trip (no retries) that suspends the oldest vehicle with "The car is pending to be sold", checks it in the Suspended list, then activates it back into Ready For Pricing. Both list page objects share `BackendListPage`.
 - **Pricing Done** (`tests/backend/pricing-done.spec.ts`, `/backend/auction/pricing-done/index`): read-only checks of the grid and row actions, VIN (full and partial), title and starting-price search, make/model (Model stays disabled until a make is chosen), year, supplier, auction type and status filters, reset, Starting Price sorting, paging, bulk selection and select-all, the View/Update links, the suspend modal validation and cancelling "Move to upcoming". Nothing is submitted, so the file changes no data. Known bug (`test.fail()`): a non-numeric Starting Price filter (e.g. `abc`) is treated as 0 and lists the unpriced vehicles instead of none.
@@ -98,7 +104,8 @@ Login tests for the back office live in `tests/backend/`, with page objects in `
 - **Supplier price columns** (`tests/backend/supplier-prices.spec.ts`): signed in as a supplier's own account (role supplierAdmin, `SUPPLIER_PHONE` / `SUPPLIER_PASSWORD` in `.env`, also signed in once per run as the `supplier` role). Checks the exact columns of Ready For Pricing, Pricing Done, Upcoming and Awaiting: the supplier sees **Supplier Price** where staff see **Reserve Price** and **Commission**, and the prices both see (Starting Price, Buy Now, Starting Bid, Min Increment) match Dev Root's for the same vehicle. Live and Waiting Approval rows must show no reserve price, commission or fees; Suspended, Failed, Sold and Delivered answer 403; the supplier's Auctions menu has six lists. Read-only. Value checks are skipped when the supplier has no vehicle in that list.
 - **Permissions** (`tests/backend/permissions.spec.ts`): for each role, checks which of Ready For Pricing, Pricing Done, Upcoming and Suspended Vehicles it can open (HTTP 200, or 403 when denied), that the sidebar links only to those, and that the server accepts or rejects (403) the Suspend, Move to upcoming, Back to pricing done, Create auction and Activate requests. The requests use a non-existent ID or an empty form, so nothing changes on staging. The two irreversible deletes on the Suspended list (bulk delete, delete vehicle) are only sent for roles that must be refused, never for allowed ones. The expected access per role lives in `test-data/backend-permissions.data.ts`, taken from the roles' permission pages on 2026-11-08; entries marked "To confirm" need a business decision.
   - **Role accounts:** Dev Root (role `root`) always runs. Each other role needs its own staging account with only that role, set in `.env` as `ROLE_<NAME>_PHONE` / `ROLE_<NAME>_PASSWORD` (see `.env.example`). `backend-setup` signs in once per configured role and saves the session to `.auth/role-<name>.json`; roles with no account are skipped. Specs use `test.use({ signedInAs: '<role>' })`.
-- **Known bug (Suspended, Ready For Pricing, Pricing Done):** the default order is unstable, so some vehicles repeat across pages and others never appear. The tests for it are marked `test.fail()`; remove that once the bug is fixed.
+- **Known bugs** are tagged `@known-bug` and marked `test.fail(true, '<ticket>: ...')`, so the run passes while the bug exists and fails once it is fixed (then remove `test.fail()`). Tickets not yet filed use `BUG-PENDING`. Open: the unstable default order of the Suspended, Ready For Pricing and Pricing Done lists (vehicles repeat across pages, others never appear), PRM-02 and PRM-03 (`tests/backend/supplier-permission-bugs.spec.ts`), the Pricing Done Starting Price filter, the Upcoming Title filter, the Create Auction end-date check, and four Customer Group defects (`tests/backend/customer-group.spec.ts`).
+- **Tags:** every test has a type tag (`@smoke`, `@functional`, `@negative`, `@ui`) and every `describe` has `@regression`; see `CLAUDE.md` for the full list. Example: `npm run test:backend -- --grep @smoke`, or `--grep-invert @mutates` for a read-only run.
 
 ## Pending
 
