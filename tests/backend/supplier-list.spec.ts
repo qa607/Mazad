@@ -114,8 +114,10 @@ test.describe('Supplier List - page and grid', { tag: ['@regression'] }, () => {
         expect(row.Phone, where).toMatch(supplierFormats.phone);
         expect(row['Joining Date'], where).toMatch(supplierFormats.dateTime);
         expect(row['English Name'], where).not.toBe('');
-        // Email is optional and may hold several addresses separated by commas.
-        for (const email of row.Email.split(',').filter(Boolean)) {
+        // Email is optional and may hold several addresses separated by commas; a supplier
+        // without one shows "(not set)".
+        const emails = row.Email === '(not set)' ? '' : row.Email;
+        for (const email of emails.split(',').filter(Boolean)) {
           expect(email.trim(), where).toMatch(supplierFormats.email);
         }
       }

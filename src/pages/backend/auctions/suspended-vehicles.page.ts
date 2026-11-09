@@ -83,15 +83,8 @@ export class SuspendedVehiclesPage extends BackendListPage {
     await this.confirmYesButton.click();
   }
 
-  /**
-   * Starts counting activate requests that reach the server. Returns a function giving the
-   * count so far, so tests can prove that cancelling sends nothing.
-   */
+  /** Starts counting activate requests that reach the server (see countPostRequests). */
   countActivateSubmissions(endpoint: string): () => number {
-    let submissions = 0;
-    this.page.on('request', (request) => {
-      if (request.method() === 'POST' && request.url().includes(endpoint)) submissions += 1;
-    });
-    return () => submissions;
+    return this.countPostRequests(endpoint);
   }
 }
