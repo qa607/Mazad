@@ -6,9 +6,9 @@ import {
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
 import { expect, test } from '@fixtures/supplier.fixture';
-import { AuctionSectionPage } from '@pages/backend/auction-section.page';
-import { MazadLoginPage } from '@pages/backend/mazad-login.page';
-import { SupplierListPage } from '@pages/backend/supplier-list.page';
+import { AuctionSectionPage } from '@pages/backend/auctions/auction-section.page';
+import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
+import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { backendUrls } from '@test-data/backend-login.data';
 import {
   auctionSections,
@@ -54,7 +54,7 @@ test.beforeAll(async ({ browser, devRootSession }) => {
   const list = new SupplierListPage(await admin.newPage());
   await list.goto();
   await fillSecret(list.phoneFilter, account.phone);
-  await list.submitSearch();
+  await list.search();
   const rows = await list.readRows();
   await admin.close();
   if (rows.length !== 1)

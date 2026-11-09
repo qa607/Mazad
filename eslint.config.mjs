@@ -28,6 +28,8 @@ export default defineConfig(
     files: ['tests/**/*.ts'],
     extends: [playwright.configs['flat/recommended']],
     rules: {
+      // Spec-local helpers that only assert, so tests calling them count as asserting.
+      'playwright/expect-expect': ['warn', { assertFunctionNames: ['expectNoResults'] }],
       // The custom fixture provides the language option, translator and page objects.
       'no-restricted-imports': [
         'error',

@@ -52,4 +52,11 @@ export const readyForPricingData = {
 /** URL patterns, matched against the full page URL. */
 export const readyForPricingUrls = {
   list: /\/backend\/auction\/ready-for-pricing\/index(\?|$)/,
+  /** The list with no filter, sort or page in the URL. */
+  unfiltered: /\/backend\/auction\/ready-for-pricing\/index$/,
+  vinSearch: /ReadyForPricingSearch%5Bvin_number%5D=/,
+  citySearch: /ReadyForPricingSearch%5Bcity_id%5D=\d+/,
+  yearSearch: /ReadyForPricingSearch%5Byear%5D=\d+/,
+  /** Sorted by a key; a leading "-" means descending. */
+  sortedBy: (key: string) => new RegExp(`[?&]sort=${key}(&|$)`),
 } as const;

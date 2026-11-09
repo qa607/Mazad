@@ -1,7 +1,10 @@
 import { DEV_ROOT_SESSION_FILE } from '@config/credentials.config';
 import { expect, test } from '@fixtures/test.fixture';
-import { AwaitingPage } from '@pages/backend/awaiting.page';
-import { type BidType, SupplierAuctionInfoPage } from '@pages/backend/supplier-auction-info.page';
+import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
+import {
+  type BidType,
+  SupplierAuctionInfoPage,
+} from '@pages/backend/suppliers/supplier-auction-info.page';
 import {
   createAuctionDateFormat,
   createAuctionText,
