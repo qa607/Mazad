@@ -94,3 +94,57 @@ export function roleMissingReason(role: BackendRole): string {
   const { label, env } = BACKEND_ROLES[role];
   return `${label} account is not set: add ${env}_PHONE and ${env}_PASSWORD to the local .env file.`;
 }
+
+export const SUPPLIER_MISSING_REASON =
+  'Supplier account is not set: add SUPPLIER_PHONE and SUPPLIER_PASSWORD to the local .env file.';
+
+/**
+ * A staging supplier account (role supplierAdmin), used to check what a supplier can see.
+ * Null when it is not configured in .env.
+ */
+export function getSupplierAccount(): BackendAccount | null {
+  const phone = localEnv.SUPPLIER_PHONE?.trim();
+  const password = localEnv.SUPPLIER_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+/** ERPNext account. Printing, logging or serialising it shows "[redacted]" instead of the values. */
+export class ErpAccount {
+  readonly #user: string;
+  readonly #password: string;
+
+  constructor(user: string, password: string) {
+    this.#user = user;
+    this.#password = password;
+  }
+
+  get user(): string {
+    return this.#user;
+  }
+
+  get password(): string {
+    return this.#password;
+  }
+
+  toString(): string {
+    return '[redacted]';
+  }
+
+  toJSON(): string {
+    return '[redacted]';
+  }
+
+  [inspect.custom](): string {
+    return '[redacted]';
+  }
+}
+
+export const ERP_MISSING_REASON =
+  'ERPNext credentials are not set: add ERP_USER and ERP_PASSWORD to the local .env file.';
+
+/** The ERPNext staging account, or null when it is not configured in .env. */
+export function getErpAccount(): ErpAccount | null {
+  const user = localEnv.ERP_USER?.trim();
+  const password = localEnv.ERP_PASSWORD;
+  return user && password ? new ErpAccount(user, password) : null;
+}
