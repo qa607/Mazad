@@ -15,6 +15,8 @@ const BACKEND_SPECS = '**/backend/**/*.spec.ts';
 const INTEGRATION_SPECS = '**/integration/**/*.spec.ts';
 /** Native app specs, driven through Appium; the app language is switched inside the specs. */
 const MOBILE_SPECS = '**/mobile/**/*.spec.ts';
+/** Signs in once per run and saves the session (see config/credentials.config.ts). */
+const BACKEND_SETUP = '**/backend/**/*.setup.ts';
 
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
@@ -43,6 +45,8 @@ export default defineConfig<LanguageOptions>({
   use: {
     baseURL: envConfig.baseURL,
     headless,
+    // SLOW_MO=<ms> pauses before every browser action, to watch a headed run step by step.
+    launchOptions: { slowMo: Number(process.env.SLOW_MO) || 0 },
     // Mazad serves the Saudi market only.
     timezoneId: 'Asia/Riyadh',
     trace: 'retain-on-failure',
@@ -61,10 +65,17 @@ export default defineConfig<LanguageOptions>({
         locale: LANGUAGES[language].locale,
       },
     })),
+    // Back office: signs in as Dev Root once per run; signed-in specs reuse that session.
+    {
+      name: 'backend-setup',
+      testMatch: BACKEND_SETUP,
+      use: { ...devices['Desktop Chrome'] },
+    },
     // Back office: no localization, so its specs run once, with no language settings.
     {
       name: 'backend',
       testMatch: BACKEND_SPECS,
+      dependencies: ['backend-setup'],
       use: { ...devices['Desktop Chrome'] },
     },
     // Back office + app API + ERP checks of the same records.

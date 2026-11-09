@@ -7,7 +7,7 @@ import {
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
 import { expect, test } from '@fixtures/test.fixture';
-import { MazadLoginPage } from '@pages/backend/mazad-login.page';
+import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { MazadUserDirectoryPage } from '@pages/backend/mazad-user-directory.page';
 
 /**

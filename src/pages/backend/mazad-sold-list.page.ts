@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendPage } from '@pages/backend/base/backend.page';
 import type { SoldListRow } from '@typings/mazad';
 
 /** Search form fields of the Sold List (GET form #w0, model SoldListViewSearch). */

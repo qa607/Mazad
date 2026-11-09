@@ -16,7 +16,7 @@ import {
   APPROVED_WEB_REQUESTS,
   WEB_SYNTHETIC_VALUES,
 } from '../network/web-approved-requests';
-import { MazadLoginPage } from '@pages/backend/mazad-login.page';
+import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import type { AccountRole, DirectoryAccount } from '@pages/backend/mazad-user-directory.page';
 import { MazadUserDirectoryPage } from '@pages/backend/mazad-user-directory.page';
 import { MazadWebsiteLoginPage } from '@pages/website/mazad-login.page';

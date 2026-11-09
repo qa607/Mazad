@@ -50,6 +50,13 @@ export class BackendAccount {
   }
 }
 
+/**
+ * Signed-in Dev Root browser session (cookies), written once per run by
+ * tests/backend/auth.setup.ts and reused by specs that only need to be logged in.
+ * It is a live session token: .auth/ is gitignored and must never be shared.
+ */
+export const DEV_ROOT_SESSION_FILE = path.resolve(__dirname, '..', '.auth', 'dev-root.json');
+
 export const DEV_ROOT_MISSING_REASON =
   'Dev Root credentials are not set: add DEV_ROOT_PHONE and DEV_ROOT_PASSWORD to the local .env file.';
 
@@ -167,4 +174,49 @@ export function getIosTestDealer(): BackendAccount | null {
 /** Names (never values) of the given .env variables that are missing or empty. */
 export function missingLocalEnv(names: readonly string[]): string[] {
   return names.filter((name) => !localEnv[name]?.trim());
+}
+
+/**
+ * Back-office roles that have a test account, for the permission specs. Each account is read
+ * from .env as <env>_PHONE and <env>_PASSWORD, and must have exactly that one role on staging.
+ */
+export const BACKEND_ROLES = {
+  auctionSupervisor: { label: 'Auction Supervisor', env: 'ROLE_AUCTION_SUPERVISOR' },
+  customerSupport: { label: 'Customer Support', env: 'ROLE_CUSTOMER_SUPPORT' },
+  auctionTeam: { label: 'Auction Team', env: 'ROLE_AUCTION_TEAM' },
+  operation: { label: 'operation', env: 'ROLE_OPERATION' },
+  noAuctionAccess: { label: 'Marketing (no auction access)', env: 'ROLE_NO_AUCTION_ACCESS' },
+} as const;
+
+export type BackendRole = keyof typeof BACKEND_ROLES;
+
+/** A role's test account, or null when it is not configured in .env. */
+export function getRoleAccount(role: BackendRole): BackendAccount | null {
+  const { env } = BACKEND_ROLES[role];
+  const phone = localEnv[`${env}_PHONE`]?.trim();
+  const password = localEnv[`${env}_PASSWORD`];
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+/** Signed-in browser session of a role's account, saved once per run like Dev Root's. */
+export function roleSessionFile(role: BackendRole): string {
+  return path.resolve(__dirname, '..', '.auth', `role-${role}.json`);
+}
+
+export function roleMissingReason(role: BackendRole): string {
+  const { label, env } = BACKEND_ROLES[role];
+  return `${label} account is not set: add ${env}_PHONE and ${env}_PASSWORD to the local .env file.`;
+}
+
+export const SUPPLIER_MISSING_REASON =
+  'Supplier account is not set: add SUPPLIER_PHONE and SUPPLIER_PASSWORD to the local .env file.';
+
+/**
+ * A staging supplier account (role supplierAdmin), used to check what a supplier can see.
+ * Null when it is not configured in .env.
+ */
+export function getSupplierAccount(): BackendAccount | null {
+  const phone = localEnv.SUPPLIER_PHONE?.trim();
+  const password = localEnv.SUPPLIER_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
 }

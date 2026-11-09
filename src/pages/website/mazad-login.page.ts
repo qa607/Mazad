@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { BasePage } from '@pages/base.page';
+import { BasePage } from '@pages/frontend/base/base.page';
 import type { Language } from '@typings';
 import { fillSecret } from '@utils/secret-input';
 
