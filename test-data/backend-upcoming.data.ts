@@ -65,6 +65,11 @@ export const createAuctionText = {
   titleTooLong: 'Title should contain at most 45 characters.',
   created: 'The auction has been created successfully.',
   movedToUpcoming: 'Items have been moved to upcoming',
+  /** Alert after saving a supplier's Auction Info tab. */
+  supplierAuctionSaved: 'Auction information saved successfully.',
+  /** Bidding types as the Awaiting list shows them. */
+  priceOffering: 'Price Offering',
+  standardBid: 'Standard',
   /** How far ahead the real test auction starts, so it never goes live during a run. */
   realAuctionMonthsAhead: 2,
 } as const;
