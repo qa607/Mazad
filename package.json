@@ -13,14 +13,32 @@
     "test:en": "playwright test --project=en",
     "test:ar": "playwright test --project=ar",
     "test:backend": "playwright test --project=backend",
+    "test:integration": "playwright test --project=integration",
+    "test:android": "playwright test --project=android",
+    "emulator:start": "bash scripts/android-emulator.sh start",
+    "emulator:check": "bash scripts/android-emulator.sh check",
+    "ios:sim": "bash scripts/ios-sim.sh",
+    "test:ios": "playwright test -c playwright.ios.config.ts --project=ios",
+    "test:ios:inspect": "cross-env IOS_INSPECT=true playwright test -c playwright.ios.config.ts --project=ios-inspect",
+    "ios:account-report": "cross-env IOS_ACCOUNT_REPORT=true playwright test -c playwright.ios.config.ts --project=ios-account-report",
+    "ios:guarded-launch": "cross-env IOS_GUARDED_LAUNCH=true playwright test -c playwright.ios.config.ts --project=ios-guarded-launch",
     "test:headless": "cross-env HEADLESS=true playwright test",
     "typecheck": "tsc",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check",
+    "ui:check": "cross-env VISUAL_MODE=check playwright test -c playwright.ui.config.ts",
+    "ui:capture": "cross-env VISUAL_MODE=capture playwright test -c playwright.ui.config.ts",
+    "ui:noise": "cross-env VISUAL_MODE=noise playwright test -c playwright.ui.config.ts",
+    "ui:selfcheck": "cross-env TEST_ENV=stg-154 UI_SUITE=selfcheck playwright test -c playwright.ui.config.ts",
+    "ui:report": "playwright show-report",
+    "ui:approve": "node scripts/visual-approve.mjs",
     "allure:generate": "allure generate allure-results --clean -o allure-report",
-    "allure:open": "allure open allure-report"
+    "allure:open": "allure open allure-report",
+    "ios:otp-ledger-init": "node scripts/ios-otp-ledger-init.mjs",
+    "ios:journal": "node scripts/ios-journal.mjs",
+    "ios:dealer-config": "cross-env IOS_ACCOUNT_REPORT=true IOS_DEALER_CONFIG=true playwright test -c playwright.ios.config.ts --project=ios-account-report tests-ios/ios-dealer-config.report.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -35,6 +53,7 @@
     "eslint-plugin-playwright": "^2.12.2",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.72.1",
+    "webdriverio": "9.32.0"
   }
 }

@@ -17,6 +17,9 @@
       "@fixtures/*": ["./src/fixtures/*"],
       "@locales": ["./src/locales/index.ts"],
       "@typings": ["./src/types/index.ts"],
+      "@typings/*": ["./src/types/*"],
+      "@api/*": ["./src/api/*"],
+      "@mobile/*": ["./src/mobile/*"],
       "@utils/*": ["./src/utils/*"],
       "@test-data/*": ["./test-data/*"]
     }

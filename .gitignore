@@ -15,3 +15,6 @@ node_modules/
 !.env.example
 
 .DS_Store
+
+# UI visual layer: unapproved screenshot candidates (approved baselines stay tracked)
+/visual-baselines/candidates/
