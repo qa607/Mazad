@@ -32,6 +32,7 @@ import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-r
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
 import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
 import { VehiclesReportPage } from '@pages/backend/reports/vehicles-report.page';
+import { MojazRequestReportPage } from '@pages/backend/reports/mojaz-request-report.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
@@ -82,6 +83,7 @@ export interface BackendPages {
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
   supplierVehicleReportPage: SupplierVehicleReportPage;
   vehiclesReportPage: VehiclesReportPage;
+  mojazRequestReportPage: MojazRequestReportPage;
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
@@ -111,6 +113,7 @@ function createBackendPages(page: Page): BackendPages {
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
     supplierVehicleReportPage: new SupplierVehicleReportPage(page),
     vehiclesReportPage: new VehiclesReportPage(page),
+    mojazRequestReportPage: new MojazRequestReportPage(page),
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
@@ -230,6 +233,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   vehiclesReportPage: async ({ page }, use) => {
     await use(new VehiclesReportPage(page));
+  },
+  mojazRequestReportPage: async ({ page }, use) => {
+    await use(new MojazRequestReportPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
