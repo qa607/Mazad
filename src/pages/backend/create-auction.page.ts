@@ -137,6 +137,22 @@ export class CreateAuctionPage extends BackendPage {
       .click();
   }
 
+  /** Sets a time field ("2:05 PM") through its timepicker, as picking it does. */
+  async setTime(field: Locator, time: string): Promise<void> {
+    await field.evaluate((element, value) => {
+      const $ = (
+        window as unknown as {
+          jQuery: (e: Element) => {
+            timepicker: (...a: string[]) => void;
+            trigger: (e: string) => void;
+          };
+        }
+      ).jQuery;
+      $(element).timepicker('setTime', value);
+      $(element).trigger('change');
+    }, time);
+  }
+
   /** Fills step 1 with a normal auction; dates are days of the month `monthsAhead` from now. */
   async fillConfiguration(options: {
     title: string;
@@ -153,10 +169,25 @@ export class CreateAuctionPage extends BackendPage {
     await this.pickDate(this.endDateInput, monthsAhead, options.endDay);
   }
 
-  /** Goes to step 2. With a supplier chosen, waits for its vehicle list to load. */
+  /**
+   * Goes to step 2. The form validates fields live as they change; if Next is pressed while
+   * that is still running, it briefly sees a just-filled date as blank and stays on step 1 (seen
+   * on the first page load of a run). So Next is pressed again, up to three times, until step 2
+   * shows. A real validation error keeps it on step 1 and fails here.
+   */
   async goToSelectCars(): Promise<void> {
-    await this.nextButton.click();
-    await this.backToConfigurationButton.waitFor();
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (await this.nextButton.isVisible()) await this.nextButton.click();
+      try {
+        await this.backToConfigurationButton.waitFor({ timeout: 4_000 });
+        return;
+      } catch {
+        // Still on step 1: let the live validation settle, then try again.
+      }
+    }
+    throw new Error(
+      'Create Auction stayed on step 1 after pressing Next three times. Check the form for errors.',
+    );
   }
 
   /** Switches the step-2 Car Source ("Upcoming" or "Failed") and waits for the list to reload. */

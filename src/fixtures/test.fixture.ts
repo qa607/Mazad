@@ -12,6 +12,8 @@ import {
 } from '@config/credentials.config';
 import { getTranslator, type Translator } from '@locales';
 import { AwaitingPage } from '@pages/backend/awaiting.page';
+import { FailedPage } from '@pages/backend/failed.page';
+import { LivePage } from '@pages/backend/live.page';
 import { CreateAuctionPage } from '@pages/backend/create-auction.page';
 import { MazadDashboardPage } from '@pages/backend/mazad-dashboard.page';
 import { MazadLoginPage } from '@pages/backend/mazad-login.page';
@@ -47,6 +49,8 @@ interface MazadFixtures {
   upcomingPage: UpcomingPage;
   createAuctionPage: CreateAuctionPage;
   awaitingPage: AwaitingPage;
+  livePage: LivePage;
+  failedPage: FailedPage;
   /** Dev Root staging account from .env. Tests using it are skipped when it is not set. */
   devRoot: BackendAccount;
 }
@@ -105,6 +109,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   awaitingPage: async ({ page }, use) => {
     await use(new AwaitingPage(page));
+  },
+  livePage: async ({ page }, use) => {
+    await use(new LivePage(page));
+  },
+  failedPage: async ({ page }, use) => {
+    await use(new FailedPage(page));
   },
   // eslint-disable-next-line no-empty-pattern
   devRoot: async ({}, use, testInfo) => {
