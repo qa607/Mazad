@@ -101,8 +101,8 @@ test.describe('Supplier List - page and grid', () => {
       expect(row.Phone, where).toMatch(/^0\d{9}$/);
       expect(row['Joining Date'], where).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
       expect(row['English Name'], where).not.toBe('');
-      // Email may hold several addresses separated by commas.
-      if (row.Email) {
+      // Email may hold several addresses separated by commas; a supplier without one shows "(not set)".
+      if (row.Email && row.Email !== '(not set)') {
         for (const email of row.Email.split(',')) {
           expect(email.trim(), where).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
         }
