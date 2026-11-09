@@ -51,6 +51,7 @@ export class SupplierFormPage extends BackendPage {
   /** SweetAlert popup that reports the save result. */
   readonly resultPopup: Locator;
   readonly resultPopupConfirm: Locator;
+  readonly resultPopupSuccessIcon: Locator;
   readonly tabs: Locator;
   readonly breadcrumbList: Locator;
 
@@ -63,6 +64,7 @@ export class SupplierFormPage extends BackendPage {
     this.loadingOverlay = page.locator('#blocker');
     this.resultPopup = page.locator('.swal2-popup');
     this.resultPopupConfirm = this.resultPopup.locator('.swal2-confirm');
+    this.resultPopupSuccessIcon = this.resultPopup.locator('.swal2-success');
     this.tabs = page.locator('.nav-tabs .nav-link');
     this.breadcrumbList = page.locator('.breadcrumb a[href="/backend/users/supplier/index"]');
   }
@@ -111,7 +113,7 @@ export class SupplierFormPage extends BackendPage {
   }
 
   /** Fills the Basic Information fields. Password fields are filled only when given. */
-  async fill(data: Partial<SupplierData>): Promise<void> {
+  async fillForm(data: Partial<SupplierData>): Promise<void> {
     if (data.name !== undefined) await this.input('name').fill(data.name);
     if (data.nameEn !== undefined) await this.input('nameEn').fill(data.nameEn);
     if (data.status !== undefined) await this.selectStatus(data.status);

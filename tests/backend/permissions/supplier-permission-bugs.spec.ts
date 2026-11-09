@@ -1,10 +1,15 @@
-import { envConfig } from '@config/env.config';
-import { expect, test } from '@fixtures/supplier.fixture';
-import { RolePermissionsPage } from '@pages/backend/role-permissions.page';
+import { devRootSession, expect, test } from '@fixtures/test.fixture';
+import { uniqueDigits } from '@utils/unique';
+import {
+  permissionData,
+  permissionUrls,
+  supplierPermissions,
+} from '@test-data/backend-permissions.data';
 
 /**
- * Evidence for two Supplier List permission findings (reported 2026-11-05). Each test asserts the
- * expected behaviour, so it fails while the bug exists; the video shows what happens.
+ * Evidence for two Supplier List permission findings (reported 2026-11-05). Each bug test asserts
+ * the expected behaviour and is marked test.fail() with a BUG-PENDING reference (replace it with
+ * the ticket ID), so the run passes while the bug exists; the video shows what happens.
  *
  * PRM-02: ticking "/users/supplier/create" on a role also ticks five other permissions, and
  *         unticking Create leaves them ticked.
@@ -12,159 +17,147 @@ import { RolePermissionsPage } from '@pages/backend/role-permissions.page';
  *         "/users/supplier/*"), but no Delete action is shown anywhere for suppliers.
  */
 
-// Video on for evidence. The account header is hidden in the recording (see beforeEach), and
-// login happens in the worker fixture's own context, so no credentials are recorded.
-test.use({ trace: 'off', screenshot: 'off', video: 'on', launchOptions: { slowMo: 300 } });
+// Video on for evidence. The account header is hidden in the recording (see beforeEach), and the
+// session was saved by auth.setup.ts, so no credentials are typed while recording.
+test.use({ ...devRootSession, video: 'on', launchOptions: { slowMo: 300 } });
 
-const CREATE = '/users/supplier/create';
-/** Permissions that should change only when they are clicked themselves. */
-const RELATED = [
-  '/users/supplier-ajax/save-basic-tab',
-  '/users/supplier-ajax/save-auction-tab',
-  '/users/supplier-ajax/save-inspection-tab',
-  '/users/supplier-ajax/save-email-tab',
-  '/users/ajax/add-supplier-commission',
-] as const;
+const { create, relatedToCreate } = supplierPermissions;
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    document.addEventListener('DOMContentLoaded', () => {
-      const style = document.createElement('style');
-      style.textContent = '.app-header-right { visibility: hidden; }';
-      document.head.appendChild(style);
-    });
-  });
+test.beforeEach(async ({ mazadDashboardPage }) => {
+  await mazadDashboardPage.hideAccountDetailsInRecordings();
 });
 
-test.describe('PRM-02: Create permission toggles other permissions', () => {
-  // A dedicated role with no users, created and deleted by this test, so no real role changes.
-  test.describe.configure({ mode: 'serial', retries: 0, timeout: 180_000 });
-  const role = `QA-AUTO PRM-02 ${Date.now().toString().slice(-6)}`;
+test.describe(
+  'PRM-02: Create permission toggles other permissions',
+  { tag: ['@regression', '@mutates'] },
+  () => {
+    // A dedicated role with no users, created and deleted by this test, so no real role changes.
+    test.describe.configure({ mode: 'serial', retries: 0, timeout: 180_000 });
+    const role = `${permissionData.testRolePrefix} ${uniqueDigits(6)}`;
 
-  test.afterAll(async ({ browser, devRootSession }) => {
-    const context = await browser.newContext({
-      baseURL: envConfig.baseURL,
-      storageState: devRootSession ?? undefined,
-    });
-    const roles = new RolePermissionsPage(await context.newPage());
-    await roles.gotoList();
-    await roles.searchRole(role);
-    if (await roles.roleRow(role).count()) await roles.deleteRole(role);
-    await context.close();
-  });
-
-  test('PRM-02 Ticking Create ticks only Create, and unticking it changes nothing else', async ({
-    page,
-  }) => {
-    const roles = new RolePermissionsPage(page);
-
-    await test.step('Create a dedicated test role with no permissions', async () => {
-      await roles.createRole(role);
-      await roles.searchRole(role);
-      await expect(roles.roleRow(role)).toBeVisible();
-    });
-
-    await test.step('Open the role from the Roles list with the permissions icon', async () => {
-      // The icon opens a new tab. Continue in the main tab so the video stays in one recording.
-      const tab = await roles.openInNewTab(roles.permissionsIcon(role));
-      await expect(tab).toHaveURL(/view-permission/);
-      const url = tab.url();
-      await tab.close();
-      await page.goto(url);
-      await expect(roles.permission(CREATE)).not.toBeChecked();
-      for (const route of RELATED) await expect(roles.permission(route)).not.toBeChecked();
-    });
-
-    await test.step(`Tick only ${CREATE} and reload`, async () => {
-      await roles.permission(CREATE).scrollIntoViewIfNeeded();
-      await roles.togglePermission(CREATE);
-      await page.reload();
-      await roles.permission(CREATE).scrollIntoViewIfNeeded();
-      await expect(roles.permission(CREATE)).toBeChecked();
-    });
-
-    await test.step('Expected: the five related permissions stay unticked', async () => {
-      for (const route of RELATED) {
-        await expect
-          .soft(roles.permission(route), `${route} after ticking Create`)
-          .not.toBeChecked();
+    // Delete the role even when the test stops midway.
+    test.afterEach(async ({ rolePermissionsPage }) => {
+      await rolePermissionsPage.gotoList();
+      await rolePermissionsPage.searchRole(role);
+      if (await rolePermissionsPage.roleRow(role).count()) {
+        await rolePermissionsPage.deleteRole(role);
       }
     });
 
-    await test.step(`Untick ${CREATE} and reload`, async () => {
-      await roles.togglePermission(CREATE);
-      await page.reload();
-      await roles.permission(CREATE).scrollIntoViewIfNeeded();
-      await expect(roles.permission(CREATE)).not.toBeChecked();
-    });
+    test(
+      'PRM-02 Ticking Create ticks only Create, and unticking it changes nothing else',
+      { tag: ['@functional', '@known-bug'] },
+      async ({ page, rolePermissionsPage }) => {
+        test.fail(
+          true,
+          'BUG-PENDING: PRM-02 ticking supplier Create also ticks five other permissions.',
+        );
 
-    await test.step('Expected: no related permission is left ticked', async () => {
-      await roles.permission(RELATED[0]).scrollIntoViewIfNeeded();
-      for (const route of RELATED) {
-        await expect
-          .soft(roles.permission(route), `${route} after unticking Create`)
-          .not.toBeChecked();
-      }
-    });
-  });
-});
+        await test.step('Create a dedicated test role with no permissions', async () => {
+          await rolePermissionsPage.createRole(role);
+          await rolePermissionsPage.searchRole(role);
+          await expect(rolePermissionsPage.roleRow(role)).toBeVisible();
+        });
 
-test.describe('PRM-03: Delete permission has no Delete button', () => {
-  test('PRM-03 The supplier Delete permission exists and root holds it', async ({ page }) => {
-    const roles = new RolePermissionsPage(page);
+        await test.step('Open the role from the Roles list with the permissions icon', async () => {
+          await rolePermissionsPage.openPermissionsFromList(role);
+          await expect(page).toHaveURL(permissionUrls.rolePermissions);
+          await expect(rolePermissionsPage.permission(create)).not.toBeChecked();
+          for (const route of relatedToCreate) {
+            await expect(rolePermissionsPage.permission(route)).not.toBeChecked();
+          }
+        });
 
-    await test.step('Permissions list contains /users/supplier/delete', async () => {
-      await page.goto(
-        '/backend/access/permission/index?AuthItemSearch%5Bname%5D=supplier%2Fdelete',
-      );
-      await expect(page.locator('table tbody tr[data-key="/users/supplier/delete"]')).toBeVisible();
-    });
+        await test.step(`Tick only ${create} and reload`, async () => {
+          await rolePermissionsPage.permission(create).scrollIntoViewIfNeeded();
+          await rolePermissionsPage.togglePermission(create);
+          await page.reload();
+          await rolePermissionsPage.permission(create).scrollIntoViewIfNeeded();
+          await expect(rolePermissionsPage.permission(create)).toBeChecked();
+        });
 
-    await test.step('Role "root" has /users/supplier/* (includes delete)', async () => {
-      await roles.gotoPermissions('root');
-      await roles.permission('/users/supplier/*').scrollIntoViewIfNeeded();
-      await expect(roles.permission('/users/supplier/*')).toBeChecked();
-    });
-  });
+        await test.step('Expected: the five related permissions stay unticked', async () => {
+          for (const route of relatedToCreate) {
+            await expect
+              .soft(rolePermissionsPage.permission(route), `${route} after ticking Create`)
+              .not.toBeChecked();
+          }
+        });
 
-  test('PRM-03 Root sees a Delete action for suppliers in the list', async ({
-    supplierListPage,
-  }) => {
-    await supplierListPage.goto();
-    const [first] = await supplierListPage.columnValues('ID');
+        await test.step(`Untick ${create} and reload`, async () => {
+          await rolePermissionsPage.togglePermission(create);
+          await page.reload();
+          await rolePermissionsPage.permission(create).scrollIntoViewIfNeeded();
+          await expect(rolePermissionsPage.permission(create)).not.toBeChecked();
+        });
 
-    await test.step('Row actions show View and Update', async () => {
-      await expect(supplierListPage.viewLink(first)).toBeVisible();
-      await expect(supplierListPage.updateLink(first)).toBeVisible();
-    });
+        await test.step('Expected: no related permission is left ticked', async () => {
+          await rolePermissionsPage.permission(relatedToCreate[0]).scrollIntoViewIfNeeded();
+          for (const route of relatedToCreate) {
+            await expect
+              .soft(rolePermissionsPage.permission(route), `${route} after unticking Create`)
+              .not.toBeChecked();
+          }
+        });
+      },
+    );
+  },
+);
 
-    await test.step('Expected: a Delete action next to them', async () => {
-      await supplierListPage.rowById(first).scrollIntoViewIfNeeded();
-      await expect(
-        supplierListPage
-          .rowById(first)
-          .locator('a[title="Delete"], a[href*="/users/supplier/delete"]'),
-      ).toBeVisible();
-    });
-  });
+test.describe('PRM-03: Delete permission has no Delete button', { tag: ['@regression'] }, () => {
+  test(
+    'PRM-03 The supplier Delete permission exists and root holds it',
+    { tag: ['@functional'] },
+    async ({ permissionListPage, rolePermissionsPage }) => {
+      await test.step(`Permissions list contains ${supplierPermissions.delete}`, async () => {
+        await permissionListPage.gotoFiltered(permissionData.deleteSearch);
+        await expect(permissionListPage.row(supplierPermissions.delete)).toBeVisible();
+      });
 
-  test('PRM-03 Root sees a Delete button on the supplier details page', async ({
-    page,
-    supplierListPage,
-    supplierViewPage,
-  }) => {
-    await supplierListPage.goto();
-    const [first] = await supplierListPage.columnValues('ID');
-    await supplierViewPage.goto(first);
+      await test.step(`Role "root" has ${supplierPermissions.all} (includes delete)`, async () => {
+        await rolePermissionsPage.gotoPermissions(permissionData.rootRole);
+        await rolePermissionsPage.permission(supplierPermissions.all).scrollIntoViewIfNeeded();
+        await expect(rolePermissionsPage.permission(supplierPermissions.all)).toBeChecked();
+      });
+    },
+  );
 
-    await test.step('Details page shows the Update button', async () => {
-      await expect(supplierViewPage.updateButton).toBeVisible();
-    });
+  test(
+    'PRM-03 Root sees a Delete action for suppliers in the list',
+    { tag: ['@functional', '@known-bug'] },
+    async ({ supplierListPage }) => {
+      test.fail(true, 'BUG-PENDING: PRM-03 no Delete action for suppliers despite the permission.');
+      await supplierListPage.goto();
+      const [first] = await supplierListPage.columnValues('ID');
 
-    await test.step('Expected: a Delete button next to Update', async () => {
-      await expect(
-        page.locator('a.btn, button.btn').filter({ hasText: /^\s*Delete\s*$/ }),
-      ).toBeVisible();
-    });
-  });
+      await test.step('Row actions show View and Update', async () => {
+        await expect(supplierListPage.viewLink(first)).toBeVisible();
+        await expect(supplierListPage.updateLink(first)).toBeVisible();
+      });
+
+      await test.step('Expected: a Delete action next to them', async () => {
+        await supplierListPage.row(first).scrollIntoViewIfNeeded();
+        await expect(supplierListPage.deleteLink(first)).toBeVisible();
+      });
+    },
+  );
+
+  test(
+    'PRM-03 Root sees a Delete button on the supplier details page',
+    { tag: ['@functional', '@known-bug'] },
+    async ({ supplierListPage, supplierViewPage }) => {
+      test.fail(true, 'BUG-PENDING: PRM-03 no Delete button on the supplier details page.');
+      await supplierListPage.goto();
+      const [first] = await supplierListPage.columnValues('ID');
+      await supplierViewPage.goto(first);
+
+      await test.step('Details page shows the Update button', async () => {
+        await expect(supplierViewPage.updateButton).toBeVisible();
+      });
+
+      await test.step('Expected: a Delete button next to Update', async () => {
+        await expect(supplierViewPage.deleteButton).toBeVisible();
+      });
+    },
+  );
 });

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 import {
   type BackendAccount,
   DEV_ROOT_MISSING_REASON,
@@ -9,7 +9,12 @@ import {
 import { getTranslator, type Translator } from '@locales';
 import { MazadDashboardPage } from '@pages/backend/mazad-dashboard.page';
 import { MazadLoginPage } from '@pages/backend/mazad-login.page';
+import { PermissionListPage } from '@pages/backend/permission-list.page';
 import { ReadyForPricingPage } from '@pages/backend/ready-for-pricing.page';
+import { RolePermissionsPage } from '@pages/backend/role-permissions.page';
+import { SupplierFormPage } from '@pages/backend/supplier-form.page';
+import { SupplierListPage } from '@pages/backend/supplier-list.page';
+import { SupplierViewPage } from '@pages/backend/supplier-view.page';
 import { SuspendedVehiclesPage } from '@pages/backend/suspended-vehicles.page';
 import type { Language } from '@typings';
 
@@ -27,15 +32,57 @@ export interface SessionOptions {
   signedInAs: 'none' | 'devRoot';
 }
 
-interface MazadFixtures {
-  /** Translator for the active language, for text assertions in tests. */
-  t: Translator;
+/**
+ * test.use() settings for specs whose pages open signed in as Dev Root. Traces, videos and
+ * automatic screenshots would capture the session and the account header, so they are off;
+ * a failing test attaches a screenshot with account details masked instead.
+ */
+export const devRootSession = {
+  signedInAs: 'devRoot',
+  trace: 'off',
+  video: 'off',
+  screenshot: 'off',
+} as const;
+
+/** Back-office page objects for one browser tab. */
+export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
+  supplierListPage: SupplierListPage;
+  supplierFormPage: SupplierFormPage;
+  supplierViewPage: SupplierViewPage;
+  rolePermissionsPage: RolePermissionsPage;
+  permissionListPage: PermissionListPage;
+}
+
+function createBackendPages(page: Page): BackendPages {
+  return {
+    mazadLoginPage: new MazadLoginPage(page),
+    mazadDashboardPage: new MazadDashboardPage(page),
+    suspendedVehiclesPage: new SuspendedVehiclesPage(page),
+    readyForPricingPage: new ReadyForPricingPage(page),
+    supplierListPage: new SupplierListPage(page),
+    supplierFormPage: new SupplierFormPage(page),
+    supplierViewPage: new SupplierViewPage(page),
+    rolePermissionsPage: new RolePermissionsPage(page),
+    permissionListPage: new PermissionListPage(page),
+  };
+}
+
+interface MazadFixtures extends BackendPages {
+  /** Translator for the active language, for text assertions in tests. */
+  t: Translator;
   /** Dev Root staging account from .env. Tests using it are skipped when it is not set. */
   devRoot: BackendAccount;
+  /** Page objects for another tab, such as one opened by a grid row action. */
+  pagesOn: (tab: Page) => BackendPages;
+  /**
+   * Automatic: when automatic screenshots are off (because the page can show credentials or
+   * account details), a failing test attaches a screenshot with those areas masked.
+   */
+  maskedFailureScreenshot: void;
 }
 
 export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures>({
@@ -69,6 +116,25 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   readyForPricingPage: async ({ page }, use) => {
     await use(new ReadyForPricingPage(page));
   },
+  supplierListPage: async ({ page }, use) => {
+    await use(new SupplierListPage(page));
+  },
+  supplierFormPage: async ({ page }, use) => {
+    await use(new SupplierFormPage(page));
+  },
+  supplierViewPage: async ({ page }, use) => {
+    await use(new SupplierViewPage(page));
+  },
+  rolePermissionsPage: async ({ page }, use) => {
+    await use(new RolePermissionsPage(page));
+  },
+  permissionListPage: async ({ page }, use) => {
+    await use(new PermissionListPage(page));
+  },
+  // eslint-disable-next-line no-empty-pattern
+  pagesOn: async ({}, use) => {
+    await use(createBackendPages);
+  },
   // eslint-disable-next-line no-empty-pattern
   devRoot: async ({}, use, testInfo) => {
     const account = getDevRootAccount();
@@ -76,6 +142,28 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
     if (!account) return; // Not reached: skip() ends the test.
     await use(account);
   },
+  maskedFailureScreenshot: [
+    async ({ page, screenshot }, use, testInfo) => {
+      await use();
+      const mode = typeof screenshot === 'string' ? screenshot : screenshot.mode;
+      if (mode !== 'off' || testInfo.status === testInfo.expectedStatus) return;
+      const login = new MazadLoginPage(page);
+      const dashboard = new MazadDashboardPage(page);
+      const image = await page
+        .screenshot({
+          fullPage: true,
+          mask: [...login.sensitiveAreas(), ...dashboard.sensitiveAreas()],
+        })
+        .catch(() => null);
+      if (image) {
+        await testInfo.attach('screenshot (account details masked)', {
+          body: image,
+          contentType: 'image/png',
+        });
+      }
+    },
+    { auto: true },
+  ],
 });
 
 export { expect };

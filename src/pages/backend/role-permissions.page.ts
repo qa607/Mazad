@@ -71,11 +71,15 @@ export class RolePermissionsPage extends BackendPage {
     await this.page.waitForLoadState('load');
   }
 
-  /** Row icons open in a new tab. Clicks one and returns the loaded tab. */
-  async openInNewTab(link: Locator): Promise<Page> {
-    const [tab] = await Promise.all([this.page.context().waitForEvent('page'), link.click()]);
-    await tab.waitForLoadState();
-    return tab;
+  /**
+   * Opens a role's permissions with its row icon. The icon opens a new tab; this reads that
+   * tab's URL, closes it and continues in this tab, so a video stays in one recording.
+   */
+  async openPermissionsFromList(role: string): Promise<void> {
+    const tab = await this.openInNewTab(this.permissionsIcon(role));
+    const url = tab.url();
+    await tab.close();
+    await this.page.goto(url);
   }
 
   async gotoPermissions(role: string): Promise<void> {

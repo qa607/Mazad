@@ -1,6 +1,7 @@
 import type { Download, Locator, Page } from '@playwright/test';
-import { BackendPage } from '@pages/backend/backend.page';
+import { BackendListPage } from '@pages/backend/backend-list.page';
 import { selectOption, selectedOption } from '@utils/widgets';
+import { escapeRegExp } from '@utils/text';
 import {
   type SortableColumn,
   type SupplierColumn,
@@ -24,13 +25,10 @@ export interface SupplierFilters {
 export type SupplierRow = Record<SupplierColumn, string>;
 
 /** Mazad back-office Supplier List (/backend/users/supplier/index). */
-export class SupplierListPage extends BackendPage {
+export class SupplierListPage extends BackendListPage {
   static readonly path = '/backend/users/supplier/index';
 
-  readonly pageHeading: Locator;
   readonly createButton: Locator;
-  readonly searchButton: Locator;
-  readonly resetButton: Locator;
 
   readonly phoneFilter: Locator;
   readonly nameEnFilter: Locator;
@@ -40,31 +38,21 @@ export class SupplierListPage extends BackendPage {
   readonly commissionFilter: Locator;
   readonly requestMojazFilter: Locator;
 
-  readonly grid: Locator;
-  readonly headerCells: Locator;
-  readonly rows: Locator;
-  readonly emptyState: Locator;
-  /** "Showing 1-20 of 63 items." Absent when there are no results. */
-  readonly summary: Locator;
-  readonly pagination: Locator;
-  readonly previousPage: Locator;
-  readonly nextPage: Locator;
-  readonly activePage: Locator;
+  /** Header labels that are sort links. */
+  readonly sortableColumnLabels: Locator;
 
   readonly exportMenuToggle: Locator;
   readonly exportColumnsToggle: Locator;
+  readonly exportColumnLabels: Locator;
   readonly openDropdown: Locator;
   /** In-page "Ok to proceed?" dialog shown before an export is generated. */
   readonly exportConfirmation: Locator;
   readonly exportConfirmButton: Locator;
 
   constructor(page: Page) {
-    super(page);
-    this.pageHeading = page.locator('.app-page-title .page-title-head');
-    const filters = page.locator('#w0');
+    // The search form is still found by its generated id; see the pending DOM review.
+    super(page, SupplierListPage.path, 'default-id', '#w0');
     this.createButton = page.locator('a[href="/backend/users/supplier/create"]');
-    this.searchButton = filters.locator('button[type="submit"]');
-    this.resetButton = filters.locator('a', { hasText: 'Reset' });
     this.phoneFilter = page.locator('#suppliersearch-phone');
     this.nameEnFilter = page.locator('#suppliersearch-name_en');
     this.supplierNameEnFilter = page.locator('#suppliersearch-supplier_name_en');
@@ -73,25 +61,18 @@ export class SupplierListPage extends BackendPage {
     this.commissionFilter = page.locator('.field-suppliersearch-commission');
     this.requestMojazFilter = page.locator('.field-suppliersearch-enable_mojaz_request');
 
-    this.grid = page.locator('#default-id table');
-    this.headerCells = this.grid.locator('thead tr').first().locator('th');
-    this.rows = this.grid.locator('tbody tr[data-key]');
-    this.emptyState = this.grid.locator('tbody .empty');
-    this.summary = page.locator('#default-id .summary');
-    this.pagination = page.locator('#default-id .pagination');
-    this.previousPage = this.pagination.locator('li.prev');
-    this.nextPage = this.pagination.locator('li.next');
-    this.activePage = this.pagination.locator('li.active');
+    this.sortableColumnLabels = this.columnHeaders.locator('a[data-sort]');
 
     this.exportMenuToggle = page.getByRole('button', { name: 'Export All' });
     this.exportColumnsToggle = page.locator('button[title="Select columns to export"]');
+    this.exportColumnLabels = page.locator('#w1-cols-list label');
     this.openDropdown = page.locator('.dropdown-menu.show');
     this.exportConfirmation = page.locator('.modal.show', { hasText: 'Ok to proceed?' });
     this.exportConfirmButton = this.exportConfirmation.getByRole('button', { name: 'Ok' });
   }
 
   /** Opens the list, optionally with query parameters (e.g. { sort: '-id', page: '2' }). */
-  async goto(query: Record<string, string> = {}): Promise<void> {
+  override async goto(query: Record<string, string> = {}): Promise<void> {
     const params = new URLSearchParams(query).toString();
     await this.page.goto(params ? `${SupplierListPage.path}?${params}` : SupplierListPage.path);
   }
@@ -113,42 +94,19 @@ export class SupplierListPage extends BackendPage {
   }
 
   /** Fills the filters and clicks Search, waiting for the filtered page to load. */
-  async search(filters: SupplierFilters): Promise<void> {
+  override async search(filters: SupplierFilters = {}): Promise<void> {
     await this.fillFilters(filters);
-    await this.submitSearch();
-  }
-
-  async submitSearch(): Promise<void> {
-    await this.loadsNewPage(() => this.searchButton.click());
+    await super.search();
   }
 
   /** Runs the search by pressing Enter in a text filter. */
   async submitSearchWithEnter(filter: Locator): Promise<void> {
-    await this.loadsNewPage(() => filter.press('Enter'));
-  }
-
-  async reset(): Promise<void> {
-    await this.loadsNewPage(() => this.resetButton.click());
-  }
-
-  /**
-   * Runs an action that loads a new page and waits for that page to finish loading. Waiting on
-   * the URL alone is not enough: after a search the URL often already matches.
-   */
-  private async loadsNewPage(action: () => Promise<void>): Promise<void> {
-    const loaded = this.page.waitForEvent('load');
-    await action();
-    await loaded;
+    await this.waitForPageLoadAfter(() => filter.press('Enter'));
   }
 
   /** Text shown by a filter dropdown, e.g. "Choose Status" or "Yes". */
   selectedFilterOption(filter: Locator): Locator {
     return selectedOption(filter);
-  }
-
-  /** Header texts in display order. */
-  async columnHeaders(): Promise<string[]> {
-    return (await this.headerCells.allInnerTexts()).map((text) => text.trim());
   }
 
   /** Values of one column for every row on the current page. */
@@ -170,57 +128,26 @@ export class SupplierListPage extends BackendPage {
     );
   }
 
-  rowById(id: string): Locator {
-    return this.rows.and(this.page.locator(`[data-key="${id}"]`));
-  }
-
   viewLink(id: string): Locator {
-    return this.rowById(id).locator(`a[href="/backend/users/supplier/view?id=${id}"]`);
+    return this.row(id).locator(`a[href="/backend/users/supplier/view?id=${id}"]`);
   }
 
   updateLink(id: string): Locator {
-    return this.rowById(id).locator(`a[href="/backend/users/supplier/update?id=${id}"]`);
+    return this.row(id).locator(`a[href="/backend/users/supplier/update?id=${id}"]`);
+  }
+
+  /** A Delete action in a supplier's row (none is shown today: see PRM-03). */
+  deleteLink(id: string): Locator {
+    return this.row(id).locator('a[title="Delete"], a[href*="/users/supplier/delete"]');
   }
 
   sortLink(column: SortableColumn): Locator {
-    return this.headerCells.locator(`a[data-sort$="${sortableColumns[column]}"]`);
+    return this.columnHeaders.locator(`a[data-sort$="${sortableColumns[column]}"]`);
   }
 
   /** Clicks a column's sort link and waits for the sorted page. */
   async sortBy(column: SortableColumn): Promise<void> {
-    await this.loadsNewPage(() => this.sortLink(column).click());
-  }
-
-  pageLink(pageNumber: number): Locator {
-    return this.pagination.locator('a.page-link', { hasText: new RegExp(`^${pageNumber}$`) });
-  }
-
-  async goToPage(pageNumber: number): Promise<void> {
-    await this.loadsNewPage(() => this.pageLink(pageNumber).click());
-  }
-
-  async goToNextPage(): Promise<void> {
-    await this.loadsNewPage(() => this.nextPage.locator('a').click());
-  }
-
-  async goToPreviousPage(): Promise<void> {
-    await this.loadsNewPage(() => this.previousPage.locator('a').click());
-  }
-
-  /** Row actions open in a new browser tab. Clicks the link and returns the loaded tab. */
-  async openInNewTab(link: Locator): Promise<Page> {
-    const [tab] = await Promise.all([this.page.context().waitForEvent('page'), link.click()]);
-    await tab.waitForLoadState();
-    return tab;
-  }
-
-  /** Parses the summary: { from, to, total }. */
-  async summaryCounts(): Promise<{ from: number; to: number; total: number }> {
-    const text = await this.summary.innerText();
-    const match = /Showing\s+([\d,]+)-([\d,]+)\s+of\s+([\d,]+)/.exec(text);
-    if (!match) throw new Error(`Unexpected summary text: "${text}"`);
-    const [from, to, total] = match.slice(1).map((n) => Number(n.replace(/,/g, '')));
-    return { from, to, total };
+    await this.clickAndWaitForPageLoad(this.sortLink(column));
   }
 
   async openExportMenu(): Promise<void> {
@@ -250,6 +177,11 @@ export class SupplierListPage extends BackendPage {
     await this.exportColumnsToggle.click();
   }
 
+  /** Closes the export column picker. */
+  async closeExportColumns(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+  }
+
   /** Checkbox for a column in the export column picker. */
   exportColumnCheckbox(column: string): Locator {
     return this.page
@@ -262,17 +194,8 @@ export class SupplierListPage extends BackendPage {
 
   /** Ticks or unticks a column in the export picker by clicking its label, as a user does. */
   async toggleExportColumn(column: string): Promise<void> {
-    await this.page
-      .locator('#w1-cols-list label')
+    await this.exportColumnLabels
       .filter({ hasText: new RegExp(`^${escapeRegExp(column)}$`) })
       .click();
   }
-
-  exportColumnLabels(): Locator {
-    return this.page.locator('#w1-cols-list label');
-  }
-}
-
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -1,15 +1,18 @@
 import fs from 'node:fs';
-import { expect, test } from '@fixtures/supplier.fixture';
+import { devRootSession, expect, test } from '@fixtures/test.fixture';
 import {
   type SortableColumn,
+  csvExport,
   exportColumns,
   exportFormats,
   pageSize,
   sortableColumns,
+  spreadsheetExports,
+  supplierUrls,
 } from '@test-data/supplier.data';
 
-// Signed in as Dev Root: no trace or video (they would capture the account header).
-test.use({ trace: 'off', video: 'off', screenshot: 'off' });
+// Pages open signed in as Dev Root; see devRootSession for what is recorded.
+test.use(devRootSession);
 
 const ascending = (values: string[]) =>
   [...values].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
@@ -22,13 +25,11 @@ function readCsvLines(file: string): string[] {
     .filter((line) => line.trim());
 }
 
-test.describe('Supplier List - sorting', () => {
+test.describe('Supplier List - sorting', { tag: ['@regression', '@functional'] }, () => {
   test('Only ID, Phone and Joining Date are sortable', async ({ supplierListPage }) => {
     await supplierListPage.goto();
 
-    const sortable = await supplierListPage.headerCells.locator('a[data-sort]').allInnerTexts();
-
-    expect(sortable.map((text) => text.trim())).toEqual(Object.keys(sortableColumns));
+    await expect(supplierListPage.sortableColumnLabels).toHaveText(Object.keys(sortableColumns));
   });
 
   for (const column of Object.keys(sortableColumns) as SortableColumn[]) {
@@ -36,13 +37,13 @@ test.describe('Supplier List - sorting', () => {
       await supplierListPage.goto();
 
       await supplierListPage.sortBy(column);
-      await expect(page).toHaveURL(new RegExp(`sort=${sortableColumns[column]}(&|$)`));
+      await expect(page).toHaveURL(supplierUrls.sortedBy(sortableColumns[column]));
       await expect(supplierListPage.sortLink(column)).toHaveClass(/asc/);
       const asc = await supplierListPage.columnValues(column);
       expect(asc).toEqual(ascending(asc));
 
       await supplierListPage.sortBy(column);
-      await expect(page).toHaveURL(new RegExp(`sort=-${sortableColumns[column]}(&|$)`));
+      await expect(page).toHaveURL(supplierUrls.sortedBy(`-${sortableColumns[column]}`));
       await expect(supplierListPage.sortLink(column)).toHaveClass(/desc/);
       const desc = await supplierListPage.columnValues(column);
       expect(desc).toEqual(ascending(desc).reverse());
@@ -71,7 +72,7 @@ test.describe('Supplier List - sorting', () => {
   });
 });
 
-test.describe('Supplier List - pagination', () => {
+test.describe('Supplier List - pagination', { tag: ['@regression', '@functional'] }, () => {
   test.beforeEach(async ({ supplierListPage }) => {
     await supplierListPage.goto({ sort: 'id' });
     const { total } = await supplierListPage.summaryCounts();
@@ -148,7 +149,7 @@ test.describe('Supplier List - pagination', () => {
   });
 });
 
-test.describe('Supplier List - export', () => {
+test.describe('Supplier List - export', { tag: ['@regression', '@functional'] }, () => {
   test.beforeEach(async ({ supplierListPage }) => {
     await supplierListPage.goto();
   });
@@ -180,30 +181,29 @@ test.describe('Supplier List - export', () => {
 
     expect(download.suggestedFilename()).toMatch(/\.csv$/);
     const lines = readCsvLines(await download.path());
-    for (const column of ['ID', 'English Name', 'Status', 'Email', 'Phone']) {
+    for (const column of csvExport.requiredColumns) {
       expect(lines[0]).toContain(column);
     }
     expect(lines.length - 1).toBe(total);
     expect(lines.some((line) => line.includes(firstId))).toBe(true);
   });
 
-  test('CSV export leaves out a column that was unselected', async ({ page, supplierListPage }) => {
+  test('CSV export leaves out a column that was unselected', async ({ supplierListPage }) => {
     await supplierListPage.openExportColumns();
-    await supplierListPage.toggleExportColumn('Email');
-    await expect(supplierListPage.exportColumnCheckbox('Email')).not.toBeChecked();
-    await page.keyboard.press('Escape');
+    await supplierListPage.toggleExportColumn(csvExport.unselectedColumn);
+    await expect(
+      supplierListPage.exportColumnCheckbox(csvExport.unselectedColumn),
+    ).not.toBeChecked();
+    await supplierListPage.closeExportColumns();
 
     const download = await supplierListPage.exportAs('CSV');
 
     const [header] = readCsvLines(await download.path());
-    expect(header).toContain('Phone');
-    expect(header).not.toContain('Email');
+    expect(header).toContain(csvExport.keptColumn);
+    expect(header).not.toContain(csvExport.unselectedColumn);
   });
 
-  for (const [format, extension] of [
-    ['Excel 95 +', 'xls'],
-    ['Excel 2007+', 'xlsx'],
-  ] as const) {
+  for (const { format, extension } of spreadsheetExports) {
     test(`${format} export downloads a .${extension} file`, async ({ supplierListPage }) => {
       const download = await supplierListPage.exportAs(format);
 
