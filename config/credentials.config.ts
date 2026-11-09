@@ -62,3 +62,35 @@ export function getDevRootAccount(): BackendAccount | null {
   const password = localEnv.DEV_ROOT_PASSWORD;
   return phone && password ? new BackendAccount(phone, password) : null;
 }
+
+/**
+ * Back-office roles that have a test account, for the permission specs. Each account is read
+ * from .env as <env>_PHONE and <env>_PASSWORD, and must have exactly that one role on staging.
+ */
+export const BACKEND_ROLES = {
+  auctionSupervisor: { label: 'Auction Supervisor', env: 'ROLE_AUCTION_SUPERVISOR' },
+  customerSupport: { label: 'Customer Support', env: 'ROLE_CUSTOMER_SUPPORT' },
+  auctionTeam: { label: 'Auction Team', env: 'ROLE_AUCTION_TEAM' },
+  operation: { label: 'operation', env: 'ROLE_OPERATION' },
+  noAuctionAccess: { label: 'Marketing (no auction access)', env: 'ROLE_NO_AUCTION_ACCESS' },
+} as const;
+
+export type BackendRole = keyof typeof BACKEND_ROLES;
+
+/** A role's test account, or null when it is not configured in .env. */
+export function getRoleAccount(role: BackendRole): BackendAccount | null {
+  const { env } = BACKEND_ROLES[role];
+  const phone = localEnv[`${env}_PHONE`]?.trim();
+  const password = localEnv[`${env}_PASSWORD`];
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+/** Signed-in browser session of a role's account, saved once per run like Dev Root's. */
+export function roleSessionFile(role: BackendRole): string {
+  return path.resolve(__dirname, '..', '.auth', `role-${role}.json`);
+}
+
+export function roleMissingReason(role: BackendRole): string {
+  const { label, env } = BACKEND_ROLES[role];
+  return `${label} account is not set: add ${env}_PHONE and ${env}_PASSWORD to the local .env file.`;
+}
