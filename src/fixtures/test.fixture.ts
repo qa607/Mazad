@@ -33,6 +33,8 @@ import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-gr
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
+import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
 import { MazadVehicleViewPage } from '@pages/backend/mazad-vehicle-view.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
@@ -85,6 +87,8 @@ export const devRootSession = {
 export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
+  operationListPage: OperationListPage;
+  operationFormPage: OperationFormPage;
   mazadSoldListPage: MazadSoldListPage;
   mazadVehicleViewPage: MazadVehicleViewPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
@@ -125,6 +129,8 @@ function createBackendPages(page: Page): BackendPages {
   return {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
+    operationListPage: new OperationListPage(page),
+    operationFormPage: new OperationFormPage(page),
     mazadSoldListPage: new MazadSoldListPage(page),
     mazadVehicleViewPage: new MazadVehicleViewPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
@@ -228,6 +234,11 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   mazadDashboardPage: async ({ page }, use) => {
     await use(new MazadDashboardPage(page));
   },
+  operationListPage: async ({ page }, use) => {
+    await use(new OperationListPage(page));
+  },
+  operationFormPage: async ({ page }, use) => {
+    await use(new OperationFormPage(page));
   mazadSoldListPage: async ({ page }, use) => {
     await use(new MazadSoldListPage(page));
   },
