@@ -28,6 +28,8 @@ import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
+import { SupplierCompanyFormPage } from '@pages/backend/suppliers/supplier-company-form.page';
+import { SupplierCompanyListPage } from '@pages/backend/suppliers/supplier-company-list.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
@@ -76,6 +78,8 @@ export interface BackendPages {
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
+  supplierCompanyListPage: SupplierCompanyListPage;
+  supplierCompanyFormPage: SupplierCompanyFormPage;
   rolePermissionsPage: RolePermissionsPage;
   permissionListPage: PermissionListPage;
   customerGroupListPage: CustomerGroupListPage;
@@ -100,6 +104,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
+    supplierCompanyListPage: new SupplierCompanyListPage(page),
+    supplierCompanyFormPage: new SupplierCompanyFormPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
     permissionListPage: new PermissionListPage(page),
     customerGroupListPage: new CustomerGroupListPage(page),
@@ -200,6 +206,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  supplierCompanyListPage: async ({ page }, use) => {
+    await use(new SupplierCompanyListPage(page));
+  },
+  supplierCompanyFormPage: async ({ page }, use) => {
+    await use(new SupplierCompanyFormPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
