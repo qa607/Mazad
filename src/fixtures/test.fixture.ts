@@ -18,6 +18,8 @@ import { MazadApiClient } from '@api/mazad-api.client';
 import { getTranslator, type Translator } from '@locales';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
 import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
+import { SuperAdminFormPage } from '@pages/backend/admins/super-admin-form.page';
+import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page';
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
@@ -58,6 +60,11 @@ import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
 import { SupplierMemberListPage } from '@pages/backend/suppliers/supplier-member-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
+import { TaxonomyFormPage } from '@pages/backend/taxonomy/taxonomy-form.page';
+import { TaxonomyListPage } from '@pages/backend/taxonomy/taxonomy-list.page';
+import { TaxonomyTypesPage } from '@pages/backend/taxonomy/taxonomy-types.page';
+import { TaxonomyViewPage } from '@pages/backend/taxonomy/taxonomy-view.page';
+import type { TaxonomyTermData } from '@test-data/taxonomy.data';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -116,6 +123,8 @@ export interface BackendPages {
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
+  superAdminListPage: SuperAdminListPage;
+  superAdminFormPage: SuperAdminFormPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
   supplierCompanyListPage: SupplierCompanyListPage;
   supplierCompanyFormPage: SupplierCompanyFormPage;
@@ -131,6 +140,10 @@ export interface BackendPages {
   dealerListPage: DealerListPage;
   dealerFormPage: DealerFormPage;
   deletedUserListPage: DeletedUserListPage;
+  taxonomyTypesPage: TaxonomyTypesPage;
+  taxonomyListPage: TaxonomyListPage;
+  taxonomyFormPage: TaxonomyFormPage;
+  taxonomyViewPage: TaxonomyViewPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
@@ -162,6 +175,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
+    superAdminListPage: new SuperAdminListPage(page),
+    superAdminFormPage: new SuperAdminFormPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
     supplierCompanyListPage: new SupplierCompanyListPage(page),
     supplierCompanyFormPage: new SupplierCompanyFormPage(page),
@@ -177,6 +192,10 @@ function createBackendPages(page: Page): BackendPages {
     dealerListPage: new DealerListPage(page),
     dealerFormPage: new DealerFormPage(page),
     deletedUserListPage: new DeletedUserListPage(page),
+    taxonomyTypesPage: new TaxonomyTypesPage(page),
+    taxonomyListPage: new TaxonomyListPage(page),
+    taxonomyFormPage: new TaxonomyFormPage(page),
+    taxonomyViewPage: new TaxonomyViewPage(page),
   };
 }
 
@@ -198,6 +217,15 @@ interface MazadFixtures extends BackendPages {
    */
   customerGroupCleanup: { track: (name: string) => void };
   /**
+   * Records the taxonomy terms a test creates (type key and Title En); after the test (passed or
+   * failed) every term of that type with that Title En is deleted through its list page.
+   */
+  taxonomyCleanup: { track: (type: string, titleEn: string) => void };
+  /**
+   * Creates a taxonomy term through the form, registers it for clean-up and returns its id.
+   * For tests that need an existing term; tests of the create flow itself use the form page.
+   */
+  createTaxonomyTerm: (type: string, data: TaxonomyTermData) => Promise<string>;
    * A back office session signed in as Dev Root, made read-only: after login every request
    * that is not a GET (except logout) is aborted, so tests cannot change back office data.
    * On failure it attaches a screenshot with account details masked.
@@ -291,6 +319,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   supplierViewPage: async ({ page }, use) => {
     await use(new SupplierViewPage(page));
   },
+  superAdminListPage: async ({ page }, use) => {
+    await use(new SuperAdminListPage(page));
+  },
+  superAdminFormPage: async ({ page }, use) => {
+    await use(new SuperAdminFormPage(page));
+  },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
   },
@@ -365,6 +399,33 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   deletedUserListPage: async ({ page }, use) => {
     await use(new DeletedUserListPage(page));
+  taxonomyTypesPage: async ({ page }, use) => {
+    await use(new TaxonomyTypesPage(page));
+  },
+  taxonomyListPage: async ({ page }, use) => {
+    await use(new TaxonomyListPage(page));
+  },
+  taxonomyFormPage: async ({ page }, use) => {
+    await use(new TaxonomyFormPage(page));
+  },
+  taxonomyViewPage: async ({ page }, use) => {
+    await use(new TaxonomyViewPage(page));
+  },
+  taxonomyCleanup: async ({ taxonomyListPage }, use) => {
+    const terms = new Map<string, { type: string; titleEn: string }>();
+    await use({
+      track: (type, titleEn) => terms.set(`${type}|${titleEn.trim()}`, { type, titleEn }),
+    });
+    for (const { type, titleEn } of terms.values()) {
+      await taxonomyListPage.deleteTermsTitledEn(type, titleEn);
+    }
+  },
+  createTaxonomyTerm: async ({ taxonomyFormPage, taxonomyListPage, taxonomyCleanup }, use) => {
+    await use(async (type, data) => {
+      taxonomyCleanup.track(type, data.titleEn);
+      await taxonomyFormPage.createTerm(type, data);
+      return taxonomyListPage.idOfTermTitledEn(type, data.titleEn);
+    });
   },
   customerGroupCleanup: async ({ customerGroupListPage }, use) => {
     const names = new Set<string>();
