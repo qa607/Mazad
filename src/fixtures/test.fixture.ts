@@ -13,6 +13,8 @@ import {
 import { getTranslator, type Translator } from '@locales';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
 import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
+import { SuperAdminFormPage } from '@pages/backend/admins/super-admin-form.page';
+import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page';
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
@@ -75,6 +77,8 @@ export interface BackendPages {
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
+  superAdminListPage: SuperAdminListPage;
+  superAdminFormPage: SuperAdminFormPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
   rolePermissionsPage: RolePermissionsPage;
   permissionListPage: PermissionListPage;
@@ -99,6 +103,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
+    superAdminListPage: new SuperAdminListPage(page),
+    superAdminFormPage: new SuperAdminFormPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
     permissionListPage: new PermissionListPage(page),
@@ -197,6 +203,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierViewPage: async ({ page }, use) => {
     await use(new SupplierViewPage(page));
+  },
+  superAdminListPage: async ({ page }, use) => {
+    await use(new SuperAdminListPage(page));
+  },
+  superAdminFormPage: async ({ page }, use) => {
+    await use(new SuperAdminFormPage(page));
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
