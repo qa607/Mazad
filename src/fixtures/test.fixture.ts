@@ -28,6 +28,8 @@ import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-gr
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
+import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
 import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
@@ -76,6 +78,8 @@ export const devRootSession = {
 export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
+  operationListPage: OperationListPage;
+  operationFormPage: OperationFormPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -112,6 +116,8 @@ function createBackendPages(page: Page): BackendPages {
   return {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
+    operationListPage: new OperationListPage(page),
+    operationFormPage: new OperationFormPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -200,6 +206,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   mazadDashboardPage: async ({ page }, use) => {
     await use(new MazadDashboardPage(page));
+  },
+  operationListPage: async ({ page }, use) => {
+    await use(new OperationListPage(page));
+  },
+  operationFormPage: async ({ page }, use) => {
+    await use(new OperationFormPage(page));
   },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));
