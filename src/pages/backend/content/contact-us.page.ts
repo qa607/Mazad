@@ -1,5 +1,6 @@
 import type { Download, Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import type { ContactType } from '@test-data/backend-contact-us.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -26,14 +27,6 @@ export interface ContactUsRow {
   createdAt: string;
 }
 
-/** Message types: filter value and the label the grid shows. */
-export const contactTypes = {
-  contact_us: 'Contact Us',
-  sell_on_mazad: 'Sell On Mazad',
-} as const;
-
-export type ContactType = keyof typeof contactTypes;
-
 /**
  * Mazad back-office "Contact us" (/backend/contactUs/contact-us/index, Global Settings > Contact
  * us): messages sent from the website's Contact Us and Sell On Mazad forms. Each row has View
@@ -58,6 +51,10 @@ export class ContactUsPage extends BackendListPage {
   /** Page dialog (not a browser one) asking to confirm a delete or an export. */
   readonly confirmDialog: Locator;
 
+  // View page (a "detail-view" table of label/value rows)
+  readonly detailView: Locator;
+  readonly detailLabels: Locator;
+
   constructor(page: Page) {
     super(page, ContactUsPage.path, 'default-id');
 
@@ -72,6 +69,9 @@ export class ContactUsPage extends BackendListPage {
     this.exportAllButton = this.grid.locator('.kv-grid-toolbar button', { hasText: 'Export All' });
     this.exportCsvLink = this.grid.locator('.kv-grid-toolbar .export-full-csv');
     this.confirmDialog = page.locator('.bootstrap-dialog.show');
+
+    this.detailView = page.locator('.detail-view');
+    this.detailLabels = this.detailView.locator('th');
   }
 
   async gotoType(type: ContactType): Promise<void> {

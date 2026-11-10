@@ -59,6 +59,8 @@ export const contactUsUrls = {
   view: (id: string) => new RegExp(`/backend/contactUs/contact-us/view\\?id=${id}$`),
   viewPath: (id: string) => `/backend/contactUs/contact-us/view?id=${id}`,
   deletePath: (id: string) => `/backend/contactUs/contact-us/delete?id=${id}`,
+  /** Part of the delete endpoint's URL, blocked whenever a test opens a Delete confirmation. */
+  deleteEndpoint: '/contactUs/contact-us/delete',
   csvFileName: /^Contact us \d{4}-\d{2}-\d{2}\.csv$/,
 } as const;
 
@@ -79,3 +81,11 @@ export const contactUsAccess: Record<
   noAuctionAccess: { list: false, view: false, delete: false },
   supplier: { list: false, view: false, delete: false },
 };
+
+/** Message types: filter value and the label the grid shows. */
+export const contactTypes = {
+  contact_us: 'Contact Us',
+  sell_on_mazad: 'Sell On Mazad',
+} as const;
+
+export type ContactType = keyof typeof contactTypes;
