@@ -8,7 +8,13 @@ export interface LanguageSettings {
 }
 
 export interface EnvConfig {
-  /** Environment name, matching a file in config/environments. */
+  /** Approved staging environment id (TEST_ENV), matching a file in config/environments. */
   name: string;
   baseURL: string;
+  /** ERP (ERPNext) base URL for read-only verification. Optional: ERP tests skip without it. */
+  erpURL?: string;
+  /** Whether the ERP's environment ownership is confirmed (see config/environments/<id>.json). */
+  erpStatus?: 'unconfirmed' | 'confirmed';
+  /** Appium server URL for mobile tests. */
+  appiumURL: string;
 }

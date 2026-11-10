@@ -16,21 +16,14 @@ export abstract class BasePage {
     this.t = getTranslator(language);
   }
 
-  /** Navigates to a path relative to the environment baseURL, in the active language. */
-  protected async open(path: string): Promise<void> {
-    await this.page.goto(path);
-    await this.applyLanguage();
-  }
-
   /**
-   * PLACEHOLDER: how Mazad switches language (URL prefix, subdomain, cookie/localStorage,
-   * or UI toggle) is not confirmed yet. Implement it here once the application is inspected;
-   * `open()` may need to change too, e.g. to prefix the path or set a cookie before goto.
+   * Navigates to a path relative to the environment baseURL, in the active language.
+   * Mazad's website switches language by URL prefix only (confirmed on staging: "/login"
+   * alone 404s, "/en/login" and "/ar/login" both serve the page in that language, with no
+   * redirect between them) — there is no cookie, header or UI toggle to set instead.
    */
-  private applyLanguage(): Promise<void> {
-    throw new Error(
-      `Language switching is not implemented yet (requested "${this.language}"). ` +
-        'Implement BasePage.applyLanguage() once the Mazad language mechanism is confirmed.',
-    );
+  protected async open(path: string): Promise<void> {
+    const prefixed = `/${this.language}${path.startsWith('/') ? path : `/${path}`}`;
+    await this.page.goto(prefixed);
   }
 }
