@@ -110,6 +110,20 @@ export function getSupplierAccount(): BackendAccount | null {
   return phone && password ? new BackendAccount(phone, password) : null;
 }
 
+/**
+ * Supplier ID of the SUPPLIER_PHONE account (SUPPLIER_ID in .env), so data-scope checks compare
+ * the right supplier. Null when no supplier account is set; an account without its ID is a
+ * configuration error, raised rather than guessed.
+ */
+export function getSupplierAccountId(): string | null {
+  if (!getSupplierAccount()) return null;
+  const id = localEnv.SUPPLIER_ID?.trim();
+  if (!id || !/^\d+$/.test(id)) {
+    throw new Error('SUPPLIER_ID is not set: add the supplier ID of SUPPLIER_PHONE to .env.');
+  }
+  return id;
+}
+
 /** ERPNext account. Printing, logging or serialising it shows "[redacted]" instead of the values. */
 export class ErpAccount {
   readonly #user: string;

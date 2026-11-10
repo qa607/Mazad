@@ -23,6 +23,7 @@ import { SuspendedVehiclesPage } from '@pages/backend/auctions/suspended-vehicle
 import { UpcomingPage } from '@pages/backend/auctions/upcoming.page';
 import { WaitingApprovalPage } from '@pages/backend/auctions/waiting-approval.page';
 import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
+import { ReportGridComponent } from '@pages/backend/components/report-grid.component';
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
@@ -76,6 +77,7 @@ export const devRootSession = {
 export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
+  reportGrid: ReportGridComponent;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -112,6 +114,7 @@ function createBackendPages(page: Page): BackendPages {
   return {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
+    reportGrid: new ReportGridComponent(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -200,6 +203,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   mazadDashboardPage: async ({ page }, use) => {
     await use(new MazadDashboardPage(page));
+  },
+  reportGrid: async ({ page }, use) => {
+    await use(new ReportGridComponent(page));
   },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));

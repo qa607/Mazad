@@ -3,6 +3,8 @@ import type { AccessProfile } from '@test-data/backend-permissions.data';
 /**
  * Expected access to the Report pages, per role. Taken from each role's permissions page on
  * staging (2026-11-08) and confirmed by signing in with each role's test account (2026-11-09).
+ * To confirm: this records observed behaviour; the business owner must sign off on the matrix
+ * (review of PR #16) so a permission bug is not encoded as expected.
  */
 
 /** The Report pages, in sidebar order. */
@@ -53,8 +55,7 @@ export const supplierReports = [
 ] as const;
 
 /**
- * Supplier ID of the SUPPLIER_PHONE account in .env (supplier 38236 on staging), and other
- * suppliers whose data it must never see.
+ * Other suppliers whose data the SUPPLIER_PHONE account must never see. The account's own ID comes
+ * from SUPPLIER_ID in .env (getSupplierAccountId), so it always matches the signed-in supplier.
  */
-export const supplierAccountId = '38236';
 export const otherSupplierIds = ['141', '782'] as const;

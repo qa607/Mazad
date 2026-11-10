@@ -1,6 +1,5 @@
-import type { Page } from '@playwright/test';
-import { DEV_ROOT_SESSION_FILE } from '@config/credentials.config';
-import { expect, test } from '@fixtures/test.fixture';
+import { DEV_ROOT_SESSION_FILE, getSupplierAccountId } from '@config/credentials.config';
+import { devRootSession, expect, test } from '@fixtures/test.fixture';
 import {
   type AccessProfile,
   backendHomePath,
@@ -12,7 +11,6 @@ import {
   otherSupplierIds,
   type ReportPage,
   reportPages,
-  supplierAccountId,
   supplierReports,
 } from '@test-data/backend-report-permissions.data';
 
@@ -20,102 +18,135 @@ import {
 // account is set in .env, and is skipped otherwise. For the supplier, it also checks that each
 // report it opens is limited to its own data. Read-only.
 
-test.use({ trace: 'off', video: 'off', screenshot: 'off' });
+test.use(devRootSession);
 
 const profiles = Object.keys(expectedReportAccess) as AccessProfile[];
 const reportKeys = Object.keys(reportPages) as ReportPage[];
 
-/** Total of a Backend grid ("Showing 1-20 of 531 items." -> 531), 0 when it lists nothing. */
-async function gridTotal(page: Page): Promise<number> {
-  const summary = page.locator('.grid-view .summary').first();
-  if ((await summary.count()) === 0) return 0;
-  return Number((await summary.locator('b').last().innerText()).replace(/\D/g, ''));
-}
-
 for (const profile of profiles) {
   const allowed = expectedReportAccess[profile];
 
-  test.describe(`Report permissions - ${expectedAccess[profile].label}`, () => {
-    test.use({ signedInAs: profile });
+  test.describe(
+    `Report permissions - ${expectedAccess[profile].label}`,
+    { tag: '@regression' },
+    () => {
+      test.use({ signedInAs: profile });
 
-    for (const report of reportKeys) {
-      const { label, path } = reportPages[report];
-      const canOpen = allowed.includes(report);
+      for (const report of reportKeys) {
+        const { label, path } = reportPages[report];
+        const canOpen = allowed.includes(report);
 
-      test(`${canOpen ? 'can' : 'cannot'} open the ${label} report`, async ({ page }) => {
-        const response = await page.goto(path);
+        test(
+          `${canOpen ? 'can' : 'cannot'} open the ${label} report`,
+          { tag: '@negative' },
+          async ({ reportGrid }) => {
+            expect(await reportGrid.open(path), `${label} HTTP status`).toBe(
+              canOpen ? 200 : forbiddenStatus,
+            );
+          },
+        );
+      }
 
-        expect(response?.status(), `${label} HTTP status`).toBe(canOpen ? 200 : forbiddenStatus);
-      });
-    }
+      test(
+        'the Report menu lists exactly the reports the role can open',
+        { tag: '@functional' },
+        async ({ page, mazadDashboardPage }) => {
+          await page.goto(backendHomePath);
 
-    test('the Report menu lists exactly the reports the role can open', async ({ page }) => {
-      await page.goto(backendHomePath);
-      const menu = page.locator('.app-sidebar a[href^="/backend/report/"]');
-
-      await expect(menu).toHaveText(allowed.map((report) => reportPages[report].label));
-    });
-  });
+          await expect(mazadDashboardPage.sidebarLinksUnder('/backend/report/')).toHaveText(
+            allowed.map((report) => reportPages[report].label),
+          );
+        },
+      );
+    },
+  );
 }
 
-test.describe('Report permissions - Supplier sees only its own data', () => {
-  test.use({ signedInAs: 'supplier' });
+test.describe(
+  'Report permissions - Supplier sees only its own data',
+  { tag: '@regression' },
+  () => {
+    test.use({ signedInAs: 'supplier' });
 
-  for (const { report, form } of supplierReports) {
-    const { label, path } = reportPages[report];
-    const filterName = `${form}[supplier_id]`;
+    for (const { report, form } of supplierReports) {
+      const { label, path } = reportPages[report];
+      const filterName = `${form}[supplier_id]`;
 
-    test(`${label}: lists as many rows as Dev Root sees for this supplier`, async ({
-      page,
-      browser,
-      baseURL,
-    }) => {
-      await page.goto(path);
-      const own = await gridTotal(page);
+      test(
+        `${label}: lists the same rows Dev Root sees for this supplier`,
+        { tag: ['@functional', '@negative'] },
+        async ({ reportGrid, browser, baseURL, pagesOn }) => {
+          const supplierId = getSupplierAccountId()!;
 
-      const staff = await browser.newContext({ baseURL, storageState: DEV_ROOT_SESSION_FILE });
-      try {
-        const staffPage = await staff.newPage();
-        await staffPage.goto(`${path}?${encodeURIComponent(filterName)}=${supplierAccountId}`);
-        expect(own, `${label} rows for supplier ${supplierAccountId}`).toBe(
-          await gridTotal(staffPage),
-        );
-      } finally {
-        await staff.close();
-      }
-    });
+          await test.step('The supplier opens its own report', async () => {
+            expect(await reportGrid.open(path), `${label} HTTP status`).toBe(200);
+            await expect(reportGrid.grid, 'the report shows its grid').toBeVisible();
+          });
+          const own = (await reportGrid.totalCount())!;
+          // An empty report proves nothing about isolation: the check needs supplier data.
+          expect(own, `${label}: the supplier must have rows for this check`).toBeGreaterThan(0);
+          const ownIds = await reportGrid.rowIds();
 
-    test(`${label}: another supplier's ID in the address changes nothing`, async ({ page }) => {
-      await page.goto(path);
-      const ownIds = await page
-        .locator('.grid-view tbody tr[data-key]')
-        .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-key')));
-      const own = await gridTotal(page);
+          const staff = await browser.newContext({ baseURL, storageState: DEV_ROOT_SESSION_FILE });
+          try {
+            const staffGrid = pagesOn(await staff.newPage()).reportGrid;
+            expect(await staffGrid.open(path, { [filterName]: supplierId })).toBe(200);
+            await expect(staffGrid.grid).toBeVisible();
 
-      for (const other of otherSupplierIds) {
-        await test.step(`supplier ${other}`, async () => {
-          await page.goto(`${path}?${encodeURIComponent(filterName)}=${other}`);
-          expect(await gridTotal(page), 'rows listed').toBe(own);
-          const ids = await page
-            .locator('.grid-view tbody tr[data-key]')
-            .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-key')));
-          expect(ids).toEqual(ownIds);
-        });
-      }
-    });
+            expect(own, `${label} rows for supplier ${supplierId}`).toBe(
+              await staffGrid.totalCount(),
+            );
+            // When everything fits on one page, the very same records must be listed.
+            if (ownIds.length === own) {
+              expect([...ownIds].sort(), 'same records as Dev Root').toEqual(
+                (await staffGrid.rowIds()).sort(),
+              );
+            }
+          } finally {
+            await staff.close();
+          }
+        },
+      );
 
-    test(`${label}: the Supplier filter offers no other supplier`, async ({ page }) => {
-      // Known gap (found 2026-11-09): a supplier sees the Supplier filter with every other
-      // supplier's name (e.g. 335 in Auction Closed), although choosing one changes nothing.
-      // Remove test.fail() once the filter is hidden for suppliers or lists only their own.
-      test.fail(true, 'Known gap: suppliers see the names of all other suppliers.');
-      await page.goto(path);
+      test(
+        `${label}: another supplier's ID in the address changes nothing`,
+        { tag: '@negative' },
+        async ({ reportGrid }) => {
+          expect(await reportGrid.open(path), `${label} HTTP status`).toBe(200);
+          await expect(reportGrid.grid).toBeVisible();
+          const own = (await reportGrid.totalCount())!;
+          expect(own, `${label}: the supplier must have rows for this check`).toBeGreaterThan(0);
+          const ownIds = await reportGrid.rowIds();
 
-      const options = await page
-        .locator(`select[name="${filterName}"] option`)
-        .evaluateAll((items) => items.map((item) => (item as HTMLOptionElement).value));
-      const others = options.filter((value) => value && value !== supplierAccountId);
-      expect(others, 'other suppliers offered').toEqual([]);
-    });
-  }
-});
+          for (const other of otherSupplierIds) {
+            await test.step(`supplier ${other}`, async () => {
+              expect(await reportGrid.open(path, { [filterName]: other })).toBe(200);
+              await expect(reportGrid.grid).toBeVisible();
+              expect(await reportGrid.totalCount(), 'rows listed').toBe(own);
+              expect(await reportGrid.rowIds()).toEqual(ownIds);
+            });
+          }
+        },
+      );
+
+      test(
+        `${label}: the Supplier filter offers no other supplier`,
+        { tag: ['@negative', '@known-bug'] },
+        async ({ reportGrid }) => {
+          // Known security gap (found 2026-11-09): a supplier sees the Supplier filter with every
+          // other supplier's name (e.g. 335 in Auction Closed), although choosing one changes
+          // nothing. Remove test.fail() once the filter is hidden for suppliers or lists only
+          // their own.
+          // Read before test.fail(): a missing SUPPLIER_ID must fail, not pass as expected.
+          const supplierId = getSupplierAccountId()!;
+          test.fail(true, 'BUG-PENDING: Known security gap: suppliers see all supplier names.');
+          expect(await reportGrid.open(path)).toBe(200);
+
+          const options = await reportGrid.filterOptionValues(filterName);
+          const others = options.filter((value) => value && value !== supplierId);
+          expect(others, 'other suppliers offered').toEqual([]);
+        },
+      );
+    }
+  },
+);
