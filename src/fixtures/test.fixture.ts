@@ -21,6 +21,7 @@ import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
 import { SuspendedVehiclesPage } from '@pages/backend/auctions/suspended-vehicles.page';
 import { UpcomingPage } from '@pages/backend/auctions/upcoming.page';
+import { WaitingApprovalPage } from '@pages/backend/auctions/waiting-approval.page';
 import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
@@ -72,6 +73,7 @@ export interface BackendPages {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  waitingApprovalPage: WaitingApprovalPage;
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
@@ -96,6 +98,7 @@ function createBackendPages(page: Page): BackendPages {
     awaitingPage: new AwaitingPage(page),
     livePage: new LivePage(page),
     failedPage: new FailedPage(page),
+    waitingApprovalPage: new WaitingApprovalPage(page),
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
@@ -200,6 +203,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  waitingApprovalPage: async ({ page }, use) => {
+    await use(new WaitingApprovalPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
