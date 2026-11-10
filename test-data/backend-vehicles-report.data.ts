@@ -32,11 +32,17 @@ export const vehiclesReportData = {
   titleSearch: 'Camry',
   supplierOption: /^\s*شركة تجريبية-782 - Supplier\s*$/,
   supplierName: 'شركة تجريبية-782',
+  /** Search-form field of the VIN filter, as it appears in the report's address. */
+  vinFilter: 'ItemReportSearch[vin_number]',
+  /** Traces of server internals an error page must never show: PHP file paths, stack frames. */
+  serverInternals: /Stack trace|\.php(:\d+| on line)|#\d+ \/|\/var\/www\//i,
 } as const;
 
 /** URL patterns, matched against the full page URL. */
 export const vehiclesReportUrls = {
   list: /\/backend\/report\/item-report\/index(\?|$)/,
+  /** The report with no filter in its address (after Reset). */
+  listUnfiltered: /\/backend\/report\/item-report\/index$/,
   exportFile: /^\/backend\/export\/vehicle-report-\d{4}-\d{2}-\d{2}\.xlsx$/,
   exportFileName: /^vehicle-report-\d{4}-\d{2}-\d{2}\.xlsx$/,
 } as const;
