@@ -77,7 +77,7 @@ test.beforeAll(async ({ browser, devRootSession }) => {
 });
 
 for (const section of auctionSections) {
-  test.describe(`Supplier view of ${section.name}`, () => {
+  test.describe(`Supplier view of ${section.name}`, { tag: '@regression' }, () => {
     /** Rows Dev Root sees for this supplier in this section. */
     let own = new Set<string>();
     /** Details link of one of the supplier's own rows. */
@@ -108,72 +108,90 @@ for (const section of auctionSections) {
       await admin.close();
     });
 
-    test('Shows only the supplier’s own vehicles, as many as Dev Root sees for it', async ({
-      browser,
-    }) => {
-      const context = await newSupplierContext(browser);
-      const sectionPage = new AuctionSectionPage(await context.newPage(), section);
-      const seen = await sectionPage.allRowIds();
-      await context.close();
+    test(
+      'Shows only the supplier’s own vehicles, as many as Dev Root sees for it',
+      { tag: '@functional' },
+      async ({ browser }) => {
+        const context = await newSupplierContext(browser);
+        const sectionPage = new AuctionSectionPage(await context.newPage(), section);
+        const seen = await sectionPage.allRowIds();
+        await context.close();
 
-      expect(
-        seen.filter((id) => !own.has(id)),
-        'vehicles of other suppliers',
-      ).toEqual([]);
-      expect(seen, 'vehicles shown').toHaveLength(own.size);
-    });
+        expect(
+          seen.filter((id) => !own.has(id)),
+          'vehicles of other suppliers',
+        ).toEqual([]);
+        expect(seen, 'vehicles shown').toHaveLength(own.size);
+      },
+    );
 
-    test('Shows no reserve price, commission or fee column or wording', async ({ browser }) => {
-      const context = await newSupplierContext(browser);
-      const sectionPage = new AuctionSectionPage(await context.newPage(), section);
-      await sectionPage.goto();
-      const headers = await sectionPage.headerTexts();
-      const content = await sectionPage.content.innerText();
-      await context.close();
+    test(
+      'Shows no reserve price, commission or fee column or wording',
+      { tag: '@negative' },
+      async ({ browser }) => {
+        const context = await newSupplierContext(browser);
+        const sectionPage = new AuctionSectionPage(await context.newPage(), section);
+        await sectionPage.goto();
+        const headers = await sectionPage.headerTexts();
+        const content = await sectionPage.content.innerText();
+        await context.close();
 
-      expect(headers.filter((header) => restrictedFinancialText.test(header))).toEqual([]);
-      expect(content).not.toMatch(restrictedFinancialText);
-    });
+        expect(headers.filter((header) => restrictedFinancialText.test(header))).toEqual([]);
+        expect(content).not.toMatch(restrictedFinancialText);
+      },
+    );
 
-    test('Another supplier’s ID in the address bar shows none of its vehicles', async ({
-      browser,
-    }) => {
-      test.skip(!other, `No other supplier has vehicles in ${section.name}.`);
-      const context = await newSupplierContext(browser);
-      const sectionPage = new AuctionSectionPage(await context.newPage(), section);
-      await sectionPage.goto({ supplierId: other?.id });
-      const shown = await sectionPage.rowIds();
-      await context.close();
+    test(
+      'Another supplier’s ID in the address bar shows none of its vehicles',
+      { tag: '@functional' },
+      async ({ browser }) => {
+        test.skip(!other, `No other supplier has vehicles in ${section.name}.`);
+        const context = await newSupplierContext(browser);
+        const sectionPage = new AuctionSectionPage(await context.newPage(), section);
+        await sectionPage.goto({ supplierId: other?.id });
+        const shown = await sectionPage.rowIds();
+        await context.close();
 
-      expect(
-        shown.filter((id) => !own.has(id)),
-        `vehicles of supplier ${other?.id}`,
-      ).toEqual([]);
-    });
+        expect(
+          shown.filter((id) => !own.has(id)),
+          `vehicles of supplier ${other?.id}`,
+        ).toEqual([]);
+      },
+    );
 
-    test('Another supplier’s vehicle details cannot be opened', async ({ browser }) => {
-      test.skip(!other?.details, `No other supplier has vehicles in ${section.name}.`);
-      const link = other?.details ?? '';
-      const context = await newSupplierContext(browser);
-      const sectionPage = new AuctionSectionPage(await context.newPage(), section);
-      const status = await sectionPage.openDetails(link);
-      const body = await sectionPage.body.innerText();
-      await context.close();
+    test(
+      'Another supplier’s vehicle details cannot be opened',
+      { tag: '@negative' },
+      async ({ browser }) => {
+        test.skip(!other?.details, `No other supplier has vehicles in ${section.name}.`);
+        const link = other?.details ?? '';
+        const context = await newSupplierContext(browser);
+        const sectionPage = new AuctionSectionPage(await context.newPage(), section);
+        const status = await sectionPage.openDetails(link);
+        const body = await sectionPage.body.innerText();
+        await context.close();
 
-      expect(status >= 400 || refusedPageText.test(body), `${link} answered ${status}`).toBe(true);
-    });
+        expect(status >= 400 || refusedPageText.test(body), `${link} answered ${status}`).toBe(
+          true,
+        );
+      },
+    );
 
-    test('Own vehicle details show no reserve price, commission or fees', async ({ browser }) => {
-      test.skip(!ownDetails, `The supplier has no vehicles in ${section.name}.`);
-      const link = ownDetails ?? '';
-      const context = await newSupplierContext(browser);
-      const sectionPage = new AuctionSectionPage(await context.newPage(), section);
-      const status = await sectionPage.openDetails(link);
-      const content = await sectionPage.content.innerText();
-      await context.close();
+    test(
+      'Own vehicle details show no reserve price, commission or fees',
+      { tag: '@negative' },
+      async ({ browser }) => {
+        test.skip(!ownDetails, `The supplier has no vehicles in ${section.name}.`);
+        const link = ownDetails ?? '';
+        const context = await newSupplierContext(browser);
+        const sectionPage = new AuctionSectionPage(await context.newPage(), section);
+        const status = await sectionPage.openDetails(link);
+        const content = await sectionPage.content.innerText();
+        await context.close();
 
-      expect(status, link).toBe(200);
-      expect(content).not.toMatch(restrictedFinancialText);
-    });
+        expect(status, link).toBe(200);
+        expect(content).not.toMatch(restrictedFinancialText);
+      },
+    );
   });
 }

@@ -25,33 +25,38 @@ const actionKeys = Object.keys(auctionActions) as AuctionAction[];
 for (const profile of profiles) {
   const access = expectedAccess[profile];
 
-  test.describe(`Backend permissions - ${access.label}`, () => {
+  test.describe(`Backend permissions - ${access.label}`, { tag: '@regression' }, () => {
     test.use({ signedInAs: profile });
 
     for (const pageKey of pageKeys) {
       const { label, path } = auctionPages[pageKey];
       const allowed = access.pages.includes(pageKey);
 
-      test(`${allowed ? 'can' : 'cannot'} open ${label}`, async ({ page }) => {
-        const response = await page.goto(path);
+      test(
+        `${allowed ? 'can' : 'cannot'} open ${label}`,
+        { tag: '@negative' },
+        async ({ page }) => {
+          const response = await page.goto(path);
 
-        expect(response?.status(), `${label} HTTP status`).toBe(allowed ? 200 : forbiddenStatus);
-        expect((await page.title()) === label, `${label} page shown`).toBe(allowed);
-      });
+          expect(response?.status(), `${label} HTTP status`).toBe(allowed ? 200 : forbiddenStatus);
+          expect((await page.title()) === label, `${label} page shown`).toBe(allowed);
+        },
+      );
     }
 
-    test('sidebar links only to the auction lists the role can open', async ({
-      page,
-      mazadDashboardPage,
-    }) => {
-      await page.goto(backendHomePath);
+    test(
+      'sidebar links only to the auction lists the role can open',
+      { tag: '@functional' },
+      async ({ page, mazadDashboardPage }) => {
+        await page.goto(backendHomePath);
 
-      for (const pageKey of pageKeys) {
-        const { label, path } = auctionPages[pageKey];
-        const link = mazadDashboardPage.sidebar.locator(`a[href="${path}"]`);
-        await expect(link, `${label} link`).toHaveCount(access.pages.includes(pageKey) ? 1 : 0);
-      }
-    });
+        for (const pageKey of pageKeys) {
+          const { label, path } = auctionPages[pageKey];
+          const link = mazadDashboardPage.sidebar.locator(`a[href="${path}"]`);
+          await expect(link, `${label} link`).toHaveCount(access.pages.includes(pageKey) ? 1 : 0);
+        }
+      },
+    );
 
     for (const actionKey of actionKeys) {
       const action = auctionActions[actionKey];
@@ -60,17 +65,18 @@ for (const profile of profiles) {
       // An irreversible action is only ever sent where it must be refused.
       if (allowed && 'destructive' in action) continue;
 
-      test(`server ${allowed ? 'accepts' : 'rejects'} "${label}"`, async ({
-        page,
-        mazadDashboardPage,
-      }) => {
-        // Any signed-in page gives the CSRF token the request needs.
-        await page.goto(backendHomePath);
+      test(
+        `server ${allowed ? 'accepts' : 'rejects'} "${label}"`,
+        { tag: '@negative' },
+        async ({ page, mazadDashboardPage }) => {
+          // Any signed-in page gives the CSRF token the request needs.
+          await page.goto(backendHomePath);
 
-        const status = await mazadDashboardPage.postAction(path);
+          const status = await mazadDashboardPage.postAction(path);
 
-        expect(status === forbiddenStatus, `${label} rejected (HTTP ${status})`).toBe(!allowed);
-      });
+          expect(status === forbiddenStatus, `${label} rejected (HTTP ${status})`).toBe(!allowed);
+        },
+      );
     }
   });
 }

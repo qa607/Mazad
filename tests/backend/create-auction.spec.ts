@@ -28,7 +28,7 @@ function baseVin(cellText: string): string {
   return cellText.trim().split(/\s+/)[0];
 }
 
-test.describe('Backend - Create Auction wizard', () => {
+test.describe('Backend - Create Auction wizard', { tag: '@regression' }, () => {
   test.afterEach(async ({ page, mazadDashboardPage }, testInfo) => {
     if (testInfo.status === testInfo.expectedStatus) return;
     const screenshot = await page
@@ -49,115 +49,143 @@ test.describe('Backend - Create Auction wizard', () => {
       await expect(page).toHaveURL(upcomingUrls.createAuction);
     });
 
-    test('Wizard opens at the configuration step, with Select Cars locked', async ({
-      page,
-      createAuctionPage,
-    }) => {
-      await expect(page).toHaveTitle(createAuctionText.pageTitle);
-      await expect(createAuctionPage.pageHeading).toHaveText(createAuctionText.pageTitle);
-      await expect(createAuctionPage.step1Tab).toHaveText(createAuctionText.stepTitles[0]);
-      await expect(createAuctionPage.step2Tab).toHaveText(createAuctionText.stepTitles[1]);
-      await expect(createAuctionPage.step2Tab).toHaveClass(/\bstep-locked\b/);
+    test(
+      'Wizard opens at the configuration step, with Select Cars locked',
+      { tag: '@functional' },
+      async ({ page, createAuctionPage }) => {
+        await expect(page).toHaveTitle(createAuctionText.pageTitle);
+        await expect(createAuctionPage.pageHeading).toHaveText(createAuctionText.pageTitle);
+        await expect(createAuctionPage.step1Tab).toHaveText(createAuctionText.stepTitles[0]);
+        await expect(createAuctionPage.step2Tab).toHaveText(createAuctionText.stepTitles[1]);
+        await expect(createAuctionPage.step2Tab).toHaveClass(/\bstep-locked\b/);
 
-      await expect(createAuctionPage.titleInput).toBeEditable();
-      await expect(createAuctionPage.nextButton).toBeVisible();
-      await expect(createAuctionPage.cancelLink).toBeVisible();
-      await expect(createAuctionPage.createAuctionButton).toBeHidden();
-      await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
-    });
+        await expect(createAuctionPage.titleInput).toBeEditable();
+        await expect(createAuctionPage.nextButton).toBeVisible();
+        await expect(createAuctionPage.cancelLink).toBeVisible();
+        await expect(createAuctionPage.createAuctionButton).toBeHidden();
+        await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
+      },
+    );
 
-    test('Next with an empty configuration shows the required fields and sends nothing', async ({
-      createAuctionPage,
-    }) => {
-      const submissions = createAuctionPage.countCreateSubmissions();
+    test(
+      'Next with an empty configuration shows the required fields and sends nothing',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        const submissions = createAuctionPage.countCreateSubmissions();
 
-      await createAuctionPage.nextButton.click();
+        await createAuctionPage.nextButton.click();
 
-      for (const [inputId, message] of Object.entries(createAuctionText.requiredFieldErrors)) {
-        await expect(createAuctionPage.fieldError(inputId)).toHaveText(message);
-      }
-      await expect(createAuctionPage.visibleErrors).toHaveCount(
-        Object.keys(createAuctionText.requiredFieldErrors).length,
-      );
-      await expect(createAuctionPage.nextButton).toBeVisible();
-      await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
-      expect(submissions()).toBe(0);
-    });
+        for (const [inputId, message] of Object.entries(createAuctionText.requiredFieldErrors)) {
+          await expect(createAuctionPage.fieldError(inputId)).toHaveText(message);
+        }
+        await expect(createAuctionPage.visibleErrors).toHaveCount(
+          Object.keys(createAuctionText.requiredFieldErrors).length,
+        );
+        await expect(createAuctionPage.nextButton).toBeVisible();
+        await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
+        expect(submissions()).toBe(0);
+      },
+    );
 
-    test('Featured Auction shows the featured settings, and Normal Auction hides them', async ({
-      createAuctionPage,
-    }) => {
-      await expect(createAuctionPage.featuredTypeSelect).toBeHidden();
+    test(
+      'Featured Auction shows the featured settings, and Normal Auction hides them',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await expect(createAuctionPage.featuredTypeSelect).toBeHidden();
 
-      await createAuctionPage.chooseAuctionType('Featured Auction');
+        await createAuctionPage.chooseAuctionType('Featured Auction');
 
-      await expect(createAuctionPage.featuredTypeSelect).toBeVisible();
-      await expect(createAuctionPage.featuredAboutInput).toBeVisible();
+        await expect(createAuctionPage.featuredTypeSelect).toBeVisible();
+        await expect(createAuctionPage.featuredAboutInput).toBeVisible();
 
-      await createAuctionPage.chooseAuctionType('Normal Auction');
+        await createAuctionPage.chooseAuctionType('Normal Auction');
 
-      await expect(createAuctionPage.featuredTypeSelect).toBeHidden();
-      await expect(createAuctionPage.featuredAboutInput).toBeHidden();
-    });
+        await expect(createAuctionPage.featuredTypeSelect).toBeHidden();
+        await expect(createAuctionPage.featuredAboutInput).toBeHidden();
+      },
+    );
 
-    test('Calendar fills the date fields as yyyy-mm-dd', async ({ createAuctionPage }) => {
-      await createAuctionPage.pickDate(createAuctionPage.startDateInput, 1, 10);
-      await createAuctionPage.pickDate(createAuctionPage.endDateInput, 1, 11);
+    test(
+      'Calendar fills the date fields as yyyy-mm-dd',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.pickDate(createAuctionPage.startDateInput, 1, 10);
+        await createAuctionPage.pickDate(createAuctionPage.endDateInput, 1, 11);
 
-      await expect(createAuctionPage.startDateInput).toHaveValue(createAuctionDateFormat);
-      await expect(createAuctionPage.endDateInput).toHaveValue(createAuctionDateFormat);
-      const start = await createAuctionPage.startDateInput.inputValue();
-      const end = await createAuctionPage.endDateInput.inputValue();
-      expect(end > start, 'end date after start date').toBe(true);
-    });
+        await expect(createAuctionPage.startDateInput).toHaveValue(createAuctionDateFormat);
+        await expect(createAuctionPage.endDateInput).toHaveValue(createAuctionDateFormat);
+        const start = await createAuctionPage.startDateInput.inputValue();
+        const end = await createAuctionPage.endDateInput.inputValue();
+        expect(end > start, 'end date after start date').toBe(true);
+      },
+    );
 
-    test('Next refuses an end date before the start date', async ({ createAuctionPage }) => {
-      // Known gap (found 2026-11-09): step 1 does not check the dates, so Next moves on with an
-      // end date before the start date (also with a same-day earlier end time, or a start date
-      // typed in the past). Whether the server refuses them on submit is not verified, since
-      // that needs a real submit. Remove test.fail() once step 1 rejects the order.
-      test.fail(true, 'Known gap: step 1 accepts an end date before the start date.');
+    test(
+      'Next refuses an end date before the start date',
+      { tag: ['@negative', '@known-bug'] },
+      async ({ createAuctionPage }) => {
+        // Known gap (found 2026-11-09): step 1 does not check the dates, so Next moves on with an
+        // end date before the start date (also with a same-day earlier end time, or a start date
+        // typed in the past). Whether the server refuses them on submit is not verified, since
+        // that needs a real submit. Remove test.fail() once step 1 rejects the order.
+        test.fail(
+          true,
+          'BUG-PENDING: Known gap: step 1 accepts an end date before the start date.',
+        );
 
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        startDay: 20,
-        endDay: 19,
-      });
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          startDay: 20,
+          endDay: 19,
+        });
 
-      await createAuctionPage.nextButton.click();
+        await createAuctionPage.nextButton.click();
 
-      await expect(createAuctionPage.visibleErrors).not.toHaveCount(0);
-      await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
-    });
+        await expect(createAuctionPage.visibleErrors).not.toHaveCount(0);
+        await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
+      },
+    );
 
-    test('Next refuses a title longer than 45 characters', async ({ createAuctionPage }) => {
-      const tooLong = 'Q'.repeat(createAuctionText.titleMaxLength + 1);
+    test(
+      'Next refuses a title longer than 45 characters',
+      { tag: '@negative' },
+      async ({ createAuctionPage }) => {
+        const tooLong = 'Q'.repeat(createAuctionText.titleMaxLength + 1);
 
-      await createAuctionPage.fillConfiguration({ title: tooLong, startDay: 10, endDay: 11 });
-      await createAuctionPage.nextButton.click();
+        await createAuctionPage.fillConfiguration({ title: tooLong, startDay: 10, endDay: 11 });
+        await createAuctionPage.nextButton.click();
 
-      await expect(createAuctionPage.fieldError('auction-title')).toHaveText(
-        createAuctionText.titleTooLong,
-      );
-      await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
-    });
+        await expect(createAuctionPage.fieldError('auction-title')).toHaveText(
+          createAuctionText.titleTooLong,
+        );
+        await expect(createAuctionPage.backToConfigurationButton).toBeHidden();
+      },
+    );
 
-    test('Next accepts a title of exactly 45 characters', async ({ createAuctionPage }) => {
-      const longest = 'Q'.repeat(createAuctionText.titleMaxLength);
+    test(
+      'Next accepts a title of exactly 45 characters',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        const longest = 'Q'.repeat(createAuctionText.titleMaxLength);
 
-      await createAuctionPage.fillConfiguration({ title: longest, startDay: 10, endDay: 11 });
-      await createAuctionPage.goToSelectCars();
+        await createAuctionPage.fillConfiguration({ title: longest, startDay: 10, endDay: 11 });
+        await createAuctionPage.goToSelectCars();
 
-      await expect(createAuctionPage.fieldError('auction-title')).toBeHidden();
-    });
+        await expect(createAuctionPage.fieldError('auction-title')).toBeHidden();
+      },
+    );
 
-    test('Cancel returns to the Upcoming list', async ({ page, createAuctionPage }) => {
-      await createAuctionPage.titleInput.fill(createAuctionText.probeTitle);
+    test(
+      'Cancel returns to the Upcoming list',
+      { tag: '@functional' },
+      async ({ page, createAuctionPage }) => {
+        await createAuctionPage.titleInput.fill(createAuctionText.probeTitle);
 
-      await createAuctionPage.cancelLink.click();
+        await createAuctionPage.cancelLink.click();
 
-      await expect(page).toHaveURL(upcomingUrls.list);
-    });
+        await expect(page).toHaveURL(upcomingUrls.list);
+      },
+    );
   });
 
   test.describe('step 2: select cars', () => {
@@ -176,144 +204,162 @@ test.describe('Backend - Create Auction wizard', () => {
       await createAuctionPage.goto();
     });
 
-    test('Without a supplier, Select Cars asks for one', async ({ createAuctionPage }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        startDay: 10,
-        endDay: 11,
-      });
+    test(
+      'Without a supplier, Select Cars asks for one',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          startDay: 10,
+          endDay: 11,
+        });
 
-      await createAuctionPage.goToSelectCars();
+        await createAuctionPage.goToSelectCars();
 
-      await expect(createAuctionPage.noSupplierMessage).toBeVisible();
-      await expect(createAuctionPage.vehicleRows).toHaveCount(0);
-    });
+        await expect(createAuctionPage.noSupplierMessage).toBeVisible();
+        await expect(createAuctionPage.vehicleRows).toHaveCount(0);
+      },
+    );
 
-    test('With a supplier, Select Cars lists that supplier’s upcoming vehicles', async ({
-      createAuctionPage,
-    }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
+    test(
+      'With a supplier, Select Cars lists that supplier’s upcoming vehicles',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
 
-      await createAuctionPage.goToSelectCars();
+        await createAuctionPage.goToSelectCars();
 
-      await expect(createAuctionPage.step2Tab).toHaveClass(/\bactive\b/);
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
-      const rowCount = await createAuctionPage.vehicleRows.count();
-      await expect(createAuctionPage.totalVehicleCount).toHaveText(String(rowCount));
-      await expect(createAuctionPage.vehicleCheckboxes.first()).not.toBeChecked();
-    });
+        await expect(createAuctionPage.step2Tab).toHaveClass(/\bactive\b/);
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+        const rowCount = await createAuctionPage.vehicleRows.count();
+        await expect(createAuctionPage.totalVehicleCount).toHaveText(String(rowCount));
+        await expect(createAuctionPage.vehicleCheckboxes.first()).not.toBeChecked();
+      },
+    );
 
-    test('VIN filter narrows the vehicles, and Reset shows them all again', async ({
-      createAuctionPage,
-    }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
-      await createAuctionPage.goToSelectCars();
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
-      const allCount = await createAuctionPage.vehicleRows.count();
+    test(
+      'VIN filter narrows the vehicles, and Reset shows them all again',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
+        await createAuctionPage.goToSelectCars();
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+        const allCount = await createAuctionPage.vehicleRows.count();
 
-      await createAuctionPage.filterVehiclesByVin(vehicle.vin);
+        await createAuctionPage.filterVehiclesByVin(vehicle.vin);
 
-      await expect(createAuctionPage.vehicleRows).toHaveCount(1);
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+        await expect(createAuctionPage.vehicleRows).toHaveCount(1);
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
 
-      await createAuctionPage.filterResetButton.click();
+        await createAuctionPage.filterResetButton.click();
 
-      await expect(createAuctionPage.vinFilterInput).toHaveValue('');
-      await expect(createAuctionPage.vehicleRows).toHaveCount(allCount);
-    });
+        await expect(createAuctionPage.vinFilterInput).toHaveValue('');
+        await expect(createAuctionPage.vehicleRows).toHaveCount(allCount);
+      },
+    );
 
-    test('Select All selects every listed vehicle', async ({ createAuctionPage }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
-      await createAuctionPage.goToSelectCars();
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+    test(
+      'Select All selects every listed vehicle',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
+        await createAuctionPage.goToSelectCars();
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
 
-      await createAuctionPage.selectAllButton.click();
+        await createAuctionPage.selectAllButton.click();
 
-      for (const checkbox of await createAuctionPage.vehicleCheckboxes.all()) {
-        await expect(checkbox).toBeChecked();
-      }
-    });
+        for (const checkbox of await createAuctionPage.vehicleCheckboxes.all()) {
+          await expect(checkbox).toBeChecked();
+        }
+      },
+    );
 
-    test('Create Auction with no vehicle selected is refused, and nothing is sent', async ({
-      createAuctionPage,
-    }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
-      await createAuctionPage.goToSelectCars();
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
-      const submissions = createAuctionPage.countCreateSubmissions();
+    test(
+      'Create Auction with no vehicle selected is refused, and nothing is sent',
+      { tag: '@negative' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
+        await createAuctionPage.goToSelectCars();
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+        const submissions = createAuctionPage.countCreateSubmissions();
 
-      await createAuctionPage.createAuctionButton.click();
+        await createAuctionPage.createAuctionButton.click();
 
-      await expect(createAuctionPage.alertTitle).toHaveText(
-        createAuctionText.selectionRequiredTitle,
-      );
-      await expect(createAuctionPage.alert).toContainText(
-        createAuctionText.selectionRequiredMessage,
-      );
-      expect(submissions()).toBe(0);
-    });
+        await expect(createAuctionPage.alertTitle).toHaveText(
+          createAuctionText.selectionRequiredTitle,
+        );
+        await expect(createAuctionPage.alert).toContainText(
+          createAuctionText.selectionRequiredMessage,
+        );
+        expect(submissions()).toBe(0);
+      },
+    );
 
-    test('Car Source switches the list between upcoming and failed vehicles', async ({
-      createAuctionPage,
-    }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
-      await createAuctionPage.goToSelectCars();
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+    test(
+      'Car Source switches the list between upcoming and failed vehicles',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
+        await createAuctionPage.goToSelectCars();
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
 
-      await createAuctionPage.chooseCarSource('Failed');
+        await createAuctionPage.chooseCarSource('Failed');
 
-      // An upcoming vehicle is never also a failed one.
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(0);
+        // An upcoming vehicle is never also a failed one.
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(0);
 
-      await createAuctionPage.chooseCarSource('Upcoming');
+        await createAuctionPage.chooseCarSource('Upcoming');
 
-      await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
-    });
+        await expect(createAuctionPage.vehicleRow(vehicle.vin)).toHaveCount(1);
+      },
+    );
 
-    test('Back to Configuration returns to step 1 and keeps what was entered', async ({
-      createAuctionPage,
-    }) => {
-      await createAuctionPage.fillConfiguration({
-        title: createAuctionText.probeTitle,
-        supplier: vehicle.supplier,
-        startDay: 10,
-        endDay: 11,
-      });
-      const startDate = await createAuctionPage.startDateInput.inputValue();
-      await createAuctionPage.goToSelectCars();
+    test(
+      'Back to Configuration returns to step 1 and keeps what was entered',
+      { tag: '@functional' },
+      async ({ createAuctionPage }) => {
+        await createAuctionPage.fillConfiguration({
+          title: createAuctionText.probeTitle,
+          supplier: vehicle.supplier,
+          startDay: 10,
+          endDay: 11,
+        });
+        const startDate = await createAuctionPage.startDateInput.inputValue();
+        await createAuctionPage.goToSelectCars();
 
-      await createAuctionPage.backToConfigurationButton.click();
+        await createAuctionPage.backToConfigurationButton.click();
 
-      await expect(createAuctionPage.nextButton).toBeVisible();
-      await expect(createAuctionPage.titleInput).toHaveValue(createAuctionText.probeTitle);
-      await expect(createAuctionPage.startDateInput).toHaveValue(startDate);
-      await expect(createAuctionPage.supplierValue).toContainText(vehicle.supplier);
-    });
+        await expect(createAuctionPage.nextButton).toBeVisible();
+        await expect(createAuctionPage.titleInput).toHaveValue(createAuctionText.probeTitle);
+        await expect(createAuctionPage.startDateInput).toHaveValue(startDate);
+        await expect(createAuctionPage.supplierValue).toContainText(vehicle.supplier);
+      },
+    );
   });
 
   test.describe('create and undo', () => {
@@ -342,70 +388,72 @@ test.describe('Backend - Create Auction wizard', () => {
       }
     });
 
-    test('Creating an auction moves the vehicle to Awaiting, and Back to upcoming returns it', async ({
-      page,
-      upcomingPage,
-      createAuctionPage,
-      awaitingPage,
-    }) => {
-      // Five pages and a two-step wizard: more than the default 30 s, especially when headed.
-      test.slow();
+    test(
+      'Creating an auction moves the vehicle to Awaiting, and Back to upcoming returns it',
+      { tag: ['@functional', '@crud', '@mutates'] },
+      async ({ page, upcomingPage, createAuctionPage, awaitingPage }) => {
+        // Five pages and a two-step wizard: more than the default 30 s, especially when headed.
+        test.slow();
 
-      // The highest-priced Upcoming vehicle.
-      await upcomingPage.gotoSortedByStartingPriceDesc();
-      const row = upcomingPage.rows.first();
-      await expect(row, 'No vehicle in the Upcoming list to build an auction from.').toBeVisible();
-      const itemId = await upcomingPage.rowId(row);
-      const vin = baseVin(await upcomingPage.rowVin(row).innerText());
-      const supplier = (await upcomingPage.rowSupplier(row).innerText()).trim();
-      const startingPrice = (await upcomingPage.rowStartingPrice(row).innerText()).trim();
-      const title = `${createAuctionText.realAuctionTitle} ${Date.now()}`;
+        // The highest-priced Upcoming vehicle.
+        await upcomingPage.gotoSortedByStartingPriceDesc();
+        const row = upcomingPage.rows.first();
+        await expect(
+          row,
+          'No vehicle in the Upcoming list to build an auction from.',
+        ).toBeVisible();
+        const itemId = await upcomingPage.rowId(row);
+        const vin = baseVin(await upcomingPage.rowVin(row).innerText());
+        const supplier = (await upcomingPage.rowSupplier(row).innerText()).trim();
+        const startingPrice = (await upcomingPage.rowStartingPrice(row).innerText()).trim();
+        const title = `${createAuctionText.realAuctionTitle} ${Date.now()}`;
 
-      await createAuctionPage.goto();
-      await createAuctionPage.fillConfiguration({
-        title,
-        supplier,
-        monthsAhead: createAuctionText.realAuctionMonthsAhead,
-        startDay: 10,
-        endDay: 11,
-      });
-      const startDate = await createAuctionPage.startDateInput.inputValue();
-      await createAuctionPage.goToSelectCars();
-      await createAuctionPage.selectVehicle(vin);
-      await createAuctionPage.createAuctionButton.click();
+        await createAuctionPage.goto();
+        await createAuctionPage.fillConfiguration({
+          title,
+          supplier,
+          monthsAhead: createAuctionText.realAuctionMonthsAhead,
+          startDay: 10,
+          endDay: 11,
+        });
+        const startDate = await createAuctionPage.startDateInput.inputValue();
+        await createAuctionPage.goToSelectCars();
+        await createAuctionPage.selectVehicle(vin);
+        await createAuctionPage.createAuctionButton.click();
 
-      await expect(createAuctionPage.alert).toContainText(createAuctionText.created);
-      pendingRestore = vin;
-      // The success alert closes by itself and the page goes back to the Upcoming list.
-      await expect(page).toHaveURL(upcomingUrls.list);
+        await expect(createAuctionPage.alert).toContainText(createAuctionText.created);
+        pendingRestore = vin;
+        // The success alert closes by itself and the page goes back to the Upcoming list.
+        await expect(page).toHaveURL(upcomingUrls.list);
 
-      // The vehicle left Upcoming...
-      await upcomingPage.goto();
-      await upcomingPage.searchByVin(vin);
-      await expect(upcomingPage.rows).toHaveCount(0);
+        // The vehicle left Upcoming...
+        await upcomingPage.goto();
+        await upcomingPage.searchByVin(vin);
+        await expect(upcomingPage.rows).toHaveCount(0);
 
-      // ...and is in Awaiting, in the new auction, with the chosen start date.
-      await awaitingPage.goto();
-      const awaitingRow = awaitingPage.rowByVin(vin);
-      await expect(awaitingRow).toHaveCount(1);
-      await expect(awaitingRow).toContainText(title);
-      await expect(awaitingRow).toContainText(startDate);
+        // ...and is in Awaiting, in the new auction, with the chosen start date.
+        await awaitingPage.goto();
+        const awaitingRow = awaitingPage.rowByVin(vin);
+        await expect(awaitingRow).toHaveCount(1);
+        await expect(awaitingRow).toContainText(title);
+        await expect(awaitingRow).toContainText(startDate);
 
-      // Back to upcoming returns it, unchanged.
-      await awaitingPage.openBackToUpcomingConfirmation(awaitingRow);
-      await awaitingPage.confirmYesButton.click();
-      await expect(awaitingPage.resultAlertTitle).toHaveText(createAuctionText.movedToUpcoming);
-      await awaitingPage.resultAlertOkButton.click();
-      pendingRestore = null;
-      await expect(awaitingRow).toHaveCount(0);
+        // Back to upcoming returns it, unchanged.
+        await awaitingPage.openBackToUpcomingConfirmation(awaitingRow);
+        await awaitingPage.confirmYesButton.click();
+        await expect(awaitingPage.resultAlertTitle).toHaveText(createAuctionText.movedToUpcoming);
+        await awaitingPage.resultAlertOkButton.click();
+        pendingRestore = null;
+        await expect(awaitingRow).toHaveCount(0);
 
-      await upcomingPage.goto();
-      await upcomingPage.searchByVin(vin);
-      await expect(upcomingPage.row(itemId)).toHaveCount(1);
-      await expect(upcomingPage.rowStartingPrice(upcomingPage.row(itemId))).toHaveText(
-        startingPrice,
-      );
-    });
+        await upcomingPage.goto();
+        await upcomingPage.searchByVin(vin);
+        await expect(upcomingPage.row(itemId)).toHaveCount(1);
+        await expect(upcomingPage.rowStartingPrice(upcomingPage.row(itemId))).toHaveText(
+          startingPrice,
+        );
+      },
+    );
   });
 
   test.describe('supplier bid type', () => {
@@ -437,69 +485,70 @@ test.describe('Backend - Create Auction wizard', () => {
       }
     });
 
-    test('A supplier set to Price Offering gets Price Offering auctions', async ({
-      page,
-      upcomingPage,
-      supplierAuctionInfoPage,
-      createAuctionPage,
-      awaitingPage,
-    }) => {
-      test.slow();
+    test(
+      'A supplier set to Price Offering gets Price Offering auctions',
+      { tag: ['@functional', '@mutates'] },
+      async ({ page, upcomingPage, supplierAuctionInfoPage, createAuctionPage, awaitingPage }) => {
+        test.slow();
 
-      // A priced Upcoming vehicle and its supplier ("شركة تجريبية-35271" -> ID 35271).
-      await upcomingPage.gotoSortedByStartingPriceDesc();
-      const row = upcomingPage.rows.first();
-      await expect(row, 'No vehicle in the Upcoming list to build an auction from.').toBeVisible();
-      const vin = baseVin(await upcomingPage.rowVin(row).innerText());
-      const supplier = (await upcomingPage.rowSupplier(row).innerText()).trim();
-      const supplierId = supplier.match(/-(\d+)$/)?.[1];
-      expect(supplierId, `No supplier ID in "${supplier}".`).toBeTruthy();
+        // A priced Upcoming vehicle and its supplier ("شركة تجريبية-35271" -> ID 35271).
+        await upcomingPage.gotoSortedByStartingPriceDesc();
+        const row = upcomingPage.rows.first();
+        await expect(
+          row,
+          'No vehicle in the Upcoming list to build an auction from.',
+        ).toBeVisible();
+        const vin = baseVin(await upcomingPage.rowVin(row).innerText());
+        const supplier = (await upcomingPage.rowSupplier(row).innerText()).trim();
+        const supplierId = supplier.match(/-(\d+)$/)?.[1];
+        expect(supplierId, `No supplier ID in "${supplier}".`).toBeTruthy();
 
-      // 1. Supplier -> Auction Info -> Bid Type: Price Offering.
-      await supplierAuctionInfoPage.goto(supplierId!);
-      const originalBidType = await supplierAuctionInfoPage.bidType();
-      restore = { supplierId: supplierId!, bidType: originalBidType, vin: null };
-      await supplierAuctionInfoPage.chooseBidType('Price Offering');
-      await supplierAuctionInfoPage.save();
-      await expect(supplierAuctionInfoPage.alertTitle).toHaveText(
-        createAuctionText.supplierAuctionSaved,
-      );
-      await supplierAuctionInfoPage.alertOkButton.click();
-      await supplierAuctionInfoPage.goto(supplierId!);
-      expect(await supplierAuctionInfoPage.bidType()).toBe('Price Offering');
+        // 1. Supplier -> Auction Info -> Bid Type: Price Offering.
+        await supplierAuctionInfoPage.goto(supplierId!);
+        const originalBidType = await supplierAuctionInfoPage.bidType();
+        restore = { supplierId: supplierId!, bidType: originalBidType, vin: null };
+        await supplierAuctionInfoPage.chooseBidType('Price Offering');
+        await supplierAuctionInfoPage.save();
+        await expect(supplierAuctionInfoPage.alertTitle).toHaveText(
+          createAuctionText.supplierAuctionSaved,
+        );
+        await supplierAuctionInfoPage.alertOkButton.click();
+        await supplierAuctionInfoPage.goto(supplierId!);
+        expect(await supplierAuctionInfoPage.bidType()).toBe('Price Offering');
 
-      // 2. Create an auction with that supplier's vehicle.
-      const title = `${createAuctionText.realAuctionTitle} ${Date.now()}`;
-      await createAuctionPage.goto();
-      await createAuctionPage.fillConfiguration({
-        title,
-        supplier,
-        monthsAhead: createAuctionText.realAuctionMonthsAhead,
-        startDay: 10,
-        endDay: 11,
-      });
-      await createAuctionPage.goToSelectCars();
-      await createAuctionPage.selectVehicle(vin);
-      await createAuctionPage.createAuctionButton.click();
-      await expect(createAuctionPage.alert).toContainText(createAuctionText.created);
-      restore.vin = vin;
-      await expect(page).toHaveURL(upcomingUrls.list);
+        // 2. Create an auction with that supplier's vehicle.
+        const title = `${createAuctionText.realAuctionTitle} ${Date.now()}`;
+        await createAuctionPage.goto();
+        await createAuctionPage.fillConfiguration({
+          title,
+          supplier,
+          monthsAhead: createAuctionText.realAuctionMonthsAhead,
+          startDay: 10,
+          endDay: 11,
+        });
+        await createAuctionPage.goToSelectCars();
+        await createAuctionPage.selectVehicle(vin);
+        await createAuctionPage.createAuctionButton.click();
+        await expect(createAuctionPage.alert).toContainText(createAuctionText.created);
+        restore.vin = vin;
+        await expect(page).toHaveURL(upcomingUrls.list);
 
-      // 3. The auction takes the supplier's bid type.
-      await awaitingPage.goto();
-      const awaitingRow = awaitingPage.rowByVin(vin);
-      await expect(awaitingRow).toContainText(title);
-      await expect(awaitingRow).toContainText(createAuctionText.priceOffering);
-      await expect(awaitingRow).not.toContainText(createAuctionText.standardBid);
+        // 3. The auction takes the supplier's bid type.
+        await awaitingPage.goto();
+        const awaitingRow = awaitingPage.rowByVin(vin);
+        await expect(awaitingRow).toContainText(title);
+        await expect(awaitingRow).toContainText(createAuctionText.priceOffering);
+        await expect(awaitingRow).not.toContainText(createAuctionText.standardBid);
 
-      // 4. Undo: the vehicle back to Upcoming, the supplier back to its bid type.
-      await awaitingPage.backToUpcoming(vin);
-      await expect(awaitingPage.rowByVin(vin)).toHaveCount(0);
-      restore.vin = null;
-      await supplierAuctionInfoPage.setBidType(supplierId!, originalBidType);
-      await supplierAuctionInfoPage.goto(supplierId!);
-      expect(await supplierAuctionInfoPage.bidType()).toBe(originalBidType);
-      restore = null;
-    });
+        // 4. Undo: the vehicle back to Upcoming, the supplier back to its bid type.
+        await awaitingPage.backToUpcoming(vin);
+        await expect(awaitingPage.rowByVin(vin)).toHaveCount(0);
+        restore.vin = null;
+        await supplierAuctionInfoPage.setBidType(supplierId!, originalBidType);
+        await supplierAuctionInfoPage.goto(supplierId!);
+        expect(await supplierAuctionInfoPage.bidType()).toBe(originalBidType);
+        restore = null;
+      },
+    );
   });
 });
