@@ -115,7 +115,13 @@ check appears to use a 6-character minimum; we want the backend's confirmed rule
 
 **X2. Expected behaviour after a successful password reset.**
 Please confirm what happens after the new password is saved:
-(a) Is the user signed in automatically (the website does this)?
+(a) Is the user signed in automatically? _Observation, not a confirmed fact:_ Motory's web Forgot
+Password automation (a different product, a different platform, not Mazad) asserts that its
+user is signed in automatically right after a reset. This is Motory's own test code only — it
+has not been confirmed to ever pass, and it says nothing about Mazad's backend or the iOS app.
+We're noting it only because, if the reset-then-sign-in behaviour is driven by the backend
+rather than by each client, it may also apply here — please confirm whether it does for Mazad's
+iOS app specifically.
 (b) Is the old password invalidated immediately?
 (c) Are existing sessions on other devices invalidated or kept?
 
