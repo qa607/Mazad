@@ -14,6 +14,7 @@
     "test:ar": "playwright test --project=ar",
     "test:backend": "playwright test --project=backend",
     "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
+    "test:taxonomy": "playwright test --project=backend tests/backend/taxonomy.spec.ts",
     "test:headless": "cross-env HEADLESS=true playwright test",
     "typecheck": "tsc",
     "lint": "eslint .",
