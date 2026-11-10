@@ -30,6 +30,7 @@ import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-gr
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
+import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
@@ -78,6 +79,7 @@ export interface BackendPages {
   waitingApprovalPage: WaitingApprovalPage;
   auctionClosedReportPage: AuctionClosedReportPage;
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
+  supplierVehicleReportPage: SupplierVehicleReportPage;
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
@@ -105,6 +107,7 @@ function createBackendPages(page: Page): BackendPages {
     waitingApprovalPage: new WaitingApprovalPage(page),
     auctionClosedReportPage: new AuctionClosedReportPage(page),
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
+    supplierVehicleReportPage: new SupplierVehicleReportPage(page),
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
@@ -218,6 +221,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   purchaseSurveyReportPage: async ({ page }, use) => {
     await use(new PurchaseSurveyReportPage(page));
+  },
+  supplierVehicleReportPage: async ({ page }, use) => {
+    await use(new SupplierVehicleReportPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
