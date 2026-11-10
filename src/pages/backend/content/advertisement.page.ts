@@ -1,5 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import { escapeRegExp } from '@utils/text';
+import {
+  type AdvertisementPlatform,
+  advertisementPlatforms,
+} from '@test-data/backend-advertisement.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -25,14 +30,6 @@ export interface AdvertisementRow {
   createdAt: string;
   updatedAt: string;
 }
-
-export const advertisementPlatforms = {
-  both: 'Both',
-  mobile: 'Mobile',
-  web: 'Web',
-} as const;
-
-export type AdvertisementPlatform = keyof typeof advertisementPlatforms;
 
 /**
  * Mazad back-office "Advertisements" (/backend/advertisement/advertisement/index, Content >
@@ -90,6 +87,19 @@ export class AdvertisementPage extends BackendListPage {
     this.formErrors = this.adForm.locator('.invalid-feedback').filter({ hasText: /\S/ });
   }
 
+  viewLink(row: Locator): Locator {
+    return row.locator('a[href*="advertisement/view"]');
+  }
+
+  updateLink(row: Locator): Locator {
+    return row.locator('a[href*="advertisement/update"]');
+  }
+
+  /** The row's Is Published switch. Tests never click it: it changes what customers see. */
+  publishSwitch(row: Locator): Locator {
+    return row.locator('input.update-advertisement-is-published');
+  }
+
   viewPath(id: string): string {
     return `/backend/advertisement/advertisement/view?id=${id}`;
   }
@@ -128,7 +138,7 @@ export class AdvertisementPage extends BackendListPage {
   detailValue(label: string): Locator {
     return this.page
       .locator('.detail-view tr', {
-        has: this.page.locator('th', { hasText: new RegExp(`^${label}$`) }),
+        has: this.page.locator('th', { hasText: new RegExp(`^${escapeRegExp(label)}$`) }),
       })
       .locator('td');
   }

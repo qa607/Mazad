@@ -84,3 +84,12 @@ export const advertisementAccess: Record<AccessProfile, boolean> = {
   noAuctionAccess: false,
   supplier: false,
 };
+
+/** Platforms of the Platform filter (staging, 2026-11-10). To confirm whether an "all" value is stored too. */
+export const advertisementPlatforms = {
+  both: 'Both',
+  mobile: 'Mobile',
+  web: 'Web',
+} as const;
+
+export type AdvertisementPlatform = keyof typeof advertisementPlatforms;
