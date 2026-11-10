@@ -1,5 +1,6 @@
-import { expect, test } from '@fixtures/test.fixture';
-import type { QuestionFormField } from '@pages/backend/survey/confirm-delivery-survey.page';
+import { DEV_ROOT_SESSION_FILE } from '@config/credentials.config';
+import { devRootSession, expect, test } from '@fixtures/test.fixture';
+import { ConfirmDeliverySurveyPage } from '@pages/backend/survey/confirm-delivery-survey.page';
 import {
   type AccessProfile,
   backendHomePath,
@@ -13,6 +14,7 @@ import {
   confirmDeliveryText,
   confirmDeliveryUrls,
   invalidScaleCases,
+  type QuestionFormField,
 } from '@test-data/backend-confirm-delivery-survey.data';
 
 // Survey > Confirm Delivery (/backend/survey/confirm-delivery-survey/index): the questions a buyer
@@ -20,7 +22,7 @@ import {
 // Question form is only submitted while invalid (the browser blocks it, nothing is sent). Then,
 // who can manage the questions.
 
-test.use({ trace: 'off', video: 'off', screenshot: 'off' });
+test.use(devRootSession);
 
 test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () => {
   test.use({ signedInAs: 'devRoot' });
@@ -59,9 +61,9 @@ test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () =>
       async ({ confirmDeliverySurveyPage: survey }) => {
         const count = await survey.rows.count();
 
-        await expect(survey.rows.locator('a[title="View"]')).toHaveCount(count);
-        await expect(survey.rows.locator('a[title="Update"]')).toHaveCount(count);
-        await expect(survey.rows.locator('a[title="Delete"]')).toHaveCount(0);
+        await expect(survey.viewLink(survey.rows)).toHaveCount(count);
+        await expect(survey.updateLink(survey.rows)).toHaveCount(count);
+        await expect(survey.deleteLink(survey.rows)).toHaveCount(0);
       },
     );
 
@@ -158,9 +160,7 @@ test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () =>
       'Only ID, From, To and the dates are sortable',
       { tag: '@functional' },
       async ({ confirmDeliverySurveyPage: survey }) => {
-        await expect(survey.columnHeaders.locator('a')).toHaveText([
-          ...confirmDeliveryText.sortableHeaders,
-        ]);
+        await expect(survey.sortLinks).toHaveText([...confirmDeliveryText.sortableHeaders]);
       },
     );
 
@@ -233,7 +233,12 @@ test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () =>
   });
 
   test.describe('Add Question validation (nothing is saved)', () => {
+    let createAttempts: () => number;
+
     test.beforeEach(async ({ page, confirmDeliverySurveyPage: survey }) => {
+      // The create endpoint is blocked for every test here: the form is only ever submitted
+      // while invalid, and even a validation change can never add a question to the live survey.
+      createAttempts = await survey.blockRequests(confirmDeliveryUrls.createPath);
       await survey.addQuestionButton.click();
       await expect(page).toHaveURL(confirmDeliveryUrls.create);
       await expect(page).toHaveTitle(confirmDeliveryText.createTitle);
@@ -243,8 +248,6 @@ test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () =>
       'Empty form lists every required field and sends nothing',
       { tag: ['@functional', '@negative'] },
       async ({ page, confirmDeliverySurveyPage: survey }) => {
-        const posts = survey.countPostRequests(confirmDeliveryUrls.createPath);
-
         await survey.submitQuestionForm({});
 
         for (const [field, message] of Object.entries(confirmDeliveryText.requiredFields) as [
@@ -257,7 +260,7 @@ test.describe('Backend - Confirm Delivery Survey', { tag: '@regression' }, () =>
           Object.keys(confirmDeliveryText.requiredFields).length,
         );
         await expect(page).toHaveURL(confirmDeliveryUrls.create);
-        expect(posts(), 'create requests sent').toBe(0);
+        expect(createAttempts(), 'create requests attempted').toBe(0);
       },
     );
 
@@ -305,17 +308,37 @@ for (const profile of profiles) {
     () => {
       test.use({ signedInAs: profile });
 
-      for (const [label, path] of [
-        ['the questions list', '/backend/survey/confirm-delivery-survey/index'],
-        ['a question', '/backend/survey/confirm-delivery-survey/view?id=1'],
-        ['the Update form', '/backend/survey/confirm-delivery-survey/update?id=1'],
-        ['the Add Question form', confirmDeliveryUrls.createPath],
-      ] as const) {
+      const pages = [
+        ['the questions list', () => ConfirmDeliverySurveyPage.path],
+        ['a question', (survey: ConfirmDeliverySurveyPage, id: string) => survey.viewPath(id)],
+        [
+          'the Update form',
+          (survey: ConfirmDeliverySurveyPage, id: string) => survey.updatePath(id),
+        ],
+        ['the Add Question form', () => ConfirmDeliverySurveyPage.createPath],
+      ] as const;
+      for (const [label, pathOf] of pages) {
         test(
           `${allowed ? 'can' : 'cannot'} open ${label}`,
-          { tag: '@functional' },
-          async ({ page }) => {
-            const response = await page.goto(path);
+          { tag: '@negative' },
+          async ({ page, browser, baseURL, pagesOn, confirmDeliverySurveyPage }) => {
+            // A live question ID, read as Dev Root, so a deleted record can never turn the
+            // expected 200 or 403 into a 404.
+            const staff = await browser.newContext({
+              baseURL,
+              storageState: DEV_ROOT_SESSION_FILE,
+            });
+            let id: string | undefined;
+            try {
+              const staffList = pagesOn(await staff.newPage()).confirmDeliverySurveyPage;
+              await staffList.goto();
+              [id] = await staffList.rowIds();
+            } finally {
+              await staff.close();
+            }
+            test.skip(!id, 'No survey question on staging.');
+
+            const response = await page.goto(pathOf(confirmDeliverySurveyPage, id));
 
             expect(response?.status()).toBe(allowed ? 200 : forbiddenStatus);
           },
@@ -325,11 +348,11 @@ for (const profile of profiles) {
       test(
         `the sidebar ${allowed ? 'links to' : 'has no link to'} Confirm Delivery`,
         { tag: '@functional' },
-        async ({ page }) => {
+        async ({ page, mazadDashboardPage }) => {
           await page.goto(backendHomePath);
 
           await expect(
-            page.locator('.app-sidebar a[href="/backend/survey/confirm-delivery-survey/index"]'),
+            mazadDashboardPage.sidebarLinkTo(ConfirmDeliverySurveyPage.path),
           ).toHaveCount(allowed ? 1 : 0);
         },
       );

@@ -1,5 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import { escapeRegExp } from '@utils/text';
+import {
+  type QuestionFormField,
+  questionFormFields,
+} from '@test-data/backend-confirm-delivery-survey.data';
 
 /** Grid columns, by their data-col-seq attribute (0 is the row number). */
 const column = {
@@ -28,17 +33,6 @@ export interface SurveyQuestionRow {
   updatedAt: string;
 }
 
-/** Inputs of the Add Question / Update form, by field. */
-export const questionFormFields = {
-  question: 'confirmdeliverysurvey-question',
-  questionEn: 'confirmdeliverysurvey-question_en',
-  from: 'confirmdeliverysurvey-from',
-  to: 'confirmdeliverysurvey-to',
-  isActive: 'confirmdeliverysurvey-is_active',
-} as const;
-
-export type QuestionFormField = keyof typeof questionFormFields;
-
 /**
  * Mazad back-office "Confirm Delivery Survey" (/backend/survey/confirm-delivery-survey/index,
  * Survey > Confirm Delivery): the questions a buyer answers after confirming delivery, each with
@@ -54,6 +48,9 @@ export class ConfirmDeliverySurveyPage extends BackendListPage {
   readonly addQuestionButton: Locator;
   readonly questionInput: Locator;
   readonly questionEnInput: Locator;
+
+  /** Sort links of the grid headers, in order. */
+  readonly sortLinks: Locator;
 
   // View page (a "detail-view" table of label/value rows)
   readonly detailLabels: Locator;
@@ -73,6 +70,7 @@ export class ConfirmDeliverySurveyPage extends BackendListPage {
     this.questionInput = this.searchForm.locator('#confirmdeliverysurveysearch-question');
     this.questionEnInput = this.searchForm.locator('#confirmdeliverysurveysearch-question_en');
 
+    this.sortLinks = this.columnHeaders.locator('a');
     this.detailLabels = page.locator('.detail-view th');
 
     // The Add Question or Update form only (the page also holds hidden upload and import forms).
@@ -84,6 +82,18 @@ export class ConfirmDeliverySurveyPage extends BackendListPage {
       `a[href="${ConfirmDeliverySurveyPage.path}"]`,
     );
     this.formErrors = this.questionForm.locator('.invalid-feedback').filter({ hasText: /\S/ });
+  }
+
+  viewLink(row: Locator): Locator {
+    return row.locator('a[title="View"]');
+  }
+
+  updateLink(row: Locator): Locator {
+    return row.locator('a[title="Update"]');
+  }
+
+  deleteLink(row: Locator): Locator {
+    return row.locator('a[title="Delete"]');
   }
 
   viewPath(id: string): string {
@@ -108,7 +118,7 @@ export class ConfirmDeliverySurveyPage extends BackendListPage {
 
   /** A grid header's sort link ("ID", "From", "To"...). */
   sortLink(header: string): Locator {
-    return this.columnHeaders.locator('a', { hasText: new RegExp(`^${header}$`) });
+    return this.columnHeaders.locator('a', { hasText: new RegExp(`^${escapeRegExp(header)}$`) });
   }
 
   /** Clicks a header: the first click sorts ascending, the next descending. */
@@ -125,7 +135,7 @@ export class ConfirmDeliverySurveyPage extends BackendListPage {
   detailValue(label: string): Locator {
     return this.page
       .locator('.detail-view tr', {
-        has: this.page.locator('th', { hasText: new RegExp(`^${label}$`) }),
+        has: this.page.locator('th', { hasText: new RegExp(`^${escapeRegExp(label)}$`) }),
       })
       .locator('td');
   }

@@ -105,3 +105,14 @@ export const confirmDeliveryAccess: Record<AccessProfile, boolean> = {
   noAuctionAccess: false,
   supplier: false,
 };
+
+/** Inputs of the Add Question / Update form, by field. */
+export const questionFormFields = {
+  question: 'confirmdeliverysurvey-question',
+  questionEn: 'confirmdeliverysurvey-question_en',
+  from: 'confirmdeliverysurvey-from',
+  to: 'confirmdeliverysurvey-to',
+  isActive: 'confirmdeliverysurvey-is_active',
+} as const;
+
+export type QuestionFormField = keyof typeof questionFormFields;
