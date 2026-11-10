@@ -12,3 +12,11 @@ export function uniqueDigits(length: number): string {
   const seconds = Math.floor(Date.now() / 1000).toString();
   return `${seconds.slice(-(length - 2)).padStart(length - 2, '0')}${worker}${counter}`;
 }
+
+/**
+ * A throwaway password for a test account created during the run: unique per call, never stored
+ * in test-data, and meeting the Backend rules (letters, digits, a symbol, 6+ characters).
+ */
+export function uniquePassword(): string {
+  return `QaAuto#${uniqueDigits(8)}`;
+}

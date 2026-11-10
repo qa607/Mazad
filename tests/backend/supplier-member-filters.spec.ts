@@ -11,7 +11,7 @@ import {
   pagingSize,
   supplierMemberText,
   unusualFilterValues,
-} from '@test-data/supplier-member.data';
+} from '@test-data/backend-supplier-member.data';
 
 /**
  * Mazad Backend > Supplier Members: search filters. Read-only. Expected results are worked out

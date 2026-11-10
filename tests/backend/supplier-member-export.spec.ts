@@ -8,7 +8,7 @@ import {
   memberExportFormats,
   noMatchName,
   pagingSize,
-} from '@test-data/supplier-member.data';
+} from '@test-data/backend-supplier-member.data';
 
 /**
  * Mazad Backend > Supplier Members: Export All (CSV, Excel 95 +, Excel 2007+) and the export

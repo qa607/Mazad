@@ -1,4 +1,4 @@
-import { uniqueDigits } from '@utils/unique';
+import { uniqueDigits, uniquePassword } from '@utils/unique';
 import { testRecordPrefix } from '@test-data/backend-common.data';
 
 /**
@@ -137,7 +137,8 @@ export function newTestMember(): SupplierMemberData {
     status: 'active',
     phone: `0597${stamp}`,
     email: `qa.auto.member.${stamp}@example.com`,
-    password: 'QaAuto#2026',
+    // Generated per run (never a stored credential) and typed with fillSecret().
+    password: uniquePassword(),
   };
 }
 

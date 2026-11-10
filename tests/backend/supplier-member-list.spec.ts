@@ -1,4 +1,5 @@
 import { devRootSession, expect, test } from '@fixtures/test.fixture';
+import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
 import type { MemberRow } from '@pages/backend/suppliers/supplier-member-list.page';
 import {
   type MemberSortableColumn,
@@ -12,7 +13,7 @@ import {
   pagingSize,
   supplierMemberText,
   supplierMemberUrls,
-} from '@test-data/supplier-member.data';
+} from '@test-data/backend-supplier-member.data';
 
 /**
  * Mazad Backend > Users > Suppliers > Supplier Members: page, grid, sorting and paging.
@@ -134,7 +135,7 @@ test.describe('Supplier Members - page and grid', { tag: ['@regression'] }, () =
       await list.open({}, ALL);
 
       for (const id of realIds(await list.readRows())) {
-        const response = await page.request.get(`/backend/users/supplier-member/view?id=${id}`);
+        const response = await page.request.get(SupplierMemberFormPage.pathOf('view', id));
         expect(response.status(), `view of ${id}`).toBe(200);
       }
     },
@@ -144,10 +145,8 @@ test.describe('Supplier Members - page and grid', { tag: ['@regression'] }, () =
     'View, update and permission pages of an unknown ID return 404',
     { tag: ['@negative'] },
     async ({ page }) => {
-      for (const action of ['view', 'update', 'update-permission']) {
-        const response = await page.request.get(
-          `/backend/users/supplier-member/${action}?id=99999999`,
-        );
+      for (const action of ['view', 'update', 'update-permission'] as const) {
+        const response = await page.request.get(SupplierMemberFormPage.pathOf(action, '99999999'));
         expect(response.status(), action).toBe(404);
       }
     },
@@ -161,7 +160,7 @@ test.describe('Supplier Members - sorting', { tag: ['@regression'] }, () => {
     async ({ supplierMemberListPage: list }) => {
       await list.goto();
 
-      const sortable = await list.columnHeaders.locator('a[data-sort]').allInnerTexts();
+      const sortable = await list.sortableHeaderLinks.allInnerTexts();
       expect(sortable.map((text) => text.trim()).sort()).toEqual(
         Object.keys(memberSortableColumns).sort(),
       );

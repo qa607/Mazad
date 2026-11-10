@@ -5,12 +5,13 @@ import { type BackendPages, devRootSession, expect, test } from '@fixtures/test.
 import { shownOption } from '@utils/widgets';
 import {
   invalidMemberCases,
+  isTestMember,
   memberRowActions,
   newTestMember,
   permissionSections,
   supplierMemberText as text,
   supplierMemberUrls,
-} from '@test-data/supplier-member.data';
+} from '@test-data/backend-supplier-member.data';
 
 /**
  * Mazad Backend > Supplier Members: create form validation, then one QA-AUTO test member created
@@ -60,7 +61,8 @@ test.describe('Supplier member - create form validation', { tag: ['@regression']
 
   test.beforeEach(async ({ supplierMemberListPage: list, supplierMemberFormPage: form }) => {
     await list.goto();
-    existingPhone = (await list.columnValues('Phone'))[0];
+    // A real member: the QA-AUTO member of the CRUD tests may be deleted while this test runs.
+    existingPhone = (await list.readRows()).find((row) => !isTestMember(row))!.Phone;
     await form.gotoCreate();
   });
 
@@ -83,7 +85,7 @@ test.describe('Supplier member - create form validation', { tag: ['@regression']
       { tag: ['@negative'] },
       async ({ page, supplierMemberFormPage: form }) => {
         await form.fill({ ...valid, ...data });
-        if (confirm !== undefined) await form.input('passwordConfirm').fill(confirm);
+        if (confirm !== undefined) await form.setPassword(data.password ?? valid.password, confirm);
         await form.save();
 
         await expect(page).toHaveURL(supplierMemberUrls.create);
@@ -373,8 +375,7 @@ test.describe(
       { tag: ['@functional'] },
       async ({ browser, pagesOn, supplierMemberFormPage: form }) => {
         await form.gotoUpdate(memberId);
-        await form.input('newPassword').fill(edited.password);
-        await form.input('passwordConfirm').fill(edited.password);
+        await form.setPassword(edited.password);
         await form.save();
 
         expect(await loginError(browser, pagesOn, member.phone, edited.password)).toBeNull();

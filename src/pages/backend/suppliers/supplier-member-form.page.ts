@@ -1,7 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
 import { BackendPage } from '@pages/backend/base/backend.page';
+import { fillSecret } from '@utils/secret-input';
 import { selectOption, selectedOption } from '@utils/widgets';
-import type { SupplierMemberData } from '@test-data/supplier-member.data';
+import type { SupplierMemberData } from '@test-data/backend-supplier-member.data';
 
 type TextField = 'name' | 'nameEn' | 'phone' | 'email' | 'newPassword' | 'passwordConfirm';
 type Field = TextField | 'parent' | 'status';
@@ -53,6 +54,11 @@ export class SupplierMemberFormPage extends BackendPage {
     await this.page.goto(`/backend/users/supplier-member/update?id=${id}`);
   }
 
+  /** Address of a member's View, Update or permissions page. */
+  static pathOf(action: 'view' | 'update' | 'update-permission', id: string): string {
+    return `/backend/users/supplier-member/${action}?id=${id}`;
+  }
+
   async gotoView(id: string): Promise<void> {
     await this.page.goto(`/backend/users/supplier-member/view?id=${id}`);
   }
@@ -100,10 +106,16 @@ export class SupplierMemberFormPage extends BackendPage {
     if (data.status) await this.selectStatus(data.status);
     if (data.phone !== undefined) await this.input('phone').fill(data.phone);
     if (data.email !== undefined) await this.input('email').fill(data.email);
-    if (data.password !== undefined) {
-      await this.input('newPassword').fill(data.password);
-      await this.input('passwordConfirm').fill(data.password);
-    }
+    if (data.password !== undefined) await this.setPassword(data.password);
+  }
+
+  /**
+   * Types the new password and its confirmation (the password by default) without either value
+   * appearing in report steps.
+   */
+  async setPassword(password: string, confirm: string = password): Promise<void> {
+    await fillSecret(this.input('newPassword'), password);
+    await fillSecret(this.input('passwordConfirm'), confirm);
   }
 
   /** Clicks Save. A valid form loads a new page; an invalid one shows errors in place. */

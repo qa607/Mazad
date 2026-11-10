@@ -9,7 +9,7 @@ import {
   type MemberStatus,
   memberColumns,
   memberSortableColumns,
-} from '@test-data/supplier-member.data';
+} from '@test-data/backend-supplier-member.data';
 
 export interface MemberFilters {
   phone?: string;
@@ -37,6 +37,8 @@ export class SupplierMemberListPage extends BackendListPage {
   static readonly path = '/backend/users/supplier-member/index';
 
   readonly createButton: Locator;
+  /** Header links that sort the grid. */
+  readonly sortableHeaderLinks: Locator;
   readonly filterLabels: Locator;
   readonly phoneFilter: Locator;
   readonly nameFilter: Locator;
@@ -56,6 +58,7 @@ export class SupplierMemberListPage extends BackendListPage {
   constructor(page: Page) {
     super(page, SupplierMemberListPage.path, 'default-id');
     this.createButton = page.locator('a[href="/backend/users/supplier-member/create"]');
+    this.sortableHeaderLinks = this.columnHeaders.locator('a[data-sort]');
     this.filterLabels = this.searchForm.locator('label');
     this.phoneFilter = page.locator('#suppliermembersearch-phone');
     this.nameFilter = page.locator('#suppliermembersearch-name');
