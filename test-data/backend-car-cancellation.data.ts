@@ -74,6 +74,9 @@ export const cancellationActions = {
     path: '/backend/requestCancellation/ajax/request-cancellation/',
     form: { type: 'cancel-car', id: '0', user_id: '0', value: 'decline', option_status: '' },
   },
+  // A GET that changes data (moves a vehicle to Failed), so it is open to CSRF: reported for an
+  // application fix (POST + CSRF token). Never send it for a role that is allowed, even with
+  // item_id=0.
   moveToFailed: {
     label: 'Move the vehicle to Failed (Approve)',
     method: 'GET' as const,
@@ -81,3 +84,12 @@ export const cancellationActions = {
     form: null,
   },
 } as const;
+
+/** Request statuses: filter value and dropdown label. */
+export const cancellationStatuses = {
+  pending: 'Pending',
+  approve: 'Approve',
+  decline: 'Decline',
+} as const;
+
+export type CancellationStatus = keyof typeof cancellationStatuses;

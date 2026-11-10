@@ -1,5 +1,9 @@
 import type { Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import {
+  type CancellationStatus,
+  cancellationStatuses,
+} from '@test-data/backend-car-cancellation.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -36,15 +40,6 @@ export interface CarCancellationRow {
   requestDate: string;
   updatedAt: string;
 }
-
-/** Request statuses: filter value and dropdown label. */
-export const cancellationStatuses = {
-  pending: 'Pending',
-  approve: 'Approve',
-  decline: 'Decline',
-} as const;
-
-export type CancellationStatus = keyof typeof cancellationStatuses;
 
 /**
  * Mazad back-office "Car Cancellations" (/backend/requestCancellation/car-cancellation/index,
