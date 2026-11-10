@@ -309,7 +309,13 @@ export async function installGuestGuard(
         navigation: request.isNavigationRequest(),
       });
     }
-    await route.fulfill({ response: request.isNavigationRequest() ? first : hop });
+    try {
+      await route.fulfill({ response: request.isNavigationRequest() ? first : hop });
+    } catch (error) {
+      // The test ended (its page or context closed) while this already allowed response was
+      // still being delivered; there is nothing left to deliver it to. Any other error stands.
+      if (!/has been disposed|has been closed/i.test(String(error))) throw error;
+    }
   });
 
   // Backstop: report any redirect hop the browser sent to a target that is not allowed.

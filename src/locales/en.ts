@@ -18,6 +18,29 @@ export const en = {
   logout: 'Log out',
   /** Header prompt shown instead of the account name when signed out (home page, any page). */
   headerGuestPrompt: 'Create an Account / Log In',
+
+  // Website Contact Us form, /<lang>/contact-us/ (recorded from staging stg-154, 2026-11-10).
+  // The Send button reuses `send`.
+  contactUsPageTitle: 'Contact Us | Mazad By Motory',
+  contactUsHeading: 'We are glad to hear from you!',
+  contactUsNameLabel: 'Name',
+  contactUsEmailLabel: 'Email',
+  contactUsMobileLabel: 'Mobile Number',
+  contactUsMessageLabel: 'Message',
+  contactUsNamePlaceholder: 'Enter your name',
+  contactUsEmailPlaceholder: 'Enter Email',
+  contactUsMobilePlaceholder: 'Example: 0554235678',
+  contactUsMessagePlaceholder: 'Write your message',
+  contactUsNameRequired: 'Name cannot be blank.',
+  contactUsEmailRequired: 'Email cannot be blank.',
+  contactUsMobileRequired: 'Mobile Number cannot be blank.',
+  contactUsMessageRequired: 'Message cannot be blank.',
+  contactUsEmailInvalid: 'Incorrect Email',
+  contactUsMobileMustStartWith5: 'Mobile Number must start with "5"',
+  contactUsMobileMustStartWith05: 'Mobile Number must start with "05"',
+  contactUsMobileLength: 'Mobile number must be 10 digits',
+  /** Shown under Send for 5 seconds after the server accepts the message; the form is cleared. */
+  contactUsSent: 'Your message was sent successfully!',
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;

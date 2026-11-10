@@ -226,6 +226,7 @@ interface MazadFixtures extends BackendPages {
    * For tests that need an existing term; tests of the create flow itself use the form page.
    */
   createTaxonomyTerm: (type: string, data: TaxonomyTermData) => Promise<string>;
+  /**
    * A back office session signed in as Dev Root, made read-only: after login every request
    * that is not a GET (except logout) is aborted, so tests cannot change back office data.
    * On failure it attaches a screenshot with account details masked.
@@ -399,6 +400,7 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   deletedUserListPage: async ({ page }, use) => {
     await use(new DeletedUserListPage(page));
+  },
   taxonomyTypesPage: async ({ page }, use) => {
     await use(new TaxonomyTypesPage(page));
   },
