@@ -91,6 +91,14 @@ export class RolePermissionsPage extends BackendPage {
     return this.page.locator(`input.checkboxPermission[title="${route}"]`);
   }
 
+  /** Routes ticked on the open role permission page, sorted (to record and compare a role). */
+  async checkedPermissions(): Promise<string[]> {
+    const routes = await this.page
+      .locator('input.checkboxPermission:checked')
+      .evaluateAll((boxes) => boxes.map((box) => box.getAttribute('title') ?? ''));
+    return routes.sort();
+  }
+
   /** Clicks a permission checkbox and waits for the change to be saved. */
   async togglePermission(route: string): Promise<void> {
     await Promise.all([

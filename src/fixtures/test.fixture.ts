@@ -26,8 +26,14 @@ import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
+import { DealerFormPage } from '@pages/backend/customers/dealer-form.page';
+import { DealerListPage } from '@pages/backend/customers/dealer-list.page';
+import { DeletedUserListPage } from '@pages/backend/customers/deleted-user-list.page';
+import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
+import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
 import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
@@ -76,6 +82,8 @@ export const devRootSession = {
 export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
+  operationListPage: OperationListPage;
+  operationFormPage: OperationFormPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -106,12 +114,18 @@ export interface BackendPages {
   customerGroupFormPage: CustomerGroupFormPage;
   customerGroupViewPage: CustomerGroupViewPage;
   customerGroupMembersPage: CustomerGroupMembersPage;
+  individualListPage: IndividualListPage;
+  dealerListPage: DealerListPage;
+  dealerFormPage: DealerFormPage;
+  deletedUserListPage: DeletedUserListPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
   return {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
+    operationListPage: new OperationListPage(page),
+    operationFormPage: new OperationFormPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -142,6 +156,10 @@ function createBackendPages(page: Page): BackendPages {
     customerGroupFormPage: new CustomerGroupFormPage(page),
     customerGroupViewPage: new CustomerGroupViewPage(page),
     customerGroupMembersPage: new CustomerGroupMembersPage(page),
+    individualListPage: new IndividualListPage(page),
+    dealerListPage: new DealerListPage(page),
+    dealerFormPage: new DealerFormPage(page),
+    deletedUserListPage: new DeletedUserListPage(page),
   };
 }
 
@@ -200,6 +218,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   mazadDashboardPage: async ({ page }, use) => {
     await use(new MazadDashboardPage(page));
+  },
+  operationListPage: async ({ page }, use) => {
+    await use(new OperationListPage(page));
+  },
+  operationFormPage: async ({ page }, use) => {
+    await use(new OperationFormPage(page));
   },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));
@@ -290,6 +314,18 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   customerGroupMembersPage: async ({ page }, use) => {
     await use(new CustomerGroupMembersPage(page));
+  },
+  individualListPage: async ({ page }, use) => {
+    await use(new IndividualListPage(page));
+  },
+  dealerListPage: async ({ page }, use) => {
+    await use(new DealerListPage(page));
+  },
+  dealerFormPage: async ({ page }, use) => {
+    await use(new DealerFormPage(page));
+  },
+  deletedUserListPage: async ({ page }, use) => {
+    await use(new DeletedUserListPage(page));
   },
   customerGroupCleanup: async ({ customerGroupListPage }, use) => {
     const names = new Set<string>();
