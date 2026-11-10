@@ -52,6 +52,7 @@ Still unverified (do not assume they cannot change the app's backend): Firebase 
 | `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required)                         |
 | `npm run allure:clean`                           | Delete old `allure-results/` before a run, so the report shows only that run |
 | `npm run test:customer-group`                    | Run only the Customer Group specs (signs in first)                           |
+| `npm run test:taxonomy`                          | Run only the Taxonomy specs (signs in first)                                 |
 
 JUnit XML is written to `reports/junit.xml` for CI.
 
