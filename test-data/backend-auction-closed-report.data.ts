@@ -56,5 +56,7 @@ export const auctionClosedData = {
 /** URL patterns, matched against the full page URL. */
 export const auctionClosedUrls = {
   list: /\/backend\/report\/auction-closed-report\/index(\?|$)/,
+  /** The list with no filter in its address (after Reset). */
+  listUnfiltered: /\/backend\/report\/auction-closed-report\/index$/,
   csvFileName: /^Auction Closed Report \d{4}-\d{2}-\d{2}\.csv$/,
 } as const;

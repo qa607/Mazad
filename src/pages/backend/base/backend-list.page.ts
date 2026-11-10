@@ -152,6 +152,24 @@ export abstract class BackendListPage extends BackendPage {
       .click();
   }
 
+  /**
+   * Picks an option in a search-as-you-type select2 filter: opens it, types the text and clicks
+   * the first option matching `option` (the typed text by default). Does not search.
+   */
+  protected async pickSearchSuggestion(
+    fieldClass: string,
+    typed: string,
+    option: string | RegExp = typed,
+  ): Promise<void> {
+    await this.searchForm.locator(`.${fieldClass} .select2-selection`).click();
+    await this.page.locator('.select2-container--open .select2-search__field').fill(typed);
+    await this.page
+      .locator('.select2-container--open .select2-results__option')
+      .filter({ hasText: option })
+      .first()
+      .click();
+  }
+
   /** Text shown in a select2 dropdown of the search form (the selection or the placeholder). */
   protected filterValue(selectId: string): Locator {
     return this.searchForm.locator(`#select2-${selectId}-container`);

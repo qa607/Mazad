@@ -82,13 +82,7 @@ export class AuctionClosedReportPage extends BackendListPage {
 
   /** Picks an auction in the title filter (a search-as-you-type list) and searches. */
   async filterByAuctionTitle(title: string): Promise<void> {
-    await this.searchForm.locator('.field-auctionitemclosedsearch-title .select2-selection').click();
-    await this.page.locator('.select2-container--open .select2-search__field').fill(title);
-    await this.page
-      .locator('.select2-container--open .select2-results__option')
-      .filter({ hasText: title })
-      .first()
-      .click();
+    await this.pickSearchSuggestion('field-auctionitemclosedsearch-title', title);
     await this.search();
   }
 
