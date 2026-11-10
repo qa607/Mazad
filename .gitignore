@@ -17,3 +17,6 @@ node_modules/
 /.auth/
 
 .DS_Store
+
+# UI visual layer: unapproved screenshot candidates (approved baselines stay tracked)
+/visual-baselines/candidates/

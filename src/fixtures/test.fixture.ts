@@ -1,15 +1,20 @@
 import fs from 'node:fs';
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, request as playwrightRequest, type Page } from '@playwright/test';
 import {
   type BackendAccount,
   type BackendRole,
   DEV_ROOT_MISSING_REASON,
   DEV_ROOT_SESSION_FILE,
+  ERP_MISSING_REASON,
   getDevRootAccount,
+  getErpAccount,
   getRoleAccount,
   roleMissingReason,
   roleSessionFile,
 } from '@config/credentials.config';
+import { envConfig } from '@config/env.config';
+import { ErpClient } from '@api/erp.client';
+import { MazadApiClient } from '@api/mazad-api.client';
 import { getTranslator, type Translator } from '@locales';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
 import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
@@ -30,6 +35,8 @@ import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-gr
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
 import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
 import { OperationListPage } from '@pages/backend/operations/operation-list.page';
+import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
+import { MazadVehicleViewPage } from '@pages/backend/mazad-vehicle-view.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
 import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
@@ -40,6 +47,8 @@ import { AdvertisementPage } from '@pages/backend/content/advertisement.page';
 import { ConfirmDeliverySurveyPage } from '@pages/backend/survey/confirm-delivery-survey.page';
 import { ContactUsPage } from '@pages/backend/content/contact-us.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
+import { SupplierCompanyFormPage } from '@pages/backend/suppliers/supplier-company-form.page';
+import { SupplierCompanyListPage } from '@pages/backend/suppliers/supplier-company-list.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
@@ -80,6 +89,8 @@ export interface BackendPages {
   mazadDashboardPage: MazadDashboardPage;
   operationListPage: OperationListPage;
   operationFormPage: OperationFormPage;
+  mazadSoldListPage: MazadSoldListPage;
+  mazadVehicleViewPage: MazadVehicleViewPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -102,6 +113,8 @@ export interface BackendPages {
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
+  supplierCompanyListPage: SupplierCompanyListPage;
+  supplierCompanyFormPage: SupplierCompanyFormPage;
   supplierMemberListPage: SupplierMemberListPage;
   supplierMemberFormPage: SupplierMemberFormPage;
   rolePermissionsPage: RolePermissionsPage;
@@ -118,6 +131,8 @@ function createBackendPages(page: Page): BackendPages {
     mazadDashboardPage: new MazadDashboardPage(page),
     operationListPage: new OperationListPage(page),
     operationFormPage: new OperationFormPage(page),
+    mazadSoldListPage: new MazadSoldListPage(page),
+    mazadVehicleViewPage: new MazadVehicleViewPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -140,6 +155,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
+    supplierCompanyListPage: new SupplierCompanyListPage(page),
+    supplierCompanyFormPage: new SupplierCompanyFormPage(page),
     supplierMemberListPage: new SupplierMemberListPage(page),
     supplierMemberFormPage: new SupplierMemberFormPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
@@ -168,6 +185,16 @@ interface MazadFixtures extends BackendPages {
    * group with one of those names is deleted through the list page.
    */
   customerGroupCleanup: { track: (name: string) => void };
+  /**
+   * A back office session signed in as Dev Root, made read-only: after login every request
+   * that is not a GET (except logout) is aborted, so tests cannot change back office data.
+   * On failure it attaches a screenshot with account details masked.
+   */
+  backendSession: void;
+  /** Mazad customer API client (guest calls). */
+  mazadApi: MazadApiClient;
+  /** Read-only ERP client, signed in from .env. Skips the test when the ERP is not configured. */
+  erp: ErpClient;
 }
 
 export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures>({
@@ -212,6 +239,11 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   operationFormPage: async ({ page }, use) => {
     await use(new OperationFormPage(page));
+  mazadSoldListPage: async ({ page }, use) => {
+    await use(new MazadSoldListPage(page));
+  },
+  mazadVehicleViewPage: async ({ page }, use) => {
+    await use(new MazadVehicleViewPage(page));
   },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));
@@ -248,6 +280,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  supplierCompanyListPage: async ({ page }, use) => {
+    await use(new SupplierCompanyListPage(page));
+  },
+  supplierCompanyFormPage: async ({ page }, use) => {
+    await use(new SupplierCompanyFormPage(page));
   },
   supplierMemberListPage: async ({ page }, use) => {
     await use(new SupplierMemberListPage(page));
@@ -318,6 +356,61 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
     testInfo.skip(!account, DEV_ROOT_MISSING_REASON);
     if (!account) return; // Not reached: skip() ends the test.
     await use(account);
+  },
+  backendSession: async ({ page, devRoot, mazadLoginPage, mazadDashboardPage }, use, testInfo) => {
+    await mazadLoginPage.goto();
+    await mazadLoginPage.loginAs(devRoot);
+    await mazadDashboardPage.userMenuToggle.waitFor();
+
+    await page.route('**/*', async (route) => {
+      const req = route.request();
+      const allowed = req.method() === 'GET' || req.url().includes('/authentication/logout');
+      await (allowed ? route.fallback() : route.abort('blockedbyclient'));
+    });
+
+    await use();
+
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const screenshot = await page
+        .screenshot({
+          fullPage: false,
+          mask: [...mazadLoginPage.sensitiveAreas(), ...mazadDashboardPage.sensitiveAreas()],
+        })
+        .catch(() => null);
+      if (screenshot) {
+        await testInfo.attach('screenshot (account details masked)', {
+          body: screenshot,
+          contentType: 'image/png',
+        });
+      }
+    }
+    // Log out from the dashboard, within a fixed budget so teardown never eats the test timeout.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await Promise.race([
+      (async () => {
+        await mazadDashboardPage.goto();
+        await mazadDashboardPage.logout();
+        await page.waitForURL(/\/authentication\/login/);
+      })(),
+      new Promise((resolve) => setTimeout(resolve, 20_000)),
+    ]).catch(() => undefined);
+  },
+  mazadApi: async ({ request }, use) => {
+    await use(new MazadApiClient(request));
+  },
+  // eslint-disable-next-line no-empty-pattern
+  erp: async ({}, use, testInfo) => {
+    const account = getErpAccount();
+    testInfo.skip(!envConfig.erpURL, `No erpURL configured for environment "${envConfig.name}".`);
+    testInfo.skip(!account, ERP_MISSING_REASON);
+    if (!account || !envConfig.erpURL) return; // Not reached: skip() ends the test.
+
+    const context = await playwrightRequest.newContext({ baseURL: envConfig.erpURL });
+    const client = new ErpClient(context);
+    await client.login(account);
+    await use(client);
+    await client.logout();
+    await context.dispose();
   },
   maskedFailureScreenshot: [
     async ({ page, screenshot }, use, testInfo) => {
