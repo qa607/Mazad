@@ -1,5 +1,11 @@
 import type { Download, Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import {
+  type AuctionStage,
+  type InspectionStage,
+  auctionStages,
+  inspectionStages,
+} from '@test-data/backend-supplier-vehicle-report.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -13,30 +19,6 @@ const column = {
   inspectionDetails: 7,
 } as const;
 
-/** Labels of the Auction Details cell, in order. */
-export const auctionStages = [
-  'Pending Bulk',
-  'Ready For Pricing',
-  'Pricing Done',
-  'Upcoming',
-  'Awaiting',
-  'Live',
-  'Sold',
-  'Failed',
-] as const;
-
-/** Labels of the Inspection Details cell, in order. */
-export const inspectionStages = [
-  'Under Review',
-  'Awaiting',
-  'Ongoing',
-  'Completed',
-  'Waiting for QC',
-  'QC Completed',
-] as const;
-
-export type AuctionStage = (typeof auctionStages)[number];
-export type InspectionStage = (typeof inspectionStages)[number];
 
 /** One supplier as the report shows it. */
 export interface SupplierVehicleRow {

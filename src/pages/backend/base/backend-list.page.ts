@@ -196,9 +196,15 @@ export abstract class BackendListPage extends BackendPage {
     return { from, to, total };
   }
 
-  /** Opens the list with query parameters (search-form fields, sort, page) given as is. */
-  async gotoWithQuery(params: Record<string, string>): Promise<void> {
-    await this.page.goto(`${this.listPath}?${new URLSearchParams(params).toString()}`);
+  /**
+   * Opens the list with query parameters (search-form fields, sort, page) given as is, and
+   * returns the HTTP status of the page (null when there was no response).
+   */
+  async gotoWithQuery(params: Record<string, string>): Promise<number | null> {
+    const response = await this.page.goto(
+      `${this.listPath}?${new URLSearchParams(params).toString()}`,
+    );
+    return response?.status() ?? null;
   }
 
   /** The grid's column labels, in order, without the empty ones. */

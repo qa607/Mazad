@@ -67,3 +67,29 @@ export const supplierVehicleUrls = {
   list: /\/backend\/report\/supplier-vehicle-report\/index(\?|$)/,
   csvFileName: /^Supplier Vehicle Report \d{4}-\d{2}-\d{2}\.csv$/,
 } as const;
+
+/** Stage labels of the report's detail cells (staging, 2026-11-09). */
+/** Labels of the Auction Details cell, in order. */
+export const auctionStages = [
+  'Pending Bulk',
+  'Ready For Pricing',
+  'Pricing Done',
+  'Upcoming',
+  'Awaiting',
+  'Live',
+  'Sold',
+  'Failed',
+] as const;
+
+/** Labels of the Inspection Details cell, in order. */
+export const inspectionStages = [
+  'Under Review',
+  'Awaiting',
+  'Ongoing',
+  'Completed',
+  'Waiting for QC',
+  'QC Completed',
+] as const;
+
+export type AuctionStage = (typeof auctionStages)[number];
+export type InspectionStage = (typeof inspectionStages)[number];
