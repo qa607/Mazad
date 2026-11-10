@@ -40,6 +40,8 @@ import { ContactUsPage } from '@pages/backend/content/contact-us.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
+import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
+import { SupplierMemberListPage } from '@pages/backend/suppliers/supplier-member-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
 import type { Language } from '@typings';
 
@@ -96,6 +98,8 @@ export interface BackendPages {
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
+  supplierMemberListPage: SupplierMemberListPage;
+  supplierMemberFormPage: SupplierMemberFormPage;
   rolePermissionsPage: RolePermissionsPage;
   permissionListPage: PermissionListPage;
   customerGroupListPage: CustomerGroupListPage;
@@ -130,6 +134,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
+    supplierMemberListPage: new SupplierMemberListPage(page),
+    supplierMemberFormPage: new SupplierMemberFormPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
     permissionListPage: new PermissionListPage(page),
     customerGroupListPage: new CustomerGroupListPage(page),
@@ -230,6 +236,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  supplierMemberListPage: async ({ page }, use) => {
+    await use(new SupplierMemberListPage(page));
+  },
+  supplierMemberFormPage: async ({ page }, use) => {
+    await use(new SupplierMemberFormPage(page));
   },
   waitingApprovalPage: async ({ page }, use) => {
     await use(new WaitingApprovalPage(page));
