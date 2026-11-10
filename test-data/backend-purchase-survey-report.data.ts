@@ -39,4 +39,19 @@ export const purchaseSurveyData = {
 /** URL patterns, matched against the full page URL. */
 export const purchaseSurveyUrls = {
   list: /\/backend\/report\/purchase-survey-report\/index(\?|$)/,
+  /** The list with no filter in its address (form not sent, or after Reset). */
+  listUnfiltered: /\/backend\/report\/purchase-survey-report\/index$/,
 } as const;
+
+/** The survey's questions, as the Question filter and the grid show them (staging, 2026-11-09). */
+export const surveyQuestions = {
+  easeOfUse: { value: '1', label: 'How easy Mazad By Motory is to use?' },
+  satisfaction: { value: '2', label: 'How satisfied are you with Mazad By Motory?' },
+  recommend: {
+    value: '3',
+    label: 'How likely are you to recommend Mazad By Motory to a friend or colleague?',
+  },
+  other: { value: 'other', label: 'Other' },
+} as const;
+
+export type SurveyQuestion = keyof typeof surveyQuestions;

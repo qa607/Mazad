@@ -1,5 +1,7 @@
 import type { Locator, Page, Response } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import { escapeRegExp } from '@utils/text';
+import { type SurveyQuestion, surveyQuestions } from '@test-data/backend-purchase-survey-report.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -33,18 +35,6 @@ export interface SurveyRow {
   createdAt: string;
 }
 
-/** The survey's questions, as the Question filter lists them. */
-export const surveyQuestions = {
-  easeOfUse: { value: '1', label: 'How easy Mazad By Motory is to use?' },
-  satisfaction: { value: '2', label: 'How satisfied are you with Mazad By Motory?' },
-  recommend: {
-    value: '3',
-    label: 'How likely are you to recommend Mazad By Motory to a friend or colleague?',
-  },
-  other: { value: 'other', label: 'Other' },
-} as const;
-
-export type SurveyQuestion = keyof typeof surveyQuestions;
 
 /**
  * Mazad back-office "Purchase Survey Report" (/backend/report/purchase-survey-report/index,
@@ -123,14 +113,8 @@ export class PurchaseSurveyReportPage extends BackendListPage {
   private async pickSuggestion(field: string, value: string): Promise<void> {
     const words = value.trim().split(/\s+/);
     const typed = words.slice(0, Math.min(2, words.length)).join(' ');
-    const escaped = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    await this.searchForm.locator(`.${field} .select2-selection`).click();
-    await this.page.locator('.select2-container--open .select2-search__field').fill(typed);
-    await this.page
-      .locator('.select2-container--open .select2-results__option')
-      .filter({ hasText: new RegExp(`^\\s*${escaped.join('\\s+')}\\s*$`) })
-      .first()
-      .click();
+    const whole = new RegExp(`^\\s*${words.map(escapeRegExp).join('\\s+')}\\s*$`);
+    await this.pickSearchSuggestion(field, typed, whole);
     await this.search();
   }
 
