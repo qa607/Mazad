@@ -177,4 +177,37 @@ export abstract class BackendListPage extends BackendPage {
     const [from, to, total] = match.slice(1).map((n) => Number(n.replace(/,/g, '')));
     return { from, to, total };
   }
+
+  /** Opens the list with query parameters (search-form fields, sort, page) given as is. */
+  async gotoWithQuery(params: Record<string, string>): Promise<void> {
+    await this.page.goto(`${this.listPath}?${new URLSearchParams(params).toString()}`);
+  }
+
+  /** The grid's column labels, in order, without the empty ones. */
+  async headerLabels(): Promise<string[]> {
+    const labels = await this.grid.locator('thead tr').first().locator('th').allInnerTexts();
+    return labels.map((label) => label.trim()).filter(Boolean);
+  }
+
+  /**
+   * One grid row as { column label: cell text } plus its record ID under "key", matching cells to
+   * headers by data-col-seq. Picks the row by ID, or the first row. Null when there is no such row.
+   */
+  async rowValues(rowKey?: string): Promise<Record<string, string> | null> {
+    if ((await this.grid.count()) === 0) return null;
+    return this.grid.evaluate((grid, key) => {
+      const row = key
+        ? grid.querySelector(`tbody tr[data-key="${CSS.escape(key)}"]`)
+        : grid.querySelector('tbody tr[data-key]');
+      if (!row) return null;
+      const values: Record<string, string> = { key: row.getAttribute('data-key') ?? '' };
+      for (const th of grid.querySelector('thead tr')?.querySelectorAll('th') ?? []) {
+        const label = (th as HTMLElement).innerText.trim();
+        const seq = th.getAttribute('data-col-seq');
+        const cell = seq === null ? null : row.querySelector(`td[data-col-seq="${seq}"]`);
+        if (label && cell) values[label] = (cell as HTMLElement).innerText.trim();
+      }
+      return values;
+    }, rowKey);
+  }
 }

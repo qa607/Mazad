@@ -38,6 +38,7 @@ export class WaitingApprovalPage extends BackendListPage {
   readonly penaltyInput: Locator;
   readonly biddersModal: Locator;
   readonly biddersTitle: Locator;
+  readonly bidderRows: Locator;
 
   constructor(page: Page) {
     // The grid's container id is "live", as on the Live list.
@@ -62,6 +63,7 @@ export class WaitingApprovalPage extends BackendListPage {
     );
     this.biddersModal = page.locator('#modal-xl');
     this.biddersTitle = this.biddersModal.locator('.modal-title');
+    this.bidderRows = this.biddersModal.locator('tbody tr');
   }
 
   acceptLink(row: Locator): Locator {
@@ -197,5 +199,6 @@ export class WaitingApprovalPage extends BackendListPage {
         // Still open: the click landed during the opening animation. Try again.
       }
     }
+    throw new Error('The dialog is still open after 5 attempts to close it.');
   }
 }

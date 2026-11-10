@@ -99,4 +99,26 @@ export abstract class BackendPage {
     });
     return () => requests;
   }
+
+  /**
+   * Aborts every POST/PUT/PATCH/DELETE request whose URL contains one of the given parts, for the
+   * rest of the test, and returns a function giving how many were attempted. GET requests (dialog
+   * content, page loads) pass through. Wrap clicks on destructive controls (Delete, Accept,
+   * Publish, Save) with it, so a missing confirmation or a misclick can never reach the server.
+   */
+  async blockRequests(...urlParts: string[]): Promise<() => number> {
+    let attempts = 0;
+    await this.page.route(
+      (url) => urlParts.some((part) => url.href.includes(part)),
+      async (route) => {
+        if (['GET', 'HEAD', 'OPTIONS'].includes(route.request().method())) {
+          await route.fallback();
+          return;
+        }
+        attempts += 1;
+        await route.abort('blockedbyclient');
+      },
+    );
+    return () => attempts;
+  }
 }

@@ -28,6 +28,8 @@ export const supplierColumns = {
   pricingDone: {
     label: 'Pricing Done',
     path: '/backend/auction/pricing-done/index',
+    /** Search-form field of the VIN filter. */
+    vinFilter: 'PricingDoneSearch[vin_number]',
     headers: [
       '#',
       'ID',
@@ -48,6 +50,8 @@ export const supplierColumns = {
   upcoming: {
     label: 'Upcoming',
     path: '/backend/auction/upcoming/index',
+    /** Search-form field of the VIN filter. */
+    vinFilter: 'UpcomingSearch[vin_number]',
     headers: [
       '#',
       'ID',
@@ -107,11 +111,10 @@ export const sharedPriceColumns = [
 
 /** Lists with one combined "Prices" cell per row (Live, Waiting Approval). */
 export const combinedPriceLists = {
-  live: { label: 'Live', path: '/backend/auction/live/index', gridId: 'live' },
+  live: { label: 'Live', path: '/backend/auction/live/index' },
   waitingApproval: {
     label: 'Waiting Approval',
     path: '/backend/auction/waiting-approval/index',
-    gridId: 'live',
   },
 } as const;
 

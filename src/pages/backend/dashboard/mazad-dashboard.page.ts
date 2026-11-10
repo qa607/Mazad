@@ -26,6 +26,16 @@ export class MazadDashboardPage extends BackendPage {
     this.homeLink = this.sidebar.locator('a[href="/backend/site/index"]');
   }
 
+  /** Sidebar links whose address starts with a path ("/backend/report/"). */
+  sidebarLinksUnder(pathPrefix: string): Locator {
+    return this.sidebar.locator(`a[href^="${pathPrefix}"]`);
+  }
+
+  /** The sidebar link to exactly one page. */
+  sidebarLinkTo(path: string): Locator {
+    return this.sidebar.locator(`a[href="${path}"]`);
+  }
+
   async goto(): Promise<void> {
     await this.page.goto(MazadDashboardPage.path);
   }
