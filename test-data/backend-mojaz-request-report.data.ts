@@ -45,7 +45,22 @@ export const mojazRequestData = {
 /** URL patterns, matched against the full page URL. */
 export const mojazRequestUrls = {
   list: /\/backend\/report\/mojaz-request\/index(\?|$)/,
-  /** Generated reports are PDFs stored on S3. */
+  /**
+   * Generated reports are PDFs stored on S3, linked without a signature or expiry (no query
+   * string), so a link keeps working for anyone who has it. Pending a business/security decision
+   * (review of PR #15): if access must be limited, the app should switch to pre-signed URLs and
+   * this pattern and the "opens a PDF" test must change with it.
+   */
   reportPdf: /^https:\/\/s3\.[a-z0-9-]+\.amazonaws\.com\/.+\.pdf$/,
   csvFileName: /^Request Mojaz \d{4}-\d{2}-\d{2}\.csv$/,
 } as const;
+
+/** Request statuses: filter value and the label the grid shows. */
+export const mojazStatuses = {
+  pending: 'Pending',
+  done: 'Generated',
+  'not-found': 'Not Found',
+  failed: 'Failed',
+} as const;
+
+export type MojazStatus = keyof typeof mojazStatuses;

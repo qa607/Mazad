@@ -1,5 +1,6 @@
 import type { Download, Locator, Page } from '@playwright/test';
 import { BackendListPage } from '@pages/backend/base/backend-list.page';
+import { type MojazStatus, mojazStatuses } from '@test-data/backend-mojaz-request-report.data';
 
 /** Grid columns, by their data-col-seq attribute. */
 const column = {
@@ -30,15 +31,6 @@ export interface MojazRequestRow {
   updatedAt: string;
 }
 
-/** Request statuses: filter value and the label the grid shows. */
-export const mojazStatuses = {
-  pending: 'Pending',
-  done: 'Generated',
-  'not-found': 'Not Found',
-  failed: 'Failed',
-} as const;
-
-export type MojazStatus = keyof typeof mojazStatuses;
 
 /**
  * Mazad back-office "Request Mojaz" report (/backend/report/mojaz-request/index, Report >
