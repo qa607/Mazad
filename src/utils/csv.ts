@@ -1,33 +1,42 @@
 /**
- * Parses CSV text (quoted fields, "" escapes, CRLF or LF line ends) into rows, dropping the byte
- * order mark and blank lines.
+ * Parses CSV text into records of fields. Handles double-quoted fields holding commas, escaped
+ * quotes ("") and line breaks, so a record is not cut where a message has a new line. A leading
+ * byte order mark (U+FEFF, added for Excel) is dropped. Empty lines are skipped.
  */
 export function parseCsv(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let cell = '';
+  const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const records: string[][] = [];
+  let record: string[] = [];
+  let field = '';
   let quoted = false;
-  const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
-  for (let i = 0; i < body.length; i++) {
-    const char = body[i];
+
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
     if (quoted) {
-      if (char === '"' && body[i + 1] === '"') {
-        cell += '"';
+      if (char === '"' && source[i + 1] === '"') {
+        field += '"';
         i++;
-      } else if (char === '"') quoted = false;
-      else cell += char;
-    } else if (char === '"') quoted = true;
-    else if (char === ',') {
-      row.push(cell);
-      cell = '';
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"') {
+      quoted = true;
+    } else if (char === ',') {
+      record.push(field);
+      field = '';
     } else if (char === '\n' || char === '\r') {
-      if (char === '\r' && body[i + 1] === '\n') i++;
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = '';
-    } else cell += char;
+      if (char === '\r' && source[i + 1] === '\n') i++;
+      record.push(field);
+      if (record.some((value) => value !== '')) records.push(record);
+      record = [];
+      field = '';
+    } else {
+      field += char;
+    }
   }
-  if (cell || row.length) rows.push([...row, cell]);
-  return rows.filter((r) => r.some((value) => value.trim()));
+  record.push(field);
+  if (record.some((value) => value !== '')) records.push(record);
+  return records;
 }

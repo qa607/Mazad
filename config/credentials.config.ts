@@ -72,6 +72,8 @@ export const BACKEND_ROLES = {
   customerSupport: { label: 'Customer Support', env: 'ROLE_CUSTOMER_SUPPORT' },
   auctionTeam: { label: 'Auction Team', env: 'ROLE_AUCTION_TEAM' },
   operation: { label: 'operation', env: 'ROLE_OPERATION' },
+  // A supplier's own account (role supplierAdmin), read from SUPPLIER_PHONE / SUPPLIER_PASSWORD.
+  supplier: { label: 'Supplier (supplierAdmin)', env: 'SUPPLIER' },
   noAuctionAccess: { label: 'Marketing (no auction access)', env: 'ROLE_NO_AUCTION_ACCESS' },
 } as const;
 

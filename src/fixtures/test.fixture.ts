@@ -21,17 +21,29 @@ import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
 import { SuspendedVehiclesPage } from '@pages/backend/auctions/suspended-vehicles.page';
 import { UpcomingPage } from '@pages/backend/auctions/upcoming.page';
+import { WaitingApprovalPage } from '@pages/backend/auctions/waiting-approval.page';
 import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
+import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
+import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
+import { VehiclesReportPage } from '@pages/backend/reports/vehicles-report.page';
+import { MojazRequestReportPage } from '@pages/backend/reports/mojaz-request-report.page';
+import { CarCancellationPage } from '@pages/backend/request-cancellation/car-cancellation.page';
+import { AdvertisementPage } from '@pages/backend/content/advertisement.page';
+import { ConfirmDeliverySurveyPage } from '@pages/backend/survey/confirm-delivery-survey.page';
+import { ContactUsPage } from '@pages/backend/content/contact-us.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { SupplierCompanyFormPage } from '@pages/backend/suppliers/supplier-company-form.page';
 import { SupplierCompanyListPage } from '@pages/backend/suppliers/supplier-company-list.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
+import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
+import { SupplierMemberListPage } from '@pages/backend/suppliers/supplier-member-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
 import type { Language } from '@typings';
 
@@ -74,12 +86,24 @@ export interface BackendPages {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  waitingApprovalPage: WaitingApprovalPage;
+  auctionClosedReportPage: AuctionClosedReportPage;
+  purchaseSurveyReportPage: PurchaseSurveyReportPage;
+  supplierVehicleReportPage: SupplierVehicleReportPage;
+  vehiclesReportPage: VehiclesReportPage;
+  mojazRequestReportPage: MojazRequestReportPage;
+  carCancellationPage: CarCancellationPage;
+  contactUsPage: ContactUsPage;
+  advertisementPage: AdvertisementPage;
+  confirmDeliverySurveyPage: ConfirmDeliverySurveyPage;
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
   supplierCompanyListPage: SupplierCompanyListPage;
   supplierCompanyFormPage: SupplierCompanyFormPage;
+  supplierMemberListPage: SupplierMemberListPage;
+  supplierMemberFormPage: SupplierMemberFormPage;
   rolePermissionsPage: RolePermissionsPage;
   permissionListPage: PermissionListPage;
   customerGroupListPage: CustomerGroupListPage;
@@ -100,12 +124,24 @@ function createBackendPages(page: Page): BackendPages {
     awaitingPage: new AwaitingPage(page),
     livePage: new LivePage(page),
     failedPage: new FailedPage(page),
+    waitingApprovalPage: new WaitingApprovalPage(page),
+    auctionClosedReportPage: new AuctionClosedReportPage(page),
+    purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
+    supplierVehicleReportPage: new SupplierVehicleReportPage(page),
+    vehiclesReportPage: new VehiclesReportPage(page),
+    mojazRequestReportPage: new MojazRequestReportPage(page),
+    carCancellationPage: new CarCancellationPage(page),
+    contactUsPage: new ContactUsPage(page),
+    advertisementPage: new AdvertisementPage(page),
+    confirmDeliverySurveyPage: new ConfirmDeliverySurveyPage(page),
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
     supplierCompanyListPage: new SupplierCompanyListPage(page),
     supplierCompanyFormPage: new SupplierCompanyFormPage(page),
+    supplierMemberListPage: new SupplierMemberListPage(page),
+    supplierMemberFormPage: new SupplierMemberFormPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
     permissionListPage: new PermissionListPage(page),
     customerGroupListPage: new CustomerGroupListPage(page),
@@ -212,6 +248,42 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierCompanyFormPage: async ({ page }, use) => {
     await use(new SupplierCompanyFormPage(page));
+  },
+  supplierMemberListPage: async ({ page }, use) => {
+    await use(new SupplierMemberListPage(page));
+  },
+  supplierMemberFormPage: async ({ page }, use) => {
+    await use(new SupplierMemberFormPage(page));
+  },
+  waitingApprovalPage: async ({ page }, use) => {
+    await use(new WaitingApprovalPage(page));
+  },
+  auctionClosedReportPage: async ({ page }, use) => {
+    await use(new AuctionClosedReportPage(page));
+  },
+  purchaseSurveyReportPage: async ({ page }, use) => {
+    await use(new PurchaseSurveyReportPage(page));
+  },
+  supplierVehicleReportPage: async ({ page }, use) => {
+    await use(new SupplierVehicleReportPage(page));
+  },
+  vehiclesReportPage: async ({ page }, use) => {
+    await use(new VehiclesReportPage(page));
+  },
+  mojazRequestReportPage: async ({ page }, use) => {
+    await use(new MojazRequestReportPage(page));
+  },
+  carCancellationPage: async ({ page }, use) => {
+    await use(new CarCancellationPage(page));
+  },
+  contactUsPage: async ({ page }, use) => {
+    await use(new ContactUsPage(page));
+  },
+  advertisementPage: async ({ page }, use) => {
+    await use(new AdvertisementPage(page));
+  },
+  confirmDeliverySurveyPage: async ({ page }, use) => {
+    await use(new ConfirmDeliverySurveyPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
