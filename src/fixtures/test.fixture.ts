@@ -35,6 +35,7 @@ import { VehiclesReportPage } from '@pages/backend/reports/vehicles-report.page'
 import { MojazRequestReportPage } from '@pages/backend/reports/mojaz-request-report.page';
 import { CarCancellationPage } from '@pages/backend/request-cancellation/car-cancellation.page';
 import { AdvertisementPage } from '@pages/backend/content/advertisement.page';
+import { ConfirmDeliverySurveyPage } from '@pages/backend/survey/confirm-delivery-survey.page';
 import { ContactUsPage } from '@pages/backend/content/contact-us.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
@@ -90,6 +91,7 @@ export interface BackendPages {
   carCancellationPage: CarCancellationPage;
   contactUsPage: ContactUsPage;
   advertisementPage: AdvertisementPage;
+  confirmDeliverySurveyPage: ConfirmDeliverySurveyPage;
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
@@ -123,6 +125,7 @@ function createBackendPages(page: Page): BackendPages {
     carCancellationPage: new CarCancellationPage(page),
     contactUsPage: new ContactUsPage(page),
     advertisementPage: new AdvertisementPage(page),
+    confirmDeliverySurveyPage: new ConfirmDeliverySurveyPage(page),
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
@@ -254,6 +257,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   advertisementPage: async ({ page }, use) => {
     await use(new AdvertisementPage(page));
+  },
+  confirmDeliverySurveyPage: async ({ page }, use) => {
+    await use(new ConfirmDeliverySurveyPage(page));
   },
   rolePermissionsPage: async ({ page }, use) => {
     await use(new RolePermissionsPage(page));
