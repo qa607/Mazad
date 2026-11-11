@@ -23,10 +23,10 @@ import { digitsAsLetters, uniqueDigits } from '@utils/unique';
  *   Name drops digits and symbols, as on the website.
  * - It posts to the same endpoint as the website (v1/contact-form/submit, type contact_us).
  *
- * Backend: this build (8.2.2-stage) has no stg-154 address. Its compiled-in staging default is
- * mazad-v3.motory.dev, which resolves to the same internal IP as stg-154 but is another environment:
- * the one approved send on 2026-11-11 showed the confirmation dialog, yet never reached stg-154's
- * back office. The back-office reflection test cannot pass until the app runs against stg-154.
+ * Backend: the app keeps its own backend setting (hidden menu, long press on More). The 8.2.2-stage
+ * build defaults to mazad-v3.motory.dev, which resolves to the same internal IP as stg-154 but is
+ * another environment: a send on 2026-11-11 before the switch never reached stg-154's back office.
+ * The Android session now sets and verifies stg-154 before any test (src/mobile/ensure-app-backend.ts).
  *
  * Messages sent by the approved send test use the agreed synthetic values: a "QA AUTO" name,
  * a qa.mobile.<runId>@example.invalid email, the website tests' synthetic phone and a QA-AUTO
