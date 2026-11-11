@@ -19,6 +19,8 @@ export const ar: Translations = {
   logout: 'تسجيل الخروج',
   headerGuestPrompt: 'إنشاء حساب / تسجيل الدخول',
 
+  helpCenterHeading: 'مركز المساعدة',
+
   contactUsPageTitle: 'تواصل معنا | مزاد من موتري',
   contactUsHeading: 'تواصلك معنا يسعدنا',
   contactUsNameLabel: 'الاسم',

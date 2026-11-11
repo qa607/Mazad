@@ -75,6 +75,8 @@ export const S3_IMAGE_PATH_PREFIXES: readonly string[] = [
   // Make logos and supplier images on /auctions/ (seen in capture step3-capture-2).
   '/v3-auction-common.motory.com/makes/',
   '/v3-auction-common.motory.com/supplier-profile/',
+  // Help Center category icons on /help-center/ (seen 2026-11-11 on stg-154).
+  '/v3-auction-common.motory.com/faq-category-icon/',
 ];
 
 /** Redirect chains longer than this are treated as unexpected. */
