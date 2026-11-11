@@ -76,6 +76,10 @@ import { TrafficOfficeFormPage } from '@pages/backend/traffic-office/traffic-off
 import { TrafficOfficeListPage } from '@pages/backend/traffic-office/traffic-office-list.page';
 import { TrafficOfficeViewPage } from '@pages/backend/traffic-office/traffic-office-view.page';
 import type { TrafficOfficeData } from '@test-data/traffic-office.data';
+import { FaqCategoryPage } from '@pages/backend/help-center/faq-category.page';
+import { FaqQuestionPage } from '@pages/backend/help-center/faq-question.page';
+import { faqIconFile, type FaqCategoryData, type FaqQuestionData } from '@test-data/faq.data';
+import { faqCleanup as createFaqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -162,6 +166,8 @@ export interface BackendPages {
   trafficOfficeListPage: TrafficOfficeListPage;
   trafficOfficeFormPage: TrafficOfficeFormPage;
   trafficOfficeViewPage: TrafficOfficeViewPage;
+  faqCategoryPage: FaqCategoryPage;
+  faqQuestionPage: FaqQuestionPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
@@ -221,6 +227,8 @@ function createBackendPages(page: Page): BackendPages {
     trafficOfficeListPage: new TrafficOfficeListPage(page),
     trafficOfficeFormPage: new TrafficOfficeFormPage(page),
     trafficOfficeViewPage: new TrafficOfficeViewPage(page),
+    faqCategoryPage: new FaqCategoryPage(page),
+    faqQuestionPage: new FaqQuestionPage(page),
   };
 }
 
@@ -261,6 +269,22 @@ interface MazadFixtures extends BackendPages {
    * For tests that need an existing office; tests of the create flow itself use the form page.
    */
   createTrafficOffice: (data: TrafficOfficeData) => Promise<string>;
+  /**
+   * Records the FAQ categories and questions a test creates or renames to (by English text);
+   * after the test, passed or failed, they are deleted (questions first) in this test's tab.
+   */
+  faqCleanup: FaqTracker;
+  /** Creates a FAQ category (with the synthetic icon), registers it for clean-up, returns its id. */
+  createFaqCategory: (data: FaqCategoryData) => Promise<string>;
+  /**
+   * Creates a FAQ question in a category (by its English name), published unless publish is
+   * false, registers it for clean-up and returns its id.
+   */
+  createFaqQuestion: (
+    categoryNameEn: string,
+    data: FaqQuestionData,
+    publish?: boolean,
+  ) => Promise<string>;
   /**
    * Registers permissions a role must have once the test is over. After the test, passed or
    * failed, each one is granted on the role's permission page (in this test's tab, which must
@@ -491,6 +515,29 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
         await trafficOfficeViewPage.deleteOffice(id);
       }
     }
+  },
+  faqCategoryPage: async ({ page }, use) => {
+    await use(new FaqCategoryPage(page));
+  },
+  faqQuestionPage: async ({ page }, use) => {
+    await use(new FaqQuestionPage(page));
+  },
+  faqCleanup: async ({ faqCategoryPage, faqQuestionPage }, use) => {
+    const cleanup = createFaqCleanup({ faqCategoryPage, faqQuestionPage });
+    await use(cleanup.tracker);
+    await cleanup.run();
+  },
+  createFaqCategory: async ({ faqCategoryPage, faqCleanup }, use) => {
+    await use(async (data) => {
+      faqCleanup.trackCategory(data.nameEn);
+      return faqCategoryPage.createCategory(data, faqIconFile);
+    });
+  },
+  createFaqQuestion: async ({ faqQuestionPage, faqCleanup }, use) => {
+    await use(async (categoryNameEn, data, publish = true) => {
+      faqCleanup.trackQuestion(data.questionEn);
+      return faqQuestionPage.createQuestion(categoryNameEn, data, publish);
+    });
   },
   createTrafficOffice: async ({ trafficOfficeFormPage, trafficOfficeCleanup }, use) => {
     await use(async (data) => {

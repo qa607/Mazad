@@ -12,6 +12,8 @@ import { approvedOrigin } from '@config/staging-environments';
 import { envConfig } from '@config/env.config';
 import { type BackendPages, test as base } from '@fixtures/test.fixture';
 import { WebsiteContactUsPage } from '@pages/frontend/contact/contact-us.page';
+import { FaqWebPage } from '@pages/frontend/help-center/faq-web.page';
+import { faqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
 import { installGuestGuard, type NetworkEvent } from '../network/request-guard';
 import {
   activeWebRequests,
@@ -39,6 +41,12 @@ interface WebsiteFixtures {
    * masked. Specs using it turn off trace and video (they would record the session).
    */
   devRootBackend: BackendPages;
+  faqWebPage: FaqWebPage;
+  /**
+   * Records the FAQ categories and questions a website test creates through devRootBackend;
+   * after the test, passed or failed, they are deleted there (questions first).
+   */
+  devRootFaqCleanup: FaqTracker;
   /** A dedicated Individual test account from the back office (name contains the test filter). */
   individualAccount: DirectoryAccount;
   /** A dedicated Dealer test account from the back office (name contains the test filter). */
@@ -162,6 +170,14 @@ export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
   },
   // Its specs turn the automatic screenshot off (see devRootBackend), so a failing test attaches
   // one of the website tab here; the form only ever holds synthetic test values.
+  faqWebPage: async ({ page, language }, use) => {
+    await use(new FaqWebPage(page, language));
+  },
+  devRootFaqCleanup: async ({ devRootBackend }, use) => {
+    const cleanup = faqCleanup(devRootBackend);
+    await use(cleanup.tracker);
+    await cleanup.run();
+  },
   websiteContactUsPage: async ({ page, language, isMobile }, use, testInfo) => {
     await use(new WebsiteContactUsPage(page, language, isMobile));
     if (testInfo.status !== testInfo.expectedStatus) {

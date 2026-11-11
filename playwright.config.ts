@@ -26,6 +26,8 @@ const FRONTEND_DEVICES = {
   desktop: { device: devices['Desktop Chrome'], grepInvert: /@mobile-only/ },
   mobile: { device: devices['Pixel 7'], grepInvert: /@desktop-only/ },
 } as const;
+/** Tests tagged for one language only (e.g. @en-only) are skipped in the other's projects. */
+const LANGUAGE_ONLY: Record<Language, RegExp> = { en: /@ar-only/, ar: /@en-only/ };
 
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
@@ -80,7 +82,7 @@ export default defineConfig<LanguageOptions>({
         name: `frontend-${language}-${kind}`,
         testMatch: FRONTEND_SPECS,
         dependencies: ['backend-setup'],
-        grepInvert: FRONTEND_DEVICES[kind].grepInvert,
+        grepInvert: [FRONTEND_DEVICES[kind].grepInvert, LANGUAGE_ONLY[language]],
         use: {
           ...FRONTEND_DEVICES[kind].device,
           language,

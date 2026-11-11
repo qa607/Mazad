@@ -39,6 +39,8 @@ export const en = {
   contactUsMobileMustStartWith5: 'Mobile Number must start with "5"',
   contactUsMobileMustStartWith05: 'Mobile Number must start with "05"',
   contactUsMobileLength: 'Mobile number must be 10 digits',
+  // Website Help Center, /<lang>/help-center/ (recorded from staging stg-154, 2026-11-11).
+  helpCenterHeading: 'Help Center',
   /** Shown under Send for 5 seconds after the server accepts the message; the form is cleared. */
   contactUsSent: 'Your message was sent successfully!',
 } satisfies Record<string, string>;
