@@ -2,17 +2,44 @@
  * iOS (Appium + XCUITest) device and app configuration. Builds settings only: nothing here
  * starts a session, installs, launches or changes anything on the device.
  *
- * Device: selected by UDID only, never by name.
+ * Device: selected by UDID only, never by name, and only from APPROVED_IOS_DEVICES.
  * App: only a bundle ID + build on the APPROVED_IOS_BUILDS allowlist may be automated. An
  * environment flag alone is never enough: before any session, the build installed on the
  * device is read from the Mac (devicectl) and must match the approved entry exactly.
  */
 
-/** QA's iPhone (iPhone 15 Plus, iOS 27.0.1). */
+export interface ApprovedIosDevice {
+  udid: string;
+  /** Default platformVersion for the session (IOS_PLATFORM_VERSION overrides it). */
+  platformVersion: string;
+  /** Model, for people reading the list; never used to select the device. */
+  model: string;
+  /** Who approved the device, and when. */
+  approval: string;
+}
+
+/** QA's iPhone (iPhone 15 Plus, iOS 27.0.1): the default device. */
 export const QA_IPHONE = {
   udid: '00008120-0002703C1162601E',
   platformVersion: '27.0.1',
-} as const;
+  model: 'iPhone 15 Plus',
+  approval: 'QA owner, 2026-11-09: first physical-device stage.',
+} as const satisfies ApprovedIosDevice;
+
+/**
+ * The only physical devices iOS runs may use, selected by UDID (IOS_UDID; QA_IPHONE when unset).
+ * Any other device UDID is refused. Changed in code review only.
+ */
+export const APPROVED_IOS_DEVICES: readonly ApprovedIosDevice[] = [
+  QA_IPHONE,
+  {
+    udid: '00008030-000475EA1405802E',
+    platformVersion: '27.0.1',
+    model: 'iPhone 11 Pro Max',
+    approval:
+      "QA owner, 2026-11-11: approved for the iOS Contact Us work while QA's iPhone is not connected; has the approved build 8.3 (1491) installed.",
+  },
+];
 
 export interface ApprovedIosBuild {
   /** Where this build runs: the physical QA iPhone, or an iOS Simulator (a simulator build). */
@@ -79,6 +106,13 @@ export interface IosConfig {
    * never builds or re-signs WebDriverAgent.
    */
   wdaBundleId?: string;
+  /**
+   * Physical device only. URL of a WebDriverAgent already RUNNING on the device (started with
+   * `xcodebuild test-without-building`), for iOS versions where Appium cannot launch a
+   * preinstalled runner without a sudo tunnel. Appium attaches to it; nothing is built or signed.
+   * Private-network or loopback http URLs only.
+   */
+  wdaUrl?: string;
   /** Apple developer team ID used to sign WebDriverAgent, if Appium has to build it. */
   xcodeOrgId?: string;
 }
@@ -99,6 +133,13 @@ export function readIosConfig(env: NodeJS.ProcessEnv = process.env): IosConfig {
         ? `IOS_UDID "${udid}" is not a device UDID.`
         : `IOS_SIM_UDID "${udid}" is not a simulator UDID.`,
     );
+  }
+  const device =
+    target === 'device'
+      ? APPROVED_IOS_DEVICES.find((d) => d.udid.toUpperCase() === udid.toUpperCase())
+      : undefined;
+  if (target === 'device' && !device) {
+    throw new Error(`Refusing device ${udid}: not on the APPROVED_IOS_DEVICES list.`);
   }
   const bundleId = env.IOS_BUNDLE_ID?.trim();
   if (!bundleId) {
@@ -126,11 +167,13 @@ export function readIosConfig(env: NodeJS.ProcessEnv = process.env): IosConfig {
     target,
     guardProxy,
     udid,
-    platformVersion: env.IOS_PLATFORM_VERSION?.trim() || QA_IPHONE.platformVersion,
+    platformVersion:
+      env.IOS_PLATFORM_VERSION?.trim() || device?.platformVersion || QA_IPHONE.platformVersion,
     bundleId,
     approvedBuild,
     // Device only: the simulator ignores IOS_WDA_BUNDLE_ID entirely (Appium's own runner).
     wdaBundleId: target === 'device' ? wdaBundleIdOf(env) : undefined,
+    wdaUrl: target === 'device' ? wdaUrlOf(env) : undefined,
     xcodeOrgId: env.IOS_XCODE_ORG_ID?.trim() || undefined,
   };
 }
@@ -153,9 +196,25 @@ function wdaBundleIdOf(env: NodeJS.ProcessEnv): string | undefined {
   return id;
 }
 
+/** IOS_WDA_URL, validated: http on loopback or a private (RFC 1918) address, with a port. */
+function wdaUrlOf(env: NodeJS.ProcessEnv): string | undefined {
+  const url = env.IOS_WDA_URL?.trim();
+  if (!url) return undefined;
+  const privateHost =
+    /^http:\/\/(127\.0\.0\.1|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2}):\d{2,5}\/?$/;
+  if (!privateHost.test(url)) {
+    throw new Error(
+      `IOS_WDA_URL "${url}" must be http://<loopback or private IP>:<port> (a WebDriverAgent on the device).`,
+    );
+  }
+  return url.replace(/\/$/, '');
+}
+
 /**
  * WebDriverAgent capabilities.
  * - Simulator: none. Appium's default simulator WebDriverAgent; any runner bundle ID is ignored.
+ * - Device with IOS_WDA_URL: attach to the WebDriverAgent already running on the device; nothing
+ *   is launched, built or signed (takes precedence over IOS_WDA_BUNDLE_ID).
  * - Device with IOS_WDA_BUNDLE_ID: use the runner already installed on the device
  *   (`<id>.xctrunner`); nothing is built, signed or installed, so no Xcode signing capability is
  *   passed (the driver treats them as incompatible with a preinstalled runner).
@@ -163,6 +222,7 @@ function wdaBundleIdOf(env: NodeJS.ProcessEnv): string | undefined {
  */
 export function wdaCapabilities(config: IosConfig): Record<string, unknown> {
   if (config.target !== 'device') return {};
+  if (config.wdaUrl) return { 'appium:webDriverAgentUrl': config.wdaUrl };
   if (config.wdaBundleId) {
     return {
       'appium:usePreinstalledWDA': true,
