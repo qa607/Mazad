@@ -16,6 +16,7 @@ import { MazadLoginScreen } from '@mobile/screens/login.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
 import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
 import { NotificationsScreen } from '@mobile/screens/notifications.screen';
+import { MazadRegistrationScreen } from '@mobile/screens/registration.screen';
 
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
@@ -31,6 +32,7 @@ interface MobileFixtures {
   myActionsScreen: MyActionsScreen;
   notificationsScreen: NotificationsScreen;
   loginScreen: MazadLoginScreen;
+  registrationScreen: MazadRegistrationScreen;
   accountScreen: MazadAccountScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
@@ -90,6 +92,9 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   loginScreen: async ({ driver }, use) => {
     await use(new MazadLoginScreen(driver));
+  },
+  registrationScreen: async ({ driver }, use) => {
+    await use(new MazadRegistrationScreen(driver));
   },
   accountScreen: async ({ driver }, use) => {
     await use(new MazadAccountScreen(driver));

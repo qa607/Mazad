@@ -27,6 +27,12 @@ export const PASSWORD_RESET_BLOCKED = blocked(
 /** Logs a shared test account out (successful-login flow; signing out a signed-in app). */
 export const LOGOUT_BLOCKED = blocked('MAZAD_ALLOW_LOGOUT', 'logging a shared test account out');
 
+/** Submits registration (creates a new account) instead of only inspecting Step 2 state. */
+export const ACCOUNT_CREATION_BLOCKED = blocked(
+  'MAZAD_ALLOW_ACCOUNT_CREATION',
+  'submitting registration to create a new test account',
+);
+
 /** The first reason a test needing these operations is blocked, if any. */
 export function firstBlocked(...reasons: (string | undefined)[]): string | undefined {
   return reasons.find(Boolean);
