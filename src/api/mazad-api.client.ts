@@ -7,6 +7,7 @@ import type {
   AuctionList,
   AuctionListItem,
   AuctionListQuery,
+  FaqCategory,
 } from '@typings/mazad';
 
 /** App identity sent with every request, as the Android app does. */
@@ -47,6 +48,11 @@ export class MazadApiClient {
   /** GET /v1/configuration: tab names and empty states the apps display. */
   getConfiguration(lang: Language) {
     return this.get<AppConfiguration>('configuration', lang);
+  }
+
+  /** GET /v1/faq-list: the Help Center categories, in the order the app lists them. */
+  getFaqCategories(lang: Language) {
+    return this.get<FaqCategory[]>('faq-list', lang);
   }
 
   /** GET /v1/auction/list for one section and tab. */

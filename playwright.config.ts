@@ -15,6 +15,8 @@ const BACKEND_SPECS = '**/backend/**/*.spec.ts';
 const INTEGRATION_SPECS = '**/integration/**/*.spec.ts';
 /** Native app specs, driven through Appium; the app language is switched inside the specs. */
 const MOBILE_SPECS = '**/mobile/**/*.spec.ts';
+/** Native app specs that also check the back office, after backend-setup (Dev Root session). */
+const MOBILE_BACKOFFICE_SPECS = '**/mobile/**/*.backoffice.spec.ts';
 /** Signs in once per run and saves the session (see config/credentials.config.ts). */
 const BACKEND_SETUP = '**/backend/**/*.setup.ts';
 /**
@@ -111,7 +113,15 @@ export default defineConfig<LanguageOptions>({
     {
       name: 'android',
       testMatch: MOBILE_SPECS,
+      testIgnore: MOBILE_BACKOFFICE_SPECS,
       timeout: 120_000,
+    },
+    // Android app + back office: kept apart so a plain Android run never signs in to the back office.
+    {
+      name: 'android-backoffice',
+      testMatch: MOBILE_BACKOFFICE_SPECS,
+      dependencies: ['backend-setup'],
+      timeout: 180_000,
     },
   ],
 });

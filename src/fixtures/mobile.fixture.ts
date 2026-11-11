@@ -4,14 +4,19 @@ import {
   getBuyerAccount,
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
+import { approvedOrigin } from '@config/staging-environments';
 // Extends the website fixture (not test.fixture directly) to reuse its backend account
 // discovery (individualAccount/dealerAccount) and OTP configuration (otpCode) for Android too,
 // instead of duplicating that lookup — the back office and the OTP are shared across platforms.
 import { test as base } from '@fixtures/website.fixture';
 import { type AndroidDriver, startAndroidSession } from '@mobile/android.session';
+import { ensureAppBackend } from '@mobile/ensure-app-backend';
 import { androidNetworkProblem } from '@mobile/network-preflight';
 import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
+import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
+import { EnvironmentScreen } from '@mobile/screens/environment.screen';
+import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
 import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
@@ -20,7 +25,11 @@ import { NotificationsScreen } from '@mobile/screens/notifications.screen';
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
   androidNetworkProblem: string | undefined;
-  /** One Appium session per worker; null (and tests skipped) when Appium is not reachable. */
+  /**
+   * One Appium session per worker; null (and tests skipped) when Appium is not reachable. The app
+   * is pointed at the selected environment and verified before any test (ensureAppBackend); when
+   * that fails, the fixture fails and so does every test of the worker.
+   */
   androidDriver: AndroidDriver | null;
 }
 
@@ -32,6 +41,8 @@ interface MobileFixtures {
   notificationsScreen: NotificationsScreen;
   loginScreen: MazadLoginScreen;
   accountScreen: MazadAccountScreen;
+  helpCenterScreen: HelpCenterScreen;
+  contactFormScreen: ContactFormScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
 }
@@ -62,6 +73,19 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
         return;
       }
       const driver = await startAndroidSession(envConfig.appiumURL);
+      // The app keeps its own backend setting (default: mazad-v3.motory.dev, another environment):
+      // set it to the approved origin and read it back before any test, or fail them all.
+      try {
+        const backend = await ensureAppBackend(
+          driver,
+          { appShell: new AppShellScreen(driver), environment: new EnvironmentScreen(driver) },
+          approvedOrigin(envConfig.name),
+        );
+        console.log(`Android app backend: ${backend.before} -> ${backend.after}`);
+      } catch (error) {
+        await driver.deleteSession().catch(() => undefined);
+        throw error;
+      }
       await use(driver);
       await driver.deleteSession().catch(() => undefined);
     },
@@ -93,6 +117,12 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   accountScreen: async ({ driver }, use) => {
     await use(new MazadAccountScreen(driver));
+  },
+  helpCenterScreen: async ({ driver }, use) => {
+    await use(new HelpCenterScreen(driver));
+  },
+  contactFormScreen: async ({ driver }, use) => {
+    await use(new ContactFormScreen(driver));
   },
   // eslint-disable-next-line no-empty-pattern
   buyer: async ({}, use, testInfo) => {

@@ -1,6 +1,7 @@
 /** Re-exports of the iOS safety checks for the offline selfchecks (no device, no network). */
 export {
   APPROVED_IOS_BUILDS,
+  APPROVED_IOS_DEVICES,
   installedBuildProblem,
   QA_IPHONE,
   readIosConfig,
