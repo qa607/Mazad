@@ -20,3 +20,13 @@ export function uniqueDigits(length: number): string {
 export function uniquePassword(): string {
   return `QaAuto#${uniqueDigits(8)}`;
 }
+
+/**
+ * The same digits written as capital letters (0 → A … 9 → J), for fields that accept letters
+ * only, so a unique stamp can still be read back: "4071" → "EAHB".
+ */
+export function digitsAsLetters(digits: string): string {
+  if (!/^\d+$/.test(digits))
+    throw new Error(`digitsAsLetters expects digits only, got "${digits}".`);
+  return digits.replace(/\d/g, (d) => String.fromCharCode(65 + Number(d)));
+}

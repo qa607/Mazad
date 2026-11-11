@@ -1,4 +1,41 @@
 import type { Translations } from './en';
 
 /** Arabic UI strings. Typed against en.ts, so a missing key fails type checking. */
-export const ar: Translations = {};
+export const ar: Translations = {
+  login: 'تسجيل الدخول',
+  forgotPassword: 'هل نسيت كلمة المرور؟',
+  createAccount: 'إنشاء حساب جديد',
+  send: 'أرسل',
+  verify: 'تحقق',
+  saveAndLogin: 'حفظ وتسجيل الدخول',
+  cookieDecline: 'رفض',
+  resetPasswordHeading: 'إعادة تعيين كلمة المرور',
+  otpVerificationHeading: 'التحقق من رقم الجوال',
+  newPasswordHeading: 'إنشاء كلمة مرور جديدة',
+  invalidCredentials: 'المعلومات المدخلة غير صحيحة، يرجى التأكد منها والمحاولة مرة أخرى',
+  unregisteredPhone: 'رقم الجوال المدخل غير مسجل',
+  incorrectOtp: 'الرمز المُدخل غير صحيح',
+  passwordTooShort: 'يجب أن تتكون كلمة المرور من 6 خانات على الأقل',
+  logout: 'تسجيل الخروج',
+  headerGuestPrompt: 'إنشاء حساب / تسجيل الدخول',
+
+  contactUsPageTitle: 'تواصل معنا | مزاد من موتري',
+  contactUsHeading: 'تواصلك معنا يسعدنا',
+  contactUsNameLabel: 'الاسم',
+  contactUsEmailLabel: 'البريد الإلكتروني',
+  contactUsMobileLabel: 'رقم الجوال',
+  contactUsMessageLabel: 'الرسالة',
+  contactUsNamePlaceholder: 'أدخل الاسم',
+  contactUsEmailPlaceholder: 'أدخل البريد الإلكتروني',
+  contactUsMobilePlaceholder: 'مثال: 0554235678',
+  contactUsMessagePlaceholder: 'أدخل رسالتك',
+  contactUsNameRequired: 'الاسم لا يمكن تركه فارغًا.',
+  contactUsEmailRequired: 'البريد الإلكتروني لا يمكن تركه فارغًا.',
+  contactUsMobileRequired: 'رقم الجوال لا يمكن تركه فارغًا.',
+  contactUsMessageRequired: 'المحتوى لا يمكن تركه فارغًا.',
+  contactUsEmailInvalid: 'البريد الإلكتروني غير صحيح',
+  contactUsMobileMustStartWith5: 'يجب أن يبدأ رقم الجوال بـ "5"',
+  contactUsMobileMustStartWith05: 'يجب أن يبدأ رقم الجوال بـ "05"',
+  contactUsMobileLength: 'يجب أن يكون رقم الجوال 10 أرقام فقط',
+  contactUsSent: 'تم إرسال رسالتك بنجاح!',
+};

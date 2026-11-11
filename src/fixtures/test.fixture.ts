@@ -1,18 +1,25 @@
 import fs from 'node:fs';
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, request as playwrightRequest, type Page } from '@playwright/test';
 import {
   type BackendAccount,
   type BackendRole,
   DEV_ROOT_MISSING_REASON,
   DEV_ROOT_SESSION_FILE,
+  ERP_MISSING_REASON,
   getDevRootAccount,
+  getErpAccount,
   getRoleAccount,
   roleMissingReason,
   roleSessionFile,
 } from '@config/credentials.config';
+import { envConfig } from '@config/env.config';
+import { ErpClient } from '@api/erp.client';
+import { MazadApiClient } from '@api/mazad-api.client';
 import { getTranslator, type Translator } from '@locales';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
 import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
+import { SuperAdminFormPage } from '@pages/backend/admins/super-admin-form.page';
+import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page';
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
@@ -27,8 +34,18 @@ import { ReportGridComponent } from '@pages/backend/components/report-grid.compo
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
+import { DealerFormPage } from '@pages/backend/customers/dealer-form.page';
+import { DealerListPage } from '@pages/backend/customers/dealer-list.page';
+import { DeletedUserListPage } from '@pages/backend/customers/deleted-user-list.page';
+import { QcListPage } from '@pages/backend/qc/qc-list.page';
+import { QcViewPage } from '@pages/backend/qc/qc-view.page';
+import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
+import { OperationListPage } from '@pages/backend/operations/operation-list.page';
+import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
+import { MazadVehicleViewPage } from '@pages/backend/mazad-vehicle-view.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
 import { SupplierVehicleReportPage } from '@pages/backend/reports/supplier-vehicle-report.page';
@@ -39,11 +56,18 @@ import { AdvertisementPage } from '@pages/backend/content/advertisement.page';
 import { ConfirmDeliverySurveyPage } from '@pages/backend/survey/confirm-delivery-survey.page';
 import { ContactUsPage } from '@pages/backend/content/contact-us.page';
 import { SupplierAuctionInfoPage } from '@pages/backend/suppliers/supplier-auction-info.page';
+import { SupplierCompanyFormPage } from '@pages/backend/suppliers/supplier-company-form.page';
+import { SupplierCompanyListPage } from '@pages/backend/suppliers/supplier-company-list.page';
 import { SupplierFormPage } from '@pages/backend/suppliers/supplier-form.page';
 import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
 import { SupplierMemberListPage } from '@pages/backend/suppliers/supplier-member-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
+import { TaxonomyFormPage } from '@pages/backend/taxonomy/taxonomy-form.page';
+import { TaxonomyListPage } from '@pages/backend/taxonomy/taxonomy-list.page';
+import { TaxonomyTypesPage } from '@pages/backend/taxonomy/taxonomy-types.page';
+import { TaxonomyViewPage } from '@pages/backend/taxonomy/taxonomy-view.page';
+import type { TaxonomyTermData } from '@test-data/taxonomy.data';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -78,6 +102,10 @@ export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
   reportGrid: ReportGridComponent;
+  operationListPage: OperationListPage;
+  operationFormPage: OperationFormPage;
+  mazadSoldListPage: MazadSoldListPage;
+  mazadVehicleViewPage: MazadVehicleViewPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -99,7 +127,11 @@ export interface BackendPages {
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
+  superAdminListPage: SuperAdminListPage;
+  superAdminFormPage: SuperAdminFormPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
+  supplierCompanyListPage: SupplierCompanyListPage;
+  supplierCompanyFormPage: SupplierCompanyFormPage;
   supplierMemberListPage: SupplierMemberListPage;
   supplierMemberFormPage: SupplierMemberFormPage;
   rolePermissionsPage: RolePermissionsPage;
@@ -108,6 +140,16 @@ export interface BackendPages {
   customerGroupFormPage: CustomerGroupFormPage;
   customerGroupViewPage: CustomerGroupViewPage;
   customerGroupMembersPage: CustomerGroupMembersPage;
+  individualListPage: IndividualListPage;
+  dealerListPage: DealerListPage;
+  dealerFormPage: DealerFormPage;
+  deletedUserListPage: DeletedUserListPage;
+  qcListPage: QcListPage;
+  qcViewPage: QcViewPage;
+  taxonomyTypesPage: TaxonomyTypesPage;
+  taxonomyListPage: TaxonomyListPage;
+  taxonomyFormPage: TaxonomyFormPage;
+  taxonomyViewPage: TaxonomyViewPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
@@ -115,6 +157,10 @@ function createBackendPages(page: Page): BackendPages {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
     reportGrid: new ReportGridComponent(page),
+    operationListPage: new OperationListPage(page),
+    operationFormPage: new OperationFormPage(page),
+    mazadSoldListPage: new MazadSoldListPage(page),
+    mazadVehicleViewPage: new MazadVehicleViewPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -136,7 +182,11 @@ function createBackendPages(page: Page): BackendPages {
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
+    superAdminListPage: new SuperAdminListPage(page),
+    superAdminFormPage: new SuperAdminFormPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
+    supplierCompanyListPage: new SupplierCompanyListPage(page),
+    supplierCompanyFormPage: new SupplierCompanyFormPage(page),
     supplierMemberListPage: new SupplierMemberListPage(page),
     supplierMemberFormPage: new SupplierMemberFormPage(page),
     rolePermissionsPage: new RolePermissionsPage(page),
@@ -145,6 +195,16 @@ function createBackendPages(page: Page): BackendPages {
     customerGroupFormPage: new CustomerGroupFormPage(page),
     customerGroupViewPage: new CustomerGroupViewPage(page),
     customerGroupMembersPage: new CustomerGroupMembersPage(page),
+    individualListPage: new IndividualListPage(page),
+    dealerListPage: new DealerListPage(page),
+    dealerFormPage: new DealerFormPage(page),
+    deletedUserListPage: new DeletedUserListPage(page),
+    qcListPage: new QcListPage(page),
+    qcViewPage: new QcViewPage(page),
+    taxonomyTypesPage: new TaxonomyTypesPage(page),
+    taxonomyListPage: new TaxonomyListPage(page),
+    taxonomyFormPage: new TaxonomyFormPage(page),
+    taxonomyViewPage: new TaxonomyViewPage(page),
   };
 }
 
@@ -165,6 +225,26 @@ interface MazadFixtures extends BackendPages {
    * group with one of those names is deleted through the list page.
    */
   customerGroupCleanup: { track: (name: string) => void };
+  /**
+   * Records the taxonomy terms a test creates (type key and Title En); after the test (passed or
+   * failed) every term of that type with that Title En is deleted through its list page.
+   */
+  taxonomyCleanup: { track: (type: string, titleEn: string) => void };
+  /**
+   * Creates a taxonomy term through the form, registers it for clean-up and returns its id.
+   * For tests that need an existing term; tests of the create flow itself use the form page.
+   */
+  createTaxonomyTerm: (type: string, data: TaxonomyTermData) => Promise<string>;
+  /**
+   * A back office session signed in as Dev Root, made read-only: after login every request
+   * that is not a GET (except logout) is aborted, so tests cannot change back office data.
+   * On failure it attaches a screenshot with account details masked.
+   */
+  backendSession: void;
+  /** Mazad customer API client (guest calls). */
+  mazadApi: MazadApiClient;
+  /** Read-only ERP client, signed in from .env. Skips the test when the ERP is not configured. */
+  erp: ErpClient;
 }
 
 export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures>({
@@ -207,6 +287,18 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   reportGrid: async ({ page }, use) => {
     await use(new ReportGridComponent(page));
   },
+  operationListPage: async ({ page }, use) => {
+    await use(new OperationListPage(page));
+  },
+  operationFormPage: async ({ page }, use) => {
+    await use(new OperationFormPage(page));
+  },
+  mazadSoldListPage: async ({ page }, use) => {
+    await use(new MazadSoldListPage(page));
+  },
+  mazadVehicleViewPage: async ({ page }, use) => {
+    await use(new MazadVehicleViewPage(page));
+  },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));
   },
@@ -240,8 +332,20 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   supplierViewPage: async ({ page }, use) => {
     await use(new SupplierViewPage(page));
   },
+  superAdminListPage: async ({ page }, use) => {
+    await use(new SuperAdminListPage(page));
+  },
+  superAdminFormPage: async ({ page }, use) => {
+    await use(new SuperAdminFormPage(page));
+  },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
+  },
+  supplierCompanyListPage: async ({ page }, use) => {
+    await use(new SupplierCompanyListPage(page));
+  },
+  supplierCompanyFormPage: async ({ page }, use) => {
+    await use(new SupplierCompanyFormPage(page));
   },
   supplierMemberListPage: async ({ page }, use) => {
     await use(new SupplierMemberListPage(page));
@@ -297,6 +401,52 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   customerGroupMembersPage: async ({ page }, use) => {
     await use(new CustomerGroupMembersPage(page));
   },
+  individualListPage: async ({ page }, use) => {
+    await use(new IndividualListPage(page));
+  },
+  dealerListPage: async ({ page }, use) => {
+    await use(new DealerListPage(page));
+  },
+  dealerFormPage: async ({ page }, use) => {
+    await use(new DealerFormPage(page));
+  },
+  deletedUserListPage: async ({ page }, use) => {
+    await use(new DeletedUserListPage(page));
+  },
+  qcListPage: async ({ page }, use) => {
+    await use(new QcListPage(page));
+  },
+  qcViewPage: async ({ page }, use) => {
+    await use(new QcViewPage(page));
+  },
+  taxonomyTypesPage: async ({ page }, use) => {
+    await use(new TaxonomyTypesPage(page));
+  },
+  taxonomyListPage: async ({ page }, use) => {
+    await use(new TaxonomyListPage(page));
+  },
+  taxonomyFormPage: async ({ page }, use) => {
+    await use(new TaxonomyFormPage(page));
+  },
+  taxonomyViewPage: async ({ page }, use) => {
+    await use(new TaxonomyViewPage(page));
+  },
+  taxonomyCleanup: async ({ taxonomyListPage }, use) => {
+    const terms = new Map<string, { type: string; titleEn: string }>();
+    await use({
+      track: (type, titleEn) => terms.set(`${type}|${titleEn.trim()}`, { type, titleEn }),
+    });
+    for (const { type, titleEn } of terms.values()) {
+      await taxonomyListPage.deleteTermsTitledEn(type, titleEn);
+    }
+  },
+  createTaxonomyTerm: async ({ taxonomyFormPage, taxonomyListPage, taxonomyCleanup }, use) => {
+    await use(async (type, data) => {
+      taxonomyCleanup.track(type, data.titleEn);
+      await taxonomyFormPage.createTerm(type, data);
+      return taxonomyListPage.idOfTermTitledEn(type, data.titleEn);
+    });
+  },
   customerGroupCleanup: async ({ customerGroupListPage }, use) => {
     const names = new Set<string>();
     await use({ track: (name) => names.add(name) });
@@ -312,6 +462,61 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
     testInfo.skip(!account, DEV_ROOT_MISSING_REASON);
     if (!account) return; // Not reached: skip() ends the test.
     await use(account);
+  },
+  backendSession: async ({ page, devRoot, mazadLoginPage, mazadDashboardPage }, use, testInfo) => {
+    await mazadLoginPage.goto();
+    await mazadLoginPage.loginAs(devRoot);
+    await mazadDashboardPage.userMenuToggle.waitFor();
+
+    await page.route('**/*', async (route) => {
+      const req = route.request();
+      const allowed = req.method() === 'GET' || req.url().includes('/authentication/logout');
+      await (allowed ? route.fallback() : route.abort('blockedbyclient'));
+    });
+
+    await use();
+
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const screenshot = await page
+        .screenshot({
+          fullPage: false,
+          mask: [...mazadLoginPage.sensitiveAreas(), ...mazadDashboardPage.sensitiveAreas()],
+        })
+        .catch(() => null);
+      if (screenshot) {
+        await testInfo.attach('screenshot (account details masked)', {
+          body: screenshot,
+          contentType: 'image/png',
+        });
+      }
+    }
+    // Log out from the dashboard, within a fixed budget so teardown never eats the test timeout.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await Promise.race([
+      (async () => {
+        await mazadDashboardPage.goto();
+        await mazadDashboardPage.logout();
+        await page.waitForURL(/\/authentication\/login/);
+      })(),
+      new Promise((resolve) => setTimeout(resolve, 20_000)),
+    ]).catch(() => undefined);
+  },
+  mazadApi: async ({ request }, use) => {
+    await use(new MazadApiClient(request));
+  },
+  // eslint-disable-next-line no-empty-pattern
+  erp: async ({}, use, testInfo) => {
+    const account = getErpAccount();
+    testInfo.skip(!envConfig.erpURL, `No erpURL configured for environment "${envConfig.name}".`);
+    testInfo.skip(!account, ERP_MISSING_REASON);
+    if (!account || !envConfig.erpURL) return; // Not reached: skip() ends the test.
+
+    const context = await playwrightRequest.newContext({ baseURL: envConfig.erpURL });
+    const client = new ErpClient(context);
+    await client.login(account);
+    await use(client);
+    await client.logout();
+    await context.dispose();
   },
   maskedFailureScreenshot: [
     async ({ page, screenshot }, use, testInfo) => {

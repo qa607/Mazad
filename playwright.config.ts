@@ -11,8 +11,21 @@ process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
 
 /** Mazad Backend (back office) specs. The Backend has no localization. */
 const BACKEND_SPECS = '**/backend/**/*.spec.ts';
+/** Cross-system specs (back office, app API, ERP). Not tied to a UI language. */
+const INTEGRATION_SPECS = '**/integration/**/*.spec.ts';
+/** Native app specs, driven through Appium; the app language is switched inside the specs. */
+const MOBILE_SPECS = '**/mobile/**/*.spec.ts';
 /** Signs in once per run and saves the session (see config/credentials.config.ts). */
 const BACKEND_SETUP = '**/backend/**/*.setup.ts';
+/**
+ * Website specs that also check the back office (tests/frontend): every language on Desktop
+ * Chrome and on a phone (Pixel 7), after backend-setup has saved the Dev Root session.
+ */
+const FRONTEND_SPECS = '**/frontend/**/*.spec.ts';
+const FRONTEND_DEVICES = {
+  desktop: { device: devices['Desktop Chrome'], grepInvert: /@mobile-only/ },
+  mobile: { device: devices['Pixel 7'], grepInvert: /@desktop-only/ },
+} as const;
 
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
@@ -54,13 +67,27 @@ export default defineConfig<LanguageOptions>({
     // Customer website: one project per language, so every spec runs in English and in Arabic.
     ...(Object.keys(LANGUAGES) as Language[]).map((language) => ({
       name: language,
-      testIgnore: BACKEND_SPECS,
+      testIgnore: [BACKEND_SPECS, INTEGRATION_SPECS, MOBILE_SPECS, FRONTEND_SPECS],
       use: {
         ...devices['Desktop Chrome'],
         language,
         locale: LANGUAGES[language].locale,
       },
     })),
+    // Website + back office: frontend-<language>-<desktop|mobile>.
+    ...(Object.keys(LANGUAGES) as Language[]).flatMap((language) =>
+      (Object.keys(FRONTEND_DEVICES) as (keyof typeof FRONTEND_DEVICES)[]).map((kind) => ({
+        name: `frontend-${language}-${kind}`,
+        testMatch: FRONTEND_SPECS,
+        dependencies: ['backend-setup'],
+        grepInvert: FRONTEND_DEVICES[kind].grepInvert,
+        use: {
+          ...FRONTEND_DEVICES[kind].device,
+          language,
+          locale: LANGUAGES[language].locale,
+        },
+      })),
+    ),
     // Back office: signs in as Dev Root once per run; signed-in specs reuse that session.
     {
       name: 'backend-setup',
@@ -73,6 +100,18 @@ export default defineConfig<LanguageOptions>({
       testMatch: BACKEND_SPECS,
       dependencies: ['backend-setup'],
       use: { ...devices['Desktop Chrome'] },
+    },
+    // Back office + app API + ERP checks of the same records.
+    {
+      name: 'integration',
+      testMatch: INTEGRATION_SPECS,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Mazad Android app on a device/emulator through Appium (no browser is launched).
+    {
+      name: 'android',
+      testMatch: MOBILE_SPECS,
+      timeout: 120_000,
     },
   ],
 });

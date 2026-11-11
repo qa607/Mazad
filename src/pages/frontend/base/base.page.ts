@@ -16,21 +16,32 @@ export abstract class BasePage {
     this.t = getTranslator(language);
   }
 
-  /** Navigates to a path relative to the environment baseURL, in the active language. */
+  /**
+   * Navigates to a path relative to the environment baseURL, in the active language.
+   * Mazad's website switches language by URL prefix only (confirmed on staging: "/login"
+   * alone 404s, "/en/login" and "/ar/login" both serve the page in that language, with no
+   * redirect between them) — there is no cookie, header or UI toggle to set instead.
+   */
   protected async open(path: string): Promise<void> {
-    await this.page.goto(path);
-    await this.applyLanguage();
+    await this.page.goto(this.localizedPath(path));
   }
 
   /**
-   * PLACEHOLDER: how Mazad switches language (URL prefix, subdomain, cookie/localStorage,
-   * or UI toggle) is not confirmed yet. Implement it here once the application is inspected;
-   * `open()` may need to change too, e.g. to prefix the path or set a cookie before goto.
+   * Makes the current page show in this page object's language: when the URL carries another
+   * language prefix (or none), the same path is reopened with the right one. Does nothing
+   * when the page is already in the language.
    */
-  private applyLanguage(): Promise<void> {
-    throw new Error(
-      `Language switching is not implemented yet (requested "${this.language}"). ` +
-        'Implement BasePage.applyLanguage() once the Mazad language mechanism is confirmed.',
-    );
+  async applyLanguage(): Promise<void> {
+    const url = new URL(this.page.url());
+    const [first, ...rest] = url.pathname.split('/').filter(Boolean);
+    if (first === this.language) return;
+    const path = first === 'en' || first === 'ar' ? rest : [first, ...rest].filter(Boolean);
+    const trailing = url.pathname.endsWith('/') ? '/' : '';
+    await this.open(`/${path.join('/')}${path.length ? trailing : ''}${url.search}`);
+  }
+
+  /** "/contact-us/" → "/ar/contact-us/" for the Arabic page object. */
+  protected localizedPath(path: string): string {
+    return `/${this.language}${path.startsWith('/') ? path : `/${path}`}`;
   }
 }

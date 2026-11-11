@@ -35,6 +35,7 @@ export interface ContactUsRow {
  */
 export class ContactUsPage extends BackendListPage {
   static readonly path = '/backend/contactUs/contact-us/index';
+  static readonly viewPath = '/backend/contactUs/contact-us/view';
   private static readonly form = 'ContactUsSearch';
 
   // Search form
@@ -72,6 +73,19 @@ export class ContactUsPage extends BackendListPage {
 
     this.detailView = page.locator('.detail-view');
     this.detailLabels = this.detailView.locator('th');
+  }
+
+  /** Opens a message's View page (/backend/contactUs/contact-us/view?id=N) in this tab. */
+  async gotoView(id: string): Promise<void> {
+    await this.page.goto(`${ContactUsPage.viewPath}?id=${id}`);
+  }
+
+  /** A value on the View page, by its row label ("Message", "Email", ...). */
+  viewValue(label: string): Locator {
+    return this.detailView
+      .locator('tr')
+      .filter({ has: this.page.locator('th', { hasText: new RegExp(`^\\s*${label}\\s*$`) }) })
+      .locator('td');
   }
 
   async gotoType(type: ContactType): Promise<void> {

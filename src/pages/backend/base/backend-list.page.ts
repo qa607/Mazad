@@ -52,6 +52,8 @@ export abstract class BackendListPage extends BackendPage {
     gridId: string,
     /** Selector of the search form, when it cannot be found by its action URL. */
     searchFormSelector = `form[action="${listPath}"]`,
+    /** Selector of the Reset link inside the search form, when its href is not the list path. */
+    resetSelector = `a[href="${listPath}"]`,
   ) {
     super(page);
     this.pageHeading = page.locator('.app-page-title .page-title-head');
@@ -61,7 +63,7 @@ export abstract class BackendListPage extends BackendPage {
 
     this.searchForm = page.locator(searchFormSelector);
     this.searchButton = this.searchForm.locator('button[type="submit"]');
-    this.resetButton = this.searchForm.locator(`a[href="${listPath}"]`);
+    this.resetButton = this.searchForm.locator(resetSelector);
 
     this.grid = page.locator(`#${gridId}`);
     this.summary = this.grid.locator('.summary');

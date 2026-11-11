@@ -45,7 +45,7 @@ Always import through the aliases, never with long relative paths.
   component object, not copied between pages.
 - One class per file, named `<feature>.page.ts` / `<Feature>Page`, in the folder of its feature
   (`src/pages/backend/customer-group/customer-group-list.page.ts`). Backend feature folders:
-  `auth`, `dashboard`, `auctions`, `suppliers`, `access`, `customer-group`, `reports`,
+  `auth`, `dashboard`, `auctions`, `suppliers`, `access`, `customer-group`, `taxonomy`, `reports`,
   `request-cancellation`, `content`, `survey`.
 
 **Fixtures (`src/fixtures/**`)**
