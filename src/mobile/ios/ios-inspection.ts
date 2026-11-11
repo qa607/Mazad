@@ -65,7 +65,13 @@ export const NOT_INSPECTED_SELECTORS: Record<string, string> = {
   'newPassword.passwordInput': 'New-password step: reachable only after a real OTP (not approved).',
   'newPassword.saveAndLoginButton':
     'New-password step: reachable only after a real OTP (not approved).',
+  'contactForm.sendButton':
+    'Contact Form Send: a Button with no accessible name or label (inspected 2026-11-11); it cannot be proposed until the iOS team adds an id.',
 };
+
+/** Help Center and Contact Form text: observed on the device in both languages (not by this first inspection). */
+const CONTACT_US_OBSERVED =
+  'Help Center / Contact Form: observed on the device 2026-11-11 by the Contact Us inspection (not part of this first inspection).';
 
 /** App text keys the guest inspection cannot see, and why (the rest are checked on screen). */
 export const NOT_INSPECTED_TEXTS: Record<string, string> = {
@@ -135,6 +141,20 @@ export const NOT_INSPECTED_TEXTS: Record<string, string> = {
   passwordTooShort: 'New-password step (needs a real OTP).',
   otpVerificationHeading: 'OTP step (needs an OTP request).',
   newPasswordHeading: 'New-password step (needs a real OTP).',
+  contactHelpCenter: CONTACT_US_OBSERVED,
+  contactCategory: CONTACT_US_OBSERVED,
+  contactCantFindAnswer: CONTACT_US_OBSERVED,
+  contactUsLink: CONTACT_US_OBSERVED,
+  contactFormTitle: CONTACT_US_OBSERVED,
+  contactIntro: CONTACT_US_OBSERVED,
+  contactNameLabel: CONTACT_US_OBSERVED,
+  contactEmailLabel: CONTACT_US_OBSERVED,
+  contactMobileLabel: CONTACT_US_OBSERVED,
+  contactMessageLabel: CONTACT_US_OBSERVED,
+  contactNamePlaceholder: CONTACT_US_OBSERVED,
+  contactEmailPlaceholder: CONTACT_US_OBSERVED,
+  contactMobilePlaceholder: CONTACT_US_OBSERVED,
+  contactMessagePlaceholder: CONTACT_US_OBSERVED,
 };
 
 /** The app text each guest screen is expected to show (checked on screen by the inspection). */

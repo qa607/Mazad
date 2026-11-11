@@ -154,8 +154,13 @@ test.describe('iOS Forgot Password guards: what each step may call (selfcheck)',
   });
 
   test('the narrow gate lists exactly the reviewed guest titles, the phone tests appended at the end', () => {
-    expect(GUEST_FORM_TEST_TITLES).toHaveLength(22);
-    expect(GUEST_FORM_TEST_TITLES.slice(16)).toEqual([
+    expect(GUEST_FORM_TEST_TITLES).toHaveLength(25);
+    expect(GUEST_FORM_TEST_TITLES.slice(22)).toEqual([
+      'Help Center opens the Contact Form with its fields and labels',
+      'Contact Form Name keeps letters only',
+      'Contact Form Mobile Number ignores letters and stops at 10 digits',
+    ]);
+    expect(GUEST_FORM_TEST_TITLES.slice(16, 22)).toEqual([
       'Letters and Arabic-Indic digits are not accepted in the phone number',
       'Non-digit characters typed into the phone number are dropped',
       'The phone number is limited in length',

@@ -463,6 +463,7 @@ test.describe('iOS typed test categories and approval-switch documentation (self
       'tests-ios/forgot-password.spec.ts',
       'tests-ios/dealer.spec.ts',
       'tests-ios/registration.spec.ts',
+      'tests-ios/contact-us.spec.ts',
     ]) {
       const source = stripComments(read(file));
       // Every test.fixme / test.skip with a title, and every Individual placeholder, has an annotation.
