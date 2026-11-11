@@ -47,6 +47,7 @@
     "ios:dealer-config": "cross-env IOS_ACCOUNT_REPORT=true IOS_DEALER_CONFIG=true playwright test -c playwright.ios.config.ts --project=ios-account-report tests-ios/ios-dealer-config.report.ts"
   },
   "devDependencies": {
+    "@e965/xlsx": "0.20.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",

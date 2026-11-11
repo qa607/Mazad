@@ -26,6 +26,8 @@ import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page'
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
+import { FailedInvoicePage } from '@pages/backend/invoice/failed-invoice.page';
+import { PricingUpdatePage } from '@pages/backend/vehicle/pricing-update.page';
 import { LivePage } from '@pages/backend/auctions/live.page';
 import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
@@ -121,6 +123,8 @@ export interface BackendPages {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  failedInvoicePage: FailedInvoicePage;
+  pricingUpdatePage: PricingUpdatePage;
   waitingApprovalPage: WaitingApprovalPage;
   auctionClosedReportPage: AuctionClosedReportPage;
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
@@ -180,6 +184,8 @@ function createBackendPages(page: Page): BackendPages {
     awaitingPage: new AwaitingPage(page),
     livePage: new LivePage(page),
     failedPage: new FailedPage(page),
+    failedInvoicePage: new FailedInvoicePage(page),
+    pricingUpdatePage: new PricingUpdatePage(page),
     waitingApprovalPage: new WaitingApprovalPage(page),
     auctionClosedReportPage: new AuctionClosedReportPage(page),
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
@@ -359,6 +365,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   failedPage: async ({ page }, use) => {
     await use(new FailedPage(page));
+  },
+  failedInvoicePage: async ({ page }, use) => {
+    await use(new FailedInvoicePage(page));
+  },
+  pricingUpdatePage: async ({ page }, use) => {
+    await use(new PricingUpdatePage(page));
   },
   supplierListPage: async ({ page }, use) => {
     await use(new SupplierListPage(page));
