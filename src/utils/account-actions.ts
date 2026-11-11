@@ -27,6 +27,16 @@ export const PASSWORD_RESET_BLOCKED = blocked(
 /** Logs a shared test account out (successful-login flow; signing out a signed-in app). */
 export const LOGOUT_BLOCKED = blocked('MAZAD_ALLOW_LOGOUT', 'logging a shared test account out');
 
+/**
+ * Sends a Contact Us message from the Android app to staging. Not an account change, but it
+ * creates a back-office record the app tests cannot guard the way the website's request guard
+ * does (app traffic is not intercepted), so it waits for the QA owner's sign-off.
+ */
+export const MOBILE_CONTACT_SUBMIT_BLOCKED = blocked(
+  'MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT',
+  'sending a Contact Us message from the Android app',
+);
+
 /** The first reason a test needing these operations is blocked, if any. */
 export function firstBlocked(...reasons: (string | undefined)[]): string | undefined {
   return reasons.find(Boolean);

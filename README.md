@@ -20,6 +20,7 @@ Before running tests, set `TEST_ENV` to an approved staging environment (current
 | `npm run test:backend`                | Back office only                                               |
 | `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)        |
 | `npm run test:android`                | Mazad Android app through Appium (see Mobile below)            |
+| `npm run test:android:backoffice`     | Android app sends checked in the back office (approval needed) |
 | `npm run test:headless`               | All tests, headless                                            |
 | `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)    |
 
@@ -145,6 +146,7 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - The app is started with `noReset`: nothing is reinstalled or cleared. The specs switch the app language themselves (More → Language).
 - Logged-in checks need a buyer account (`MAZAD_BUYER_PHONE`, `MAZAD_BUYER_PASSWORD`); without one they are skipped.
 - One device per run: the mobile spec runs in serial mode.
+- Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
 
 ### Emulator and NetBird
 

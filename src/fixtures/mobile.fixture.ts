@@ -12,6 +12,8 @@ import { type AndroidDriver, startAndroidSession } from '@mobile/android.session
 import { androidNetworkProblem } from '@mobile/network-preflight';
 import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
+import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
+import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
 import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
@@ -32,6 +34,8 @@ interface MobileFixtures {
   notificationsScreen: NotificationsScreen;
   loginScreen: MazadLoginScreen;
   accountScreen: MazadAccountScreen;
+  helpCenterScreen: HelpCenterScreen;
+  contactFormScreen: ContactFormScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
 }
@@ -93,6 +97,12 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   accountScreen: async ({ driver }, use) => {
     await use(new MazadAccountScreen(driver));
+  },
+  helpCenterScreen: async ({ driver }, use) => {
+    await use(new HelpCenterScreen(driver));
+  },
+  contactFormScreen: async ({ driver }, use) => {
+    await use(new ContactFormScreen(driver));
   },
   // eslint-disable-next-line no-empty-pattern
   buyer: async ({}, use, testInfo) => {
