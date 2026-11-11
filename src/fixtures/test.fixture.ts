@@ -9,10 +9,13 @@ import {
   getDevRootAccount,
   getErpAccount,
   getRoleAccount,
+  getSuperAdminAccount,
   roleMissingReason,
   roleSessionFile,
+  SUPER_ADMIN_MISSING_REASON,
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
+import { type FreshSignIn, signInFresh } from '@fixtures/backend-sign-in';
 import { ErpClient } from '@api/erp.client';
 import { MazadApiClient } from '@api/mazad-api.client';
 import { getTranslator, type Translator } from '@locales';
@@ -65,6 +68,10 @@ import { TaxonomyListPage } from '@pages/backend/taxonomy/taxonomy-list.page';
 import { TaxonomyTypesPage } from '@pages/backend/taxonomy/taxonomy-types.page';
 import { TaxonomyViewPage } from '@pages/backend/taxonomy/taxonomy-view.page';
 import type { TaxonomyTermData } from '@test-data/taxonomy.data';
+import { TrafficOfficeFormPage } from '@pages/backend/traffic-office/traffic-office-form.page';
+import { TrafficOfficeListPage } from '@pages/backend/traffic-office/traffic-office-list.page';
+import { TrafficOfficeViewPage } from '@pages/backend/traffic-office/traffic-office-view.page';
+import type { TrafficOfficeData } from '@test-data/traffic-office.data';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -144,6 +151,9 @@ export interface BackendPages {
   taxonomyListPage: TaxonomyListPage;
   taxonomyFormPage: TaxonomyFormPage;
   taxonomyViewPage: TaxonomyViewPage;
+  trafficOfficeListPage: TrafficOfficeListPage;
+  trafficOfficeFormPage: TrafficOfficeFormPage;
+  trafficOfficeViewPage: TrafficOfficeViewPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
@@ -196,6 +206,9 @@ function createBackendPages(page: Page): BackendPages {
     taxonomyListPage: new TaxonomyListPage(page),
     taxonomyFormPage: new TaxonomyFormPage(page),
     taxonomyViewPage: new TaxonomyViewPage(page),
+    trafficOfficeListPage: new TrafficOfficeListPage(page),
+    trafficOfficeFormPage: new TrafficOfficeFormPage(page),
+    trafficOfficeViewPage: new TrafficOfficeViewPage(page),
   };
 }
 
@@ -226,6 +239,31 @@ interface MazadFixtures extends BackendPages {
    * For tests that need an existing term; tests of the create flow itself use the form page.
    */
   createTaxonomyTerm: (type: string, data: TaxonomyTermData) => Promise<string>;
+  /**
+   * Records the Office Name En of each traffic office a test creates or renames to; after the
+   * test (passed or failed) every office with one of those names is deleted from its View page.
+   */
+  trafficOfficeCleanup: { track: (officeNameEn: string) => void };
+  /**
+   * Creates a traffic office through the form, registers it for clean-up and returns its id.
+   * For tests that need an existing office; tests of the create flow itself use the form page.
+   */
+  createTrafficOffice: (data: TrafficOfficeData) => Promise<string>;
+  /**
+   * Registers permissions a role must have once the test is over. After the test, passed or
+   * failed, each one is granted on the role's permission page (in this test's tab, which must
+   * be signed in as Dev Root), judged by the server's reply, so a test may take them away and
+   * the role still ends with all of them.
+   */
+  keepRolePermissionsGranted: (role: string, routes: readonly string[]) => void;
+  /**
+   * Signs the Super Admin account from .env in to the Backend in a new, signed-out browser
+   * context and returns the result (error null on success). Skips the test without the
+   * account. The context is closed after the test; on failure a screenshot with the login
+   * fields and account header masked is attached.
+   */
+  signInAsSuperAdmin: () => Promise<FreshSignIn>;
+  /**
    * A back office session signed in as Dev Root, made read-only: after login every request
    * that is not a GET (except logout) is aborted, so tests cannot change back office data.
    * On failure it attaches a screenshot with account details masked.
@@ -399,6 +437,7 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   deletedUserListPage: async ({ page }, use) => {
     await use(new DeletedUserListPage(page));
+  },
   taxonomyTypesPage: async ({ page }, use) => {
     await use(new TaxonomyTypesPage(page));
   },
@@ -410,6 +449,71 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   taxonomyViewPage: async ({ page }, use) => {
     await use(new TaxonomyViewPage(page));
+  },
+  trafficOfficeListPage: async ({ page }, use) => {
+    await use(new TrafficOfficeListPage(page));
+  },
+  trafficOfficeFormPage: async ({ page }, use) => {
+    await use(new TrafficOfficeFormPage(page));
+  },
+  trafficOfficeViewPage: async ({ page }, use) => {
+    await use(new TrafficOfficeViewPage(page));
+  },
+  trafficOfficeCleanup: async ({ trafficOfficeListPage, trafficOfficeViewPage }, use) => {
+    const names = new Set<string>();
+    await use({ track: (officeNameEn) => names.add(officeNameEn) });
+    for (const name of names) {
+      for (const id of await trafficOfficeListPage.idsOfOfficesNamedEn(name)) {
+        await trafficOfficeViewPage.deleteOffice(id);
+      }
+    }
+  },
+  createTrafficOffice: async ({ trafficOfficeFormPage, trafficOfficeCleanup }, use) => {
+    await use(async (data) => {
+      trafficOfficeCleanup.track(data.officeNameEn);
+      return trafficOfficeFormPage.createOffice(data);
+    });
+  },
+  keepRolePermissionsGranted: async ({ rolePermissionsPage }, use) => {
+    const kept = new Map<string, Set<string>>();
+    await use((role, routes) => {
+      const set = kept.get(role) ?? new Set<string>();
+      for (const route of routes) set.add(route);
+      kept.set(role, set);
+    });
+    for (const [role, routes] of kept) {
+      await rolePermissionsPage.gotoPermissions(role);
+      for (const route of routes) await rolePermissionsPage.setPermission(route, true);
+    }
+  },
+  signInAsSuperAdmin: async ({ browser, pagesOn }, use, testInfo) => {
+    const account = getSuperAdminAccount();
+    testInfo.skip(!account, SUPER_ADMIN_MISSING_REASON);
+    if (!account) return; // Not reached: skip() ends the test.
+    const opened: FreshSignIn[] = [];
+    await use(async () => {
+      const signIn = await signInFresh(browser, pagesOn, account.phone, account.password);
+      opened.push(signIn);
+      return signIn;
+    });
+    for (const { tab, context } of opened) {
+      if (testInfo.status !== testInfo.expectedStatus) {
+        const { mazadLoginPage, mazadDashboardPage } = pagesOn(tab);
+        const image = await tab
+          .screenshot({
+            fullPage: true,
+            mask: [...mazadLoginPage.sensitiveAreas(), ...mazadDashboardPage.sensitiveAreas()],
+          })
+          .catch(() => null);
+        if (image) {
+          await testInfo.attach('Super Admin screenshot (account details masked)', {
+            body: image,
+            contentType: 'image/png',
+          });
+        }
+      }
+      await context.close();
+    }
   },
   taxonomyCleanup: async ({ taxonomyListPage }, use) => {
     const terms = new Map<string, { type: string; titleEn: string }>();
