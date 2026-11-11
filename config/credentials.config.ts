@@ -210,6 +210,19 @@ export function roleMissingReason(role: BackendRole): string {
   return `${label} account is not set: add ${env}_PHONE and ${env}_PASSWORD to the local .env file.`;
 }
 
+export const QC_MISSING_REASON =
+  'QC account is not set: add QC_PHONE and QC_PASSWORD to the local .env file.';
+
+/**
+ * A staging QC (quality control) account, used to check that QC accounts cannot sign in to the
+ * Backend. Null when it is not configured in .env.
+ */
+export function getQcAccount(): BackendAccount | null {
+  const phone = localEnv.QC_PHONE?.trim();
+  const password = localEnv.QC_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
 export const SUPPLIER_MISSING_REASON =
   'Supplier account is not set: add SUPPLIER_PHONE and SUPPLIER_PASSWORD to the local .env file.';
 

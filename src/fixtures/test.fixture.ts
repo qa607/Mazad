@@ -36,6 +36,8 @@ import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer
 import { DealerFormPage } from '@pages/backend/customers/dealer-form.page';
 import { DealerListPage } from '@pages/backend/customers/dealer-list.page';
 import { DeletedUserListPage } from '@pages/backend/customers/deleted-user-list.page';
+import { QcListPage } from '@pages/backend/qc/qc-list.page';
+import { QcViewPage } from '@pages/backend/qc/qc-view.page';
 import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
@@ -140,6 +142,8 @@ export interface BackendPages {
   dealerListPage: DealerListPage;
   dealerFormPage: DealerFormPage;
   deletedUserListPage: DeletedUserListPage;
+  qcListPage: QcListPage;
+  qcViewPage: QcViewPage;
   taxonomyTypesPage: TaxonomyTypesPage;
   taxonomyListPage: TaxonomyListPage;
   taxonomyFormPage: TaxonomyFormPage;
@@ -192,6 +196,8 @@ function createBackendPages(page: Page): BackendPages {
     dealerListPage: new DealerListPage(page),
     dealerFormPage: new DealerFormPage(page),
     deletedUserListPage: new DeletedUserListPage(page),
+    qcListPage: new QcListPage(page),
+    qcViewPage: new QcViewPage(page),
     taxonomyTypesPage: new TaxonomyTypesPage(page),
     taxonomyListPage: new TaxonomyListPage(page),
     taxonomyFormPage: new TaxonomyFormPage(page),
@@ -400,6 +406,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   deletedUserListPage: async ({ page }, use) => {
     await use(new DeletedUserListPage(page));
+  },
+  qcListPage: async ({ page }, use) => {
+    await use(new QcListPage(page));
+  },
+  qcViewPage: async ({ page }, use) => {
+    await use(new QcViewPage(page));
   },
   taxonomyTypesPage: async ({ page }, use) => {
     await use(new TaxonomyTypesPage(page));
