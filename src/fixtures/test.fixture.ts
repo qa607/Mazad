@@ -28,6 +28,10 @@ import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
 import { FailedInvoicePage } from '@pages/backend/invoice/failed-invoice.page';
 import { PricingUpdatePage } from '@pages/backend/vehicle/pricing-update.page';
+import { DeliveryCompanyFormPage } from '@pages/backend/delivery/delivery-company-form.page';
+import { DeliveryCompanyListPage } from '@pages/backend/delivery/delivery-company-list.page';
+import { DeliveryCompanyViewPage } from '@pages/backend/delivery/delivery-company-view.page';
+import { DeliveryTrackingPage } from '@pages/backend/delivery/delivery-tracking.page';
 import { LivePage } from '@pages/backend/auctions/live.page';
 import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
@@ -125,6 +129,10 @@ export interface BackendPages {
   failedPage: FailedPage;
   failedInvoicePage: FailedInvoicePage;
   pricingUpdatePage: PricingUpdatePage;
+  deliveryTrackingPage: DeliveryTrackingPage;
+  deliveryCompanyListPage: DeliveryCompanyListPage;
+  deliveryCompanyFormPage: DeliveryCompanyFormPage;
+  deliveryCompanyViewPage: DeliveryCompanyViewPage;
   waitingApprovalPage: WaitingApprovalPage;
   auctionClosedReportPage: AuctionClosedReportPage;
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
@@ -186,6 +194,10 @@ function createBackendPages(page: Page): BackendPages {
     failedPage: new FailedPage(page),
     failedInvoicePage: new FailedInvoicePage(page),
     pricingUpdatePage: new PricingUpdatePage(page),
+    deliveryTrackingPage: new DeliveryTrackingPage(page),
+    deliveryCompanyListPage: new DeliveryCompanyListPage(page),
+    deliveryCompanyFormPage: new DeliveryCompanyFormPage(page),
+    deliveryCompanyViewPage: new DeliveryCompanyViewPage(page),
     waitingApprovalPage: new WaitingApprovalPage(page),
     auctionClosedReportPage: new AuctionClosedReportPage(page),
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
@@ -371,6 +383,18 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   pricingUpdatePage: async ({ page }, use) => {
     await use(new PricingUpdatePage(page));
+  },
+  deliveryTrackingPage: async ({ page }, use) => {
+    await use(new DeliveryTrackingPage(page));
+  },
+  deliveryCompanyListPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyListPage(page));
+  },
+  deliveryCompanyFormPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyFormPage(page));
+  },
+  deliveryCompanyViewPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyViewPage(page));
   },
   supplierListPage: async ({ page }, use) => {
     await use(new SupplierListPage(page));
