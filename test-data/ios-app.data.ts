@@ -60,6 +60,35 @@ export function contactPlaceholders(text: IosContactUsText): Record<IosContactFi
   };
 }
 
+/**
+ * The More tab (guest), observed on the device 2026-11-11 (iPhone 11 Pro Max, build 8.3 (1491)), in
+ * both languages. Flat, more-prefixed keys (the coverage selfchecks read app text one level deep).
+ * The About Us and Terms pages carry the row's label as their title. "Change Environment" and
+ * "Rate us" are recorded to be CHECKED, never tapped.
+ */
+export interface IosMoreText {
+  moreTitle: string;
+  moreSettings: string;
+  moreLanguage: string;
+  moreSocialHeading: string;
+  moreImportantLinks: string;
+  moreAboutUs: string;
+  moreTerms: string;
+  morePrivacy: string;
+  moreRateUs: string;
+  moreChangeEnvironment: string;
+  moreBack: string;
+  moreVersionLabel: string;
+}
+
+/**
+ * The More tab's version line for an installed version. Arabic places the number first and wraps
+ * the word in Unicode first-strong isolates, exactly as the app shows it: "8.3 \u2068الإصدار\u2069".
+ */
+export function iosVersionLine(language: Language, version: string, label: string): string {
+  return language === 'ar' ? `${version} \u2068${label}\u2069` : `${label} ${version}`;
+}
+
 export interface IosAppText {
   tabs: { home: string; more: string };
   languageOption: string;
@@ -105,6 +134,7 @@ export interface IosAppText {
   favoritesGuestLogin: string;
   fingerprintPromptDismiss: string;
   contactUs: IosContactUsText;
+  more: IosMoreText;
   // Backend-driven text, identical on web and Android (confirmed), assumed shared by iOS.
   invalidCredentials: string;
   unregisteredPhone: string;
@@ -223,6 +253,37 @@ const OBSERVED_CONTACT_US: Record<Language, IosContactUsText> = {
   },
 };
 
+const OBSERVED_MORE: Record<Language, IosMoreText> = {
+  en: {
+    moreTitle: 'More',
+    moreSettings: 'Settings',
+    moreLanguage: 'Language',
+    moreSocialHeading: 'Follow us on Social Media',
+    moreImportantLinks: 'Important Links',
+    moreAboutUs: 'About Us',
+    moreTerms: 'Terms & Conditions',
+    morePrivacy: 'Privacy Policy',
+    moreRateUs: 'Rate us in the App Store',
+    moreChangeEnvironment: 'Change Environment',
+    moreBack: 'Back',
+    moreVersionLabel: 'Version',
+  },
+  ar: {
+    moreTitle: 'المزيد',
+    moreSettings: 'الإعدادات',
+    moreLanguage: 'اللغة',
+    moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+    moreImportantLinks: 'روابط مهمة',
+    moreAboutUs: 'من نحن',
+    moreTerms: 'الشروط و الأحكام',
+    morePrivacy: 'سياسة الخصوصية',
+    moreRateUs: 'قيّم التطبيق في المتجر',
+    moreChangeEnvironment: 'تغيير البيئة',
+    moreBack: 'عودة',
+    moreVersionLabel: 'الإصدار',
+  },
+};
+
 export function iosAppText(language: Language): IosAppText {
   const app = mobileAppText[language];
   const t = getTranslator(language);
@@ -246,6 +307,7 @@ export function iosAppText(language: Language): IosAppText {
     ...OBSERVED_GUEST_SCREENS[language],
     fingerprintPromptDismiss: app.loginFlow.fingerprintPromptDismiss,
     contactUs: OBSERVED_CONTACT_US[language],
+    more: OBSERVED_MORE[language],
     invalidCredentials: t('invalidCredentials'),
     unregisteredPhone: t('unregisteredPhone'),
     incorrectOtp: t('incorrectOtp'),
