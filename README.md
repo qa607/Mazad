@@ -146,6 +146,7 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - The app is started with `noReset`: nothing is reinstalled or cleared. The specs switch the app language themselves (More → Language).
 - Logged-in checks need a buyer account (`MAZAD_BUYER_PHONE`, `MAZAD_BUYER_PASSWORD`); without one they are skipped.
 - One device per run: the mobile spec runs in serial mode.
+- Before any session, the installed app build is read from the device and must have the selected environment's host compiled in (`src/mobile/android-backend-check.ts`); otherwise every Android test fails with that reason. The 8.2.2-stage build talks to `mazad-v3.motory.dev`, not stg-154, so it fails this check until a stg-154 build is installed.
 - Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
 
 ### Emulator and NetBird

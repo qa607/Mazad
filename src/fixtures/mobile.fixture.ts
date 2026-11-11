@@ -9,6 +9,7 @@ import { envConfig } from '@config/env.config';
 // instead of duplicating that lookup — the back office and the OTP are shared across platforms.
 import { test as base } from '@fixtures/website.fixture';
 import { type AndroidDriver, startAndroidSession } from '@mobile/android.session';
+import { androidBuildBackendProblem } from '@mobile/android-backend-check';
 import { androidNetworkProblem } from '@mobile/network-preflight';
 import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
@@ -22,6 +23,11 @@ import { NotificationsScreen } from '@mobile/screens/notifications.screen';
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
   androidNetworkProblem: string | undefined;
+  /**
+   * Why the installed build must not be used: its compiled-in backend is not the selected
+   * environment (src/mobile/android-backend-check.ts). Tests FAIL with it; no session is started.
+   */
+  androidBackendProblem: string | undefined;
   /** One Appium session per worker; null (and tests skipped) when Appium is not reachable. */
   androidDriver: AndroidDriver | null;
 }
@@ -58,10 +64,26 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-  androidDriver: [
+  androidBackendProblem: [
     async ({ androidNetworkProblem }, use) => {
-      // No session (and no app launch) when the device would hit the wrong endpoint.
-      if (androidNetworkProblem || !(await appiumReady(envConfig.appiumURL))) {
+      // Only meaningful once the device can reach the environment at all.
+      await use(
+        androidNetworkProblem
+          ? undefined
+          : await androidBuildBackendProblem(new URL(envConfig.baseURL).hostname),
+      );
+    },
+    { scope: 'worker', timeout: 180_000 },
+  ],
+  androidDriver: [
+    async ({ androidNetworkProblem, androidBackendProblem }, use) => {
+      // No session (and no app launch) when the device would hit the wrong endpoint, or the
+      // installed build talks to another environment.
+      if (
+        androidNetworkProblem ||
+        androidBackendProblem ||
+        !(await appiumReady(envConfig.appiumURL))
+      ) {
         await use(null);
         return;
       }
@@ -71,8 +93,14 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
     },
     { scope: 'worker', timeout: 180_000 },
   ],
-  driver: async ({ androidDriver, androidNetworkProblem }, use, testInfo) => {
+  driver: async (
+    { androidDriver, androidNetworkProblem, androidBackendProblem },
+    use,
+    testInfo,
+  ) => {
     testInfo.skip(Boolean(androidNetworkProblem), androidNetworkProblem);
+    // A wrong backend fails (not skips): results against another environment cannot be trusted.
+    if (androidBackendProblem) throw new Error(androidBackendProblem);
     testInfo.skip(
       !androidDriver,
       `Environment: Appium is not reachable at ${envConfig.appiumURL} (set APPIUM_URL, start Appium and the device).`,
