@@ -17,8 +17,6 @@ export const failedPool = {
   addTargetAuctionTitle: 'QA-AUTO Add Target',
   /** One vehicle per destructive scenario, by VIN (without the "#F<n>" mark). */
   vehicles: {
-    /** FL-INV-08: invoice upload. */
-    invoice: '',
     /** FL-RPR-05: re-pricing saved. */
     reprice: '',
     /** FL-CRE-05: Create Auction, then Back to upcoming. */
@@ -32,7 +30,7 @@ export const failedPool = {
   },
   /** Vehicles whose popups are opened and closed but never committed. */
   probes: {
-    /** Any failed vehicle: invoice, suspend and re-pricing negatives. */
+    /** Any failed vehicle: suspend and re-pricing negatives. */
     general: '',
     /** A failed vehicle with bids: Direct Sale popup and validation. */
     withBids: '',

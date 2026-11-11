@@ -11,10 +11,11 @@ Failed List tests now use records that already exist on staging:
   `tests/backend/failed-approved-transactions.spec.ts` with their records in
   `test-data/backend-failed-approved.data.ts`. Each one checks every identifier first and stops on a
   mismatch, runs once, in order, with no retries, and is never reversed by the suite.
-- The generic destructive tests in the other specs (`failed-invoice`, `failed-reprice`,
+- The generic destructive tests in the other specs (`failed-reprice`,
   `failed-create-auction`, `failed-add-to-auction`, `failed-suspend`, `failed-direct-sale`) still
   read the empty pool file `test-data/backend-failed-pool.data.ts`, so they skip. They can be pointed
-  at newly approved records the same way when more transactions are approved.
+  at newly approved records the same way when more transactions are approved. The real invoice
+  upload tests (FL-INV-05 to FL-INV-08) were removed from the suite entirely.
 - No suppliers or buyer accounts were created for this. One supplier, `QA-AUTO Failed Pool` (ID
   45961), and one imported vehicle (ID 22457, VIN `QAAUTO40651589700`) exist from the earlier
   approved steps and are not used by any test.

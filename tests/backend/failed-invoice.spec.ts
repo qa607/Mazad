@@ -1,16 +1,11 @@
 import { devRootSession, expect, test } from '@fixtures/test.fixture';
 import { failedInvoiceText, failedText, failedUrls } from '@test-data/backend-failed.data';
-import {
-  destructiveSkipReason,
-  failedPool,
-  probeSkipReason,
-} from '@test-data/backend-failed-pool.data';
-import { emptyInvoice, sizedInvoice, unsupportedInvoices, validInvoice } from '@utils/test-files';
+import { unsupportedInvoices, validInvoice } from '@utils/test-files';
 import { uniqueDigits } from '@utils/unique';
 
-// Upload Invoice from the Failed list, and the Failed Invoice list it feeds. The first group is
-// read-only: the popup is opened and files are only chosen, never submitted. The second group
-// really uploads to QA-AUTO pool vehicles, only after explicit approval.
+// Upload Invoice from the Failed list, and the Failed Invoice list it feeds. Read-only: the popup is
+// opened and files are only chosen, never submitted. Real invoice uploads are not part of the
+// automation scope.
 test.use(devRootSession);
 
 test.afterEach(async ({ page, mazadDashboardPage }, testInfo) => {
@@ -141,132 +136,5 @@ test.describe(
         },
       );
     }
-  },
-);
-
-test.describe(
-  'Backend - Failed List - Upload Invoice (real upload, QA-AUTO pool only)',
-  { tag: ['@regression', '@mutates'] },
-  () => {
-    // An upload cannot be undone and a retry could upload twice: never retried, one at a time.
-    test.describe.configure({ mode: 'default', retries: 0 });
-
-    test.beforeEach(() => {
-      test.skip(
-        process.env.FAILED_DESTRUCTIVE_APPROVED !== 'true',
-        'Needs FAILED_DESTRUCTIVE_APPROVED=true for this run.',
-      );
-    });
-
-    test(
-      'FL-INV-05 An empty PDF is refused and the vehicle stays in Failed',
-      { tag: ['@functional', '@negative'] },
-      async ({ failedPage, failedInvoicePage }) => {
-        const skip = probeSkipReason('general');
-        test.skip(!!skip, skip ?? '');
-        const vin = failedPool.probes.general;
-        await failedPage.gotoByVin(vin);
-        const row = failedPage.rows.first();
-        const itemId = await failedPage.rowId(row);
-
-        await failedPage.openUploadInvoice(row);
-        await failedPage.uploadInvoiceDialog.chooseFile(emptyInvoice(uniqueDigits(6)));
-        await failedPage.uploadInvoiceDialog.submit();
-
-        await expect(failedPage.uploadInvoiceDialog.dialog).toBeVisible();
-        await failedPage.gotoByVin(vin);
-        await expect(failedPage.row(itemId)).toHaveCount(1);
-        await failedInvoicePage.gotoByVin(vin);
-        await expect(failedInvoicePage.rows).toHaveCount(0);
-      },
-    );
-
-    test(
-      'FL-INV-06 A file far over any reasonable limit is refused and the vehicle stays in Failed',
-      { tag: ['@functional', '@negative'] },
-      async ({ failedPage, failedInvoicePage }) => {
-        const skip = probeSkipReason('general');
-        test.skip(!!skip, skip ?? '');
-        const vin = failedPool.probes.general;
-        await failedPage.gotoByVin(vin);
-        const row = failedPage.rows.first();
-        const itemId = await failedPage.rowId(row);
-
-        await failedPage.openUploadInvoice(row);
-        await failedPage.uploadInvoiceDialog.chooseFile(
-          sizedInvoice(uniqueDigits(6), 60 * 1024 * 1024),
-        );
-        await failedPage.uploadInvoiceDialog.submit();
-
-        await expect(failedPage.uploadInvoiceDialog.dialog).toBeVisible();
-        await failedPage.gotoByVin(vin);
-        await expect(failedPage.row(itemId)).toHaveCount(1);
-        await failedInvoicePage.gotoByVin(vin);
-        await expect(failedInvoicePage.rows).toHaveCount(0);
-      },
-    );
-
-    test(
-      'FL-INV-07 An upload failure keeps the vehicle in Failed',
-      { tag: ['@functional', '@negative'] },
-      async ({ page, failedPage }) => {
-        const skip = probeSkipReason('general');
-        test.skip(!!skip, skip ?? '');
-        const vin = failedPool.probes.general;
-        await failedPage.gotoByVin(vin);
-        const row = failedPage.rows.first();
-        const itemId = await failedPage.rowId(row);
-        // The request is stopped in the browser, so the server never receives it.
-        await page.route('**/ajax/upload-failed-invoice*', (route) => route.abort());
-
-        await failedPage.openUploadInvoice(row);
-        await failedPage.uploadInvoiceDialog.chooseFile(validInvoice('pdf', uniqueDigits(6)));
-        await failedPage.uploadInvoiceDialog.submit();
-
-        await expect(failedPage.uploadInvoiceDialog.dialog).toBeVisible();
-        await page.unroute('**/ajax/upload-failed-invoice*');
-        await failedPage.gotoByVin(vin);
-        await expect(failedPage.row(itemId)).toHaveCount(1);
-      },
-    );
-
-    test(
-      'FL-INV-08 An uploaded invoice moves the vehicle from Failed to the Failed Invoice list',
-      { tag: ['@functional'] },
-      async ({ failedPage, failedInvoicePage }, testInfo) => {
-        const reason = destructiveSkipReason(['invoice']);
-        test.skip(!!reason, reason ?? '');
-        const vin = failedPool.vehicles.invoice;
-
-        await failedPage.gotoByVin(vin);
-        const row = failedPage.rows.first();
-        await expect(row, `QA-AUTO vehicle ${vin} is in Failed`).toBeVisible();
-        const info = await failedPage.readRow(row);
-
-        await failedPage.openUploadInvoice(row);
-        await failedPage.uploadInvoiceDialog.chooseFile(validInvoice('pdf', uniqueDigits(6)));
-        await failedPage.uploadInvoiceDialog.submit();
-        await expect(failedPage.resultAlert).toBeVisible();
-        await failedPage.resultAlertOkButton.click();
-
-        // Source: gone from Failed, after a reload.
-        await failedPage.gotoByVin(vin);
-        await expect(failedPage.row(info.itemId)).toHaveCount(0);
-
-        // Destination: in Failed Invoice, with the vehicle's details. The Type shown there is
-        // recorded as found (no category is assumed).
-        await failedInvoicePage.gotoByVin(vin);
-        await expect(failedInvoicePage.rows).toHaveCount(1);
-        const [record] = await failedInvoicePage.readRows();
-        testInfo.annotations.push({
-          type: 'Failed Invoice Type observed',
-          description: record.Type,
-        });
-        expect(record['Vin Number']).toContain(vin);
-        expect(record['Item Title']).toBe(info.vehicleTitle);
-        expect(record['Supplier Name']).toBe(info.supplier);
-        await expect(failedInvoicePage.viewInvoiceLinks.first()).toBeVisible();
-      },
-    );
   },
 );

@@ -5,44 +5,52 @@ branch `test/failed-list` (nothing committed). No passwords, tokens or credentia
 
 ## 1. Final results
 
-Full run of all 10 Failed List specs together (`tests/backend/failed-*.spec.ts`, 2 workers, no
-retries, approved-transaction spec skipped because its approval flag is not set):
+Full run of all 12 Failed List specs together (`tests/backend/failed-*.spec.ts`, 2 workers, no
+retries, approved-transaction spec skipped because its approval flag is not set), after the four
+real invoice upload tests were removed from the suite:
 
 | Outcome                                                                           | Count |
 | --------------------------------------------------------------------------------- | ----- |
-| Passed (includes 3 expected failures for known defects and 6 sign-in setup steps) | 139   |
-| **Unexpected failures**                                                           | **2** |
-| Skipped                                                                           | 18    |
-| Total                                                                             | 159   |
+| Passed (includes 8 expected failures for known defects and 6 sign-in setup steps) | 201   |
+| **Unexpected failures**                                                           | **0** |
+| Skipped                                                                           | 14    |
+| Total                                                                             | 215   |
 
-The two unexpected failures are FL-FLT-09 and FL-FLT-10. Both timed out in their `beforeEach` page
-load (30 s) while the staging server was slow under two workers. They are **not** counted as passes.
-Run on their own they both passed (isolated result: 2 of 2 passed, plus the 6 setup steps). Earlier
-full runs on the same day had 0 or 1 such timeouts, each passing when re-run alone.
+Earlier full runs on the same day had page-load timeouts (30 s) on a slow staging server; each
+passed when re-run alone and none occurred in this run.
 
-Code checks: TypeScript: no errors. ESLint: 0 errors, 360 warnings (about 321 existing, about 34 in
-files from this work, mostly deliberate `test.skip` guards). Prettier: clean (`.vscode/` is not
-touched and not checked).
+Code checks: TypeScript: no errors. ESLint: 0 errors (warnings are mostly deliberate `test.skip`
+guards). Prettier: clean (`.vscode/` is not touched and not checked).
 
 ### Expected failures (known defects, kept as `test.fail()` with evidence)
 
-| Test      | Defect |
-| --------- | ------ |
-| FL-FLT-23 | DC-01  |
-| FL-SUS-04 | DC-05  |
-| FL-SUS-08 | DC-04  |
+| Test                                                             | Defect |
+| ---------------------------------------------------------------- | ------ |
+| FL-FLT-23                                                        | DC-01  |
+| FL-SUS-04                                                        | DC-05  |
+| FL-SUS-08                                                        | DC-04  |
+| FI-FLT-04                                                        | DC-07  |
+| FI-PRM-08 (Auction Team, Customer Support, Operation, Marketing) | DC-06  |
 
-### Skipped tests (18) and why
+### Skipped tests (14) and why
 
 | Tests                                              | Count | Reason                                                                                                                                      |
 | -------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1 to T6 in `failed-approved-transactions.spec.ts` | 6     | Real transactions, run only with `FAILED_DESTRUCTIVE_APPROVED=true`. They were run once on 2026-11-11 (section 2) and must not be repeated. |
 | FL-DIR-08, FL-DIR-09                               | 2     | Generic real Direct Sale tests; read the empty pool file                                                                                    |
-| FL-INV-05 to FL-INV-08                             | 4     | Generic real upload tests; same                                                                                                             |
 | FL-RPR-04, FL-RPR-05                               | 2     | Generic real re-pricing tests; same                                                                                                         |
 | FL-CRE-05                                          | 1     | Generic real Create Auction test; same                                                                                                      |
 | FL-ADD-04                                          | 1     | Generic real Add to Auction test; same                                                                                                      |
 | FL-SUS-05, FL-SUS-07                               | 2     | Generic real Suspend tests; same                                                                                                            |
+
+### Excluded from scope (not skipped)
+
+- **Real invoice upload scenarios.** The four generic tests FL-INV-05, FL-INV-06, FL-INV-07 and
+  FL-INV-08 (empty PDF, oversized file, upload failure, and a real upload moving a vehicle to the
+  Failed Invoice list) were removed from the suite on 2026-11-11 together with the helpers and pool
+  data only they used. They do not appear as skipped. The read-only upload checks stay: popup,
+  required file, invalid extensions and Close (FL-INV-00 to FL-INV-04, and FI-ACT-03 to FI-ACT-06).
+  The one real upload that was ever made is approved transaction T2 (section 2), run once.
 
 ## 2. Completed Backend transactions (all approved, run once, verified in the Backend)
 
@@ -108,6 +116,8 @@ be changed without separate approval.
   Backend only.
 - **FL-PRM-06 removed from scope.** The throwaway-role test would create and delete a QA role, so it
   is not part of the suite. No role is created, changed or deleted.
+- **Real invoice upload tests (FL-INV-05 to FL-INV-08) removed from scope**, not skipped: no real
+  invoice is uploaded, replaced or updated by the suite.
 - **Generic real-transaction specs** still read an empty pool file and skip. Real transactions were
   run through the approved-transactions spec on approved records only.
 - Staging is sometimes slow; page-load timeouts show up as isolated failures that pass when re-run.
@@ -117,3 +127,95 @@ be changed without separate approval.
   unverified (it would need submitting).
 - One pilot vehicle (ID 22457, VIN `QAAUTO40651589700`, supplier 45961) was imported earlier and is
   not used by any test.
+
+## 7. Failed Invoice list: functional and permission coverage (added 2026-11-11)
+
+Specs: `tests/backend/failed-invoice-list.spec.ts` (Dev Root) and
+`tests/backend/failed-invoice-permissions.spec.ts` (role accounts and Super Admin). Page object:
+`src/pages/backend/invoice/failed-invoice.page.ts`. Data: `test-data/backend-failed-invoice.data.ts`.
+Everything is read-only and uses the single invoice record from T2 (item 15137). Nothing is
+uploaded, replaced or updated.
+
+### Functionality found (staging)
+
+- Page `/backend/invoice/failed-invoice/index`: heading and breadcrumb "Failed Invoice", sidebar
+  link, 7 columns (ID, Type, Customer, Vin Number, Item Title, Supplier Name, Actions).
+- Filters: Supplier (offers only suppliers that have an invoice), Customer / highest bidder
+  (search-as-you-type), VIN and Item Title (text), Search and Reset. No toolbar and no export. No
+  page-size control. No Swagger or API documentation.
+- Row actions: **View Invoice** (opens the invoice file in a new tab) and **Update Supplier
+  Invoice** (opens the same "Upload Invoice" popup as the Failed list; it posts to the upload
+  endpoint with `list_name=failed_supplier_invoice`).
+
+### Results
+
+| Spec                                 | Tests | Passed | Expected failures    | Unexpected failures | Skipped |
+| ------------------------------------ | ----- | ------ | -------------------- | ------------------- | ------- |
+| `failed-invoice-list.spec.ts`        | 32    | 31     | 1 (FI-FLT-04, DC-07) | 0                   | 0       |
+| `failed-invoice-permissions.spec.ts` | 28    | 24     | 4 (FI-PRM-08, DC-06) | 0                   | 0       |
+
+Run together with `failed-invoice.spec.ts` (14 read-only upload and list tests) and
+`failed-permissions.spec.ts`: 118 tests (including 6 sign-in setup steps), 118 passed (5 of them
+expected failures), **0 skipped**, 0 unexpected failures. FL-INV-05 to FL-INV-08 are no longer in the
+suite.
+
+### Coverage
+
+- **List and data:** heading, breadcrumb, sidebar link, filters, 7 columns; the T2 row (ID, Type,
+  Customer, VIN, title, supplier, actions); summary matches the rows; empty state ("No results
+  found."); the same record after a refresh and after leaving and coming back.
+- **Filters:** VIN full, partial and no match; Item Title partial and no match; Supplier; Customer
+  (suggestions, picking one, no-results message); combined filters (finds the record, and a
+  mismatching title finds nothing); clearing one filter; Reset.
+- **Pagination:** with one page of records there is no pager, and `page` and `per-page` parameters
+  keep the page working with no repeated rows. This is single-record coverage only.
+- **View Invoice:** the link opens in a new tab and shows a PDF file; the address is served by the
+  Backend and redirects to a PDF. Only the file type is checked; the signed address, cookies and the
+  PDF contents are never read, logged or attached.
+- **Update Supplier Invoice (nothing submitted):** the popup opens for this invoice; submitting with
+  no file is refused ("Invoice cannot be blank.") and sends nothing; the extension message appears
+  for .txt, .exe, .docx, .gif, .svg and .pdf.exe; closing leaves the record unchanged.
+
+### Role and action permission matrix
+
+Observed behavior matched the configured permissions for every page and action.
+
+| Role               | List  | Sidebar | Row visible   | View Invoice     | Update Supplier Invoice              | Update form request      | File address by URL      |
+| ------------------ | ----- | ------- | ------------- | ---------------- | ------------------------------------ | ------------------------ | ------------------------ |
+| Super Admin (5556) | opens | yes     | yes           | shown, opens PDF | shown, popup opens                   | not checked (popup used) | not checked              |
+| Auction Supervisor | opens | yes     | yes           | shown, opens PDF | shown, popup opens                   | 200                      | 302 to the PDF (allowed) |
+| Auction Team       | 403   | no      | not reachable | not reachable    | not reachable (holds the permission) | 200                      | **302 (should be 403)**  |
+| Customer Support   | opens | yes     | yes           | **not shown**    | **not shown**                        | 403                      | **302 (should be 403)**  |
+| Operation          | 403   | no      | not reachable | not reachable    | not reachable                        | 403                      | **302 (should be 403)**  |
+| Marketing          | 403   | no      | not reachable | not reachable    | not reachable                        | 403                      | **302 (should be 403)**  |
+
+Auction Team holds only the upload permission, so it can request the update form but cannot reach the
+list that offers the action. No role, permission or other record was changed.
+
+### New defect candidates
+
+- **DC-06 (authorization).** The invoice file address (`/backend/image/view-file?url=...`) answers
+  302 to the stored PDF for any signed-in back-office user, including roles without
+  `view-failed-invoice` (Auction Team, Customer Support, Operation, Marketing). The authorization
+  expectation (403) is kept in FI-PRM-08, which fails as expected until fixed. Limits: the address is
+  only shown in the list to permitted roles, so using it requires knowing the file URL; signed-out
+  access was deliberately not tested; the Super Admin request to the file was not completed (a
+  network timeout reaching the storage service during an earlier probe), though Super Admin holds
+  the permission.
+- **DC-07 (filter).** The Item Title filter finds the invoice for "MG 5", "MG" and "2020" but not for
+  the title exactly as the grid shows it ("MG 5 2020"). FI-FLT-04 keeps the expectation and fails as
+  expected; FI-FLT-04b covers the working search (vehicle name without the year).
+
+### Not covered, and why
+
+- Multi-record behavior (a filter excluding other records, a supplier dropdown with several values)
+  and multi-page pagination (first, last, page-size changes, no duplicates across pages): the list
+  holds one invoice. More records would need more uploads, which were not approved.
+- **Update Supplier Invoice, real submit, replacement and server-side validation: intentionally not
+  submitted.** It changes data and needs approval for a specific record and scenario.
+- Export: none exists on this list (the separate "Failed" report has its own export permission).
+- Signed-out access to the invoice file.
+- Session note: while probing, a failed request printed part of two session cookies (one was
+  account 5556's) to the terminal. Nothing was saved. Account 5556 was signed out through the normal
+  logout flow; that clears the current session, and an old session cookie cannot be individually
+  revoked from the Backend UI.

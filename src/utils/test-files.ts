@@ -49,19 +49,3 @@ export function unsupportedInvoices(stamp: string): { name: string; file: TestFi
     make('pdf.exe', 'application/pdf', '%PDF-1.1'),
   ];
 }
-
-/** A file with an allowed extension and no content, which the server may refuse. */
-export function emptyInvoice(stamp: string): TestFile {
-  return {
-    name: `QA-AUTO-invoice-${stamp}.pdf`,
-    mimeType: 'application/pdf',
-    buffer: Buffer.alloc(0),
-  };
-}
-
-/** A file of a given size in bytes, for finding the upload limit. Starts like a PDF. */
-export function sizedInvoice(stamp: string, bytes: number): TestFile {
-  const buffer = Buffer.alloc(bytes, 0x20);
-  pdf.copy(buffer, 0, 0, Math.min(pdf.length, bytes));
-  return { name: `QA-AUTO-invoice-${stamp}-${bytes}.pdf`, mimeType: 'application/pdf', buffer };
-}
