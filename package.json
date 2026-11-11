@@ -18,6 +18,7 @@
     "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
     "test:taxonomy": "playwright test --project=backend tests/backend/taxonomy.spec.ts",
     "test:traffic-office": "playwright test --project=backend tests/backend/traffic-office.spec.ts",
+    "test:frontend": "playwright test --project=frontend-*",
     "emulator:start": "bash scripts/android-emulator.sh start",
     "emulator:check": "bash scripts/android-emulator.sh check",
     "ios:sim": "bash scripts/ios-sim.sh",

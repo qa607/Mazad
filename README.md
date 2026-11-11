@@ -54,6 +54,7 @@ Still unverified (do not assume they cannot change the app's backend): Firebase 
 | `npm run test:customer-group`                    | Run only the Customer Group specs (signs in first)                           |
 | `npm run test:taxonomy`                          | Run only the Taxonomy specs (signs in first)                                 |
 | `npm run test:traffic-office`                    | Run only the Traffic Office specs (signs in first)                           |
+| `npm run test:frontend`                          | Website + back office specs: EN/AR × Desktop/Pixel 7 (signs in first)        |
 
 JUnit XML is written to `reports/junit.xml` for CI.
 

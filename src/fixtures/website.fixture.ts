@@ -1,5 +1,6 @@
 import {
   DEV_ROOT_MISSING_REASON,
+  DEV_ROOT_SESSION_FILE,
   OTP_MISSING_REASON,
   getDevRootAccount,
   getOtpCode,
@@ -9,7 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { approvedOrigin } from '@config/staging-environments';
 import { envConfig } from '@config/env.config';
-import { test as base } from '@fixtures/test.fixture';
+import { type BackendPages, test as base } from '@fixtures/test.fixture';
+import { WebsiteContactUsPage } from '@pages/frontend/contact/contact-us.page';
 import { installGuestGuard, type NetworkEvent } from '../network/request-guard';
 import {
   activeWebRequests,
@@ -28,6 +30,15 @@ interface WebsiteWorkerFixtures {
 
 interface WebsiteFixtures {
   mazadWebsiteLoginPage: MazadWebsiteLoginPage;
+  websiteContactUsPage: WebsiteContactUsPage;
+  /**
+   * Back-office page objects on a second tab, signed in as Dev Root from the session saved by
+   * the backend-setup project. It is its own desktop browser context, outside the website
+   * request guard, so a website test can check what reached the back office. Skips the test
+   * without Dev Root credentials; on failure it attaches a screenshot with account details
+   * masked. Specs using it turn off trace and video (they would record the session).
+   */
+  devRootBackend: BackendPages;
   /** A dedicated Individual test account from the back office (name contains the test filter). */
   individualAccount: DirectoryAccount;
   /** A dedicated Dealer test account from the back office (name contains the test filter). */
@@ -148,6 +159,54 @@ export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
   },
   mazadWebsiteLoginPage: async ({ page, language }, use) => {
     await use(new MazadWebsiteLoginPage(page, language));
+  },
+  // Its specs turn the automatic screenshot off (see devRootBackend), so a failing test attaches
+  // one of the website tab here; the form only ever holds synthetic test values.
+  websiteContactUsPage: async ({ page, language, isMobile }, use, testInfo) => {
+    await use(new WebsiteContactUsPage(page, language, isMobile));
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const image = await page.screenshot({ fullPage: true }).catch(() => null);
+      if (image) {
+        await testInfo.attach('website screenshot', { body: image, contentType: 'image/png' });
+      }
+    }
+  },
+  devRootBackend: async ({ browser, pagesOn }, use, testInfo) => {
+    testInfo.skip(!getDevRootAccount(), DEV_ROOT_MISSING_REASON);
+    if (!fs.existsSync(DEV_ROOT_SESSION_FILE)) {
+      throw new Error(
+        'No saved Dev Root session: this project depends on "backend-setup", which signs in ' +
+          'first. Do not run it with --no-deps, and check the setup step passed.',
+      );
+    }
+    const context = await browser.newContext({
+      baseURL: envConfig.baseURL,
+      storageState: DEV_ROOT_SESSION_FILE,
+      timezoneId: 'Asia/Riyadh',
+    });
+    const tab = await context.newPage();
+    const pages = pagesOn(tab);
+
+    await use(pages);
+
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const image = await tab
+        .screenshot({
+          fullPage: true,
+          mask: [
+            ...pages.mazadLoginPage.sensitiveAreas(),
+            ...pages.mazadDashboardPage.sensitiveAreas(),
+          ],
+        })
+        .catch(() => null);
+      if (image) {
+        await testInfo.attach('back office screenshot (account details masked)', {
+          body: image,
+          contentType: 'image/png',
+        });
+      }
+    }
+    await context.close();
   },
   // eslint-disable-next-line no-empty-pattern
   otpCode: async ({}, use, testInfo) => {
