@@ -57,6 +57,9 @@ export function authorizeAccountAction(
     );
   }
   if (problem) throw new AccountActionNotAuthorized(`${what} refused: ${problem}`);
+  // Not 'registration-login': that kind logs in to the account its OWN run just registered and
+  // reset, with the password held in that same process - never the shared dealer's .env baseline
+  // this check protects (a password that might not be current for the SHARED account).
   if (auth.kind === 'login') requireBaselinePassword(auth, what, defaultContext);
 }
 

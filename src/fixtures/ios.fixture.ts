@@ -76,7 +76,12 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
     async ({}, use, workerInfo) => {
       await use(
         await iosRuntimeProblem(envConfig.appiumURL, {
-          forInspection: workerInfo.project.name === 'ios-inspect',
+          // The registration E2E journey's own screens (Individual Step 2, registration OTP,
+          // success) are not yet in the verified-text gate either: treated as inspection, same as
+          // ios-inspect, until they are investigated and the registration screen object is written.
+          forInspection:
+            workerInfo.project.name === 'ios-inspect' ||
+            workerInfo.project.name === 'ios-registration-e2e',
           // The functional project may run on the NARROW text gate; each test is then limited to
           // the guest display tests by textScopeGuard below (and by declaration in the specs).
           textScope: workerInfo.project.name === 'ios' ? GUEST_FORM_TEXT_SCOPE : undefined,

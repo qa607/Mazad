@@ -1,4 +1,5 @@
 import type { IosDriver } from '@mobile/ios/ios.session';
+import { parseIosSource } from '@mobile/ios/page-source';
 
 /**
  * Parent of iOS screen objects: element lookups and actions only, no assertions.
@@ -108,6 +109,11 @@ export abstract class IosScreen {
     return `-ios predicate string:type == "XCUIElementTypeStaticText" AND label == ${JSON.stringify(label)}`;
   }
 
+  /** Predicate matching a field of `type` (TextField or SecureTextField) with this exact placeholder. */
+  protected placeholderSelector(type: 'TextField' | 'SecureTextField', placeholder: string) {
+    return `-ios predicate string:type == "XCUIElementType${type}" AND placeholderValue == ${JSON.stringify(placeholder)}`;
+  }
+
   /**
    * The ONE element matching `selector`. Waits for a match to appear, then fails unless there is
    * exactly one: it never picks among several by order, position or `.first()`. A selector whose
@@ -144,10 +150,94 @@ export abstract class IosScreen {
     return this.driver.$(`-ios predicate string:label == ${t} OR value == ${t}`);
   }
 
-  /** Hides the software keyboard if it is shown. */
+  /**
+   * The ONE Button visibly containing a StaticText of exactly `label` (never clicked here). Scrolls
+   * the nearest scrollable ancestor until that text is visible first: dismissing the keyboard can
+   * spring a form back to the top, and a target further down would otherwise read as "not found".
+   */
+  private async buttonContainingText(label: string, what: string) {
+    await this.driver
+      .execute('mobile: scroll', {
+        predicateString: `type == "XCUIElementTypeStaticText" AND label == ${JSON.stringify(label)}`,
+        toVisible: true,
+      })
+      .catch(() => undefined);
+    const elements = parseIosSource(await this.driver.getPageSource());
+    const target = elements.find((e) => e.visible && e.type === 'StaticText' && e.label === label);
+    if (!target) throw new Error(`${what}: no visible text "${label}" found.`);
+    const candidates = elements.filter(
+      (e) =>
+        e.visible &&
+        e.type === 'Button' &&
+        e.x <= target.x &&
+        e.y <= target.y &&
+        e.x + e.width >= target.x + target.width &&
+        e.y + e.height >= target.y + target.height,
+    );
+    if (candidates.length !== 1) {
+      throw new Error(
+        `${what}: expected exactly 1 Button containing the "${label}" text, found ${candidates.length}. Not choosing one.`,
+      );
+    }
+    return candidates[0];
+  }
+
+  /** Whether the ONE Button containing this exact text is enabled right now (read-only, never taps). */
+  protected async buttonContainingTextEnabled(label: string, what: string): Promise<boolean> {
+    return (await this.buttonContainingText(label, what)).enabled;
+  }
+
+  protected async tapButtonContainingText(label: string, what: string): Promise<void> {
+    // A visible keyboard shifts the scrollable form (auto-scroll to keep the focused field
+    // visible), which would make a coordinate read now stale by the time of the tap below.
+    await this.hideKeyboard();
+    const button = await this.buttonContainingText(label, what);
+    await this.tapAtCenterOf(button);
+  }
+
+  /**
+   * Taps the center of an element's frame via a raw pointer action, instead of WebdriverIO's
+   * native element.click(). Observed necessary for the new-password Save/Login button (2026-11-11):
+   * a native .click() on it does not register (the screen never advances), while the identical
+   * coordinate-tap mechanism already used for Create Account does.
+   */
+  protected async tapAtCenterOf(frame: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }): Promise<void> {
+    await this.driver
+      .action('pointer')
+      .move({ x: Math.round(frame.x + frame.width / 2), y: Math.round(frame.y + frame.height / 2) })
+      .down()
+      .pause(50)
+      .up()
+      .perform();
+  }
+
+  /**
+   * Hides the software keyboard if it is shown. The default strategy fails on this app ("Did not
+   * know how to dismiss the keyboard", observed repeatedly, 2026-11-11; `mobile: performEditorAction`
+   * is also not implemented on this WDA version): best-effort only, so callers that must tap a
+   * control regardless of a lingering keyboard use a coordinate tap (tapAtCenterOf), not this.
+   */
   async hideKeyboard(): Promise<void> {
     if (await this.driver.isKeyboardShown().catch(() => false)) {
       await this.driver.hideKeyboard().catch(() => undefined);
     }
+  }
+
+  /**
+   * iOS's own native "Save Password?" Keychain prompt (OS-localized, not the app's own text;
+   * observed 2026-11-11 right after a password is submitted on the registration and new-password
+   * screens): dismisses it with "Not Now" when shown, a no-op otherwise. "Not Now" is the system's
+   * own English string; this is only ever reached by English-language runs.
+   */
+  async dismissNativeSavePasswordPrompt(): Promise<void> {
+    const notNow = this.driver.$(
+      '-ios predicate string:type == "XCUIElementTypeButton" AND label == "Not Now"',
+    );
+    if (await notNow.isExisting().catch(() => false)) await notNow.click();
   }
 }

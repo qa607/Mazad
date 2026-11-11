@@ -42,6 +42,7 @@ import { IosForgotPasswordScreen } from '../../src/mobile/ios/screens/forgot-pas
 import { IosLoginScreen } from '../../src/mobile/ios/screens/login.screen';
 import { IosNewPasswordScreen } from '../../src/mobile/ios/screens/new-password.screen';
 import { IosOtpScreen } from '../../src/mobile/ios/screens/otp.screen';
+import { IosRegistrationScreen } from '../../src/mobile/ios/screens/registration.screen';
 import { expect, test } from '../support/fixtures';
 import {
   completePolicy,
@@ -124,6 +125,17 @@ function fakeDriver() {
     isKeyboardShown: () => Promise.resolve(false),
     hideKeyboard: () => Promise.resolve(),
     pause: () => Promise.resolve(),
+    // Supports tapAtCenterOf's coordinate tap (new-password.screen.ts's Save/Login button).
+    action: () => {
+      const chain = {
+        move: () => chain,
+        down: () => chain,
+        up: () => chain,
+        pause: () => chain,
+        perform: () => Promise.resolve(void events.push('click pointer-action')),
+      };
+      return chain;
+    },
   };
   return { driver: driver as never, events };
 }
@@ -567,6 +579,9 @@ test.describe('iOS login authorization: no way to tap Log In unguarded (selfchec
       'src/mobile/ios/screens/forgot-password.screen.ts',
       'src/mobile/ios/screens/otp.screen.ts',
       'src/mobile/ios/screens/new-password.screen.ts',
+      // Selects one of the two unlabeled account-type buttons (local UI only: no submit button,
+      // no account action, needs no guard). Still a screen object only, never a spec.
+      'src/mobile/ios/screens/registration.screen.ts',
     ]);
     for (const dir of ['src', 'tests-ios', 'ui-tests', 'config']) {
       for (const file of fs
@@ -612,7 +627,13 @@ test.describe('iOS login authorization: no way to tap Log In unguarded (selfchec
     expect(taps('src/mobile/ios/screens/login.screen.ts', 'loginButtonElement')).toBe(1);
     expect(taps('src/mobile/ios/screens/forgot-password.screen.ts', 'sendButtonElement')).toBe(1);
     expect(taps('src/mobile/ios/screens/otp.screen.ts', 'verifyButtonElement')).toBe(1);
-    expect(taps('src/mobile/ios/screens/new-password.screen.ts', 'saveButtonElement')).toBe(1);
+    // new-password.screen.ts's Save/Login button is tapped by coordinate (tapAtCenterOf), not
+    // .click(): a native click on it was observed (2026-11-11) not to register at all.
+    const newPasswordScreen = stripComments(read('src/mobile/ios/screens/new-password.screen.ts'));
+    // Its own definition, the read-only inspection method, and the one submitting call site.
+    expect((newPasswordScreen.match(/saveButtonElement\(/g) ?? []).length).toBe(3);
+    expect(newPasswordScreen).not.toMatch(/saveButtonElement\([^)]*\)\)\.click\(\)/);
+    expect(newPasswordScreen).toContain('this.tapAtCenterOf(');
   });
 });
 
@@ -847,6 +868,54 @@ test.describe('iOS OTP request permit: single use, binding, expiry (selfcheck)',
     expect(method.indexOf('permit.consume(phone)')).toBeGreaterThan(0);
     expect(method.indexOf('permit.consume(phone)')).toBeLessThan(method.indexOf('setValue(phone)'));
     expect(method.indexOf('permit.consume(phone)')).toBeLessThan(method.indexOf('.click()'));
+  });
+
+  test('the registration journey: Create Account is reachable only through submitCreateAccount, which needs a valid permit', async () => {
+    await withDir(async (dir) => {
+      initializeLedger(dir);
+      const bad: unknown[] = [
+        undefined,
+        null,
+        {},
+        'permit',
+        5,
+        Object.create(OtpRequestPermit.prototype),
+      ];
+      for (const permit of bad) {
+        await expect(
+          new IosRegistrationScreen(fakeDriver().driver).submitCreateAccount(
+            'Create Account',
+            PHONE,
+            permit as never,
+          ),
+        ).rejects.toThrow();
+      }
+      const valid = issueOtpRequestPermit({
+        kind: 'registration-otp-request',
+        scenario: unique('registration'),
+        phone: PHONE,
+        target: 'unregistered',
+        deps: {
+          ctx: context(dir, { env: { ...ALL_ON, IOS_ALLOW_REGISTRATION_E2E_JOURNEY: 'true' } }),
+          ledgerDir: dir,
+          runId: unique('run'),
+          now: () => FIXTURE_NOW,
+        },
+      });
+      // A bad permit never reaches the tap: consumed-but-wrong-number is refused before any UI call,
+      // which this fake driver (no getPageSource) would otherwise throw on if reached.
+      expect(() => valid.consume(OTHER_PHONE)).toThrow(/another number/);
+      expect(valid.used).toBe(true);
+    });
+    // Nothing else taps Create Account: the only path is the guarded method (source level), and
+    // the permit is consumed BEFORE the tap (never after, never unconditionally).
+    const screen = stripComments(read('src/mobile/ios/screens/registration.screen.ts'));
+    const method = screen.slice(screen.indexOf('async submitCreateAccount('));
+    expect(method.indexOf('permit.consume(phone)')).toBeGreaterThan(0);
+    expect(method.indexOf('permit.consume(phone)')).toBeLessThan(
+      method.indexOf('tapButtonContainingText'),
+    );
+    expect(screen.match(/tapButtonContainingText\(createAccountLabel/g)).toHaveLength(1);
   });
 });
 
@@ -1349,6 +1418,57 @@ test.describe('iOS technical OTP limits follow the owner-reported rules (selfche
     // Suite limits, not policy facts.
     expect(stripComments(read('config/ios-account-policy.ts'))).not.toMatch(
       /maxRequestsWithoutValidOtp/,
+    );
+  });
+
+  test('the registration journey is exempt from the "without a valid OTP" count and its 24h window only; every other kind, and every other limit, still applies to it (selfcheck)', () => {
+    const three = [30, 20, 10].map((m) => request('r1', ago(m * MIN)));
+    // Unscoped (no kind passed) and every OTHER kind: still blocked, exactly as before.
+    expect(technicalLimitProblem(three, 'r2', 'a', NOW)).toMatch(/since the last valid OTP entry/);
+    for (const kind of [
+      'unregistered-otp-request',
+      'otp-flow-chain',
+      'otp-reset-chain',
+      'negative-chain',
+    ]) {
+      expect(technicalLimitProblem(three, 'r2', 'a', NOW, kind), kind).toMatch(
+        /since the last valid OTP entry/,
+      );
+    }
+    // The registration journey's own two kinds: the count/24h rule does not apply...
+    for (const kind of ['registration-otp-request', 'registration-password-reset']) {
+      expect(technicalLimitProblem(three, 'r2', 'a', NOW, kind), kind).toBeUndefined();
+    }
+    // ...but every other technical limit still does: the per-run cap...
+    const six = Array.from({ length: TECHNICAL_LIMITS.maxRequestsPerRun }, (_, i) =>
+      request('busy', ago((10 + i) * MIN)),
+    );
+    expect(technicalLimitProblem(six, 'busy', 'one-more', NOW, 'registration-otp-request')).toMatch(
+      /already made \d+ OTP-path requests/,
+    );
+    // ...the 60-second spacing...
+    expect(
+      technicalLimitProblem(
+        [request('r', ago(59_000))],
+        'r2',
+        'a',
+        NOW,
+        'registration-otp-request',
+      ),
+    ).toMatch(/less than 60 seconds ago/);
+    // ...and one request per scenario per run.
+    const again = request('same', ago(10 * MIN));
+    expect(
+      technicalLimitProblem([again], 'same', again.scenario, NOW, 'registration-otp-request'),
+    ).toMatch(/already made its OTP request/);
+    // This is this suite's own exemption only: the backend-recorded limit check (otp-permit.ts) is
+    // untouched, still refuses when the recorded maximum is reached, and the exemption changes
+    // nothing about config/ios-account-policy.ts.
+    expect(stripComments(read('config/ios-account-policy.ts'))).not.toMatch(
+      /registration-otp-request|registration-password-reset/,
+    );
+    expect(stripComments(read('src/mobile/ios/account/otp-permit.ts'))).toContain(
+      "return 'the recorded OTP limits (maximum requests, window, cooldown) are missing'",
     );
   });
 

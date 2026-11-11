@@ -20,7 +20,7 @@ import { iosStaticProblem } from '../../src/mobile/ios/ios-preflight';
 import { expect, test } from '../support/fixtures';
 
 /** Offline: staging-only environment selection and the iOS stored-backend check (no device). */
-const STG = 'https://stg-mazad-v3-154.motory.dev';
+const STG = 'https://stg-mazad-v3-224.motory.dev';
 const ERP = 'https://erp-stg-fixed.motory.com';
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -74,13 +74,13 @@ test.describe('Staging-only environments (selfcheck)', () => {
       expect(selectEnvironment({ TEST_ENV: 'stg-154', BASE_URL: ok }).baseURL, ok).toBe(STG);
     }
     for (const bad of [
-      'http://stg-mazad-v3-154.motory.dev',
+      'http://stg-mazad-v3-224.motory.dev',
       `${STG}:8443`,
       `${STG}/en`,
       `${STG}/?x=1`,
-      'https://user:pass@stg-mazad-v3-154.motory.dev',
-      'https://www.stg-mazad-v3-154.motory.dev',
-      'https://stg-mazad-v3-154.motory.dev.evil.invalid',
+      'https://user:pass@stg-mazad-v3-224.motory.dev',
+      'https://www.stg-mazad-v3-224.motory.dev',
+      'https://stg-mazad-v3-224.motory.dev.evil.invalid',
       'https://stg-mazad-v3-155.motory.dev',
       'https://10.152.0.2',
       'https://167772162',
@@ -90,7 +90,7 @@ test.describe('Staging-only environments (selfcheck)', () => {
       'https://motorymazad.com',
       'https://app-auctions.motory.com',
       'https://v3-auction-common.motory.com',
-      'ftp://stg-mazad-v3-154.motory.dev',
+      'ftp://stg-mazad-v3-224.motory.dev',
       'not a url',
     ]) {
       expect(() => selectEnvironment({ TEST_ENV: 'stg-154', BASE_URL: bad }), bad).toThrow();
@@ -223,7 +223,7 @@ test.describe('iOS build ↔ staging environment (selfcheck)', () => {
       undefined,
       '',
       'not a url',
-      'http://stg-mazad-v3-154.motory.dev',
+      'http://stg-mazad-v3-224.motory.dev',
       'https://mazad.motory.com',
       'https://stg-mazad-v3-155.motory.dev',
       `${STG}:8443`,
