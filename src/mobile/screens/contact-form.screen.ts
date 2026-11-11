@@ -99,20 +99,47 @@ export class ContactFormScreen extends MobileScreen {
     await button.click();
   }
 
+  /** Every visible text on screen right now (labels, messages, dialog text). */
+  async visibleTexts(): Promise<string[]> {
+    const xml = await this.driver.getPageSource();
+    return [...xml.matchAll(/\btext="([^"]+)"/g)].map((m) => m[1]);
+  }
+
+  /** A PNG of the screen (the form holds synthetic test values only). */
+  async screenshot(): Promise<Buffer> {
+    return Buffer.from(await this.driver.takeScreenshot(), 'base64');
+  }
+
   /**
    * Waits until a send has finished: the form has closed, or it is still open with the Name
    * box emptied. Throws when neither happens within the timeout (e.g. an error was shown).
+   * Also returns every text that appeared on screen meanwhile and for `settleMs` after, so a
+   * confirmation (dialog or message) can be recorded even when it is shown only briefly.
    */
-  async waitForSendOutcome(titleLabel: string, timeout = 30_000): Promise<SendOutcome> {
+  async waitForSendOutcome(
+    titleLabel: string,
+    timeout = 30_000,
+    settleMs = 3_000,
+  ): Promise<{ outcome: SendOutcome; textsSeen: string[] }> {
     let outcome: SendOutcome | undefined;
+    const seen = new Set<string>();
+    const collect = async () => {
+      for (const text of await this.visibleTexts().catch(() => [])) seen.add(text);
+    };
     await this.driver.waitUntil(
       async () => {
+        await collect();
         if (!(await this.title(titleLabel).isExisting())) outcome = 'closed';
         else if ((await this.value('name').catch(() => 'unreadable')) === '') outcome = 'cleared';
         return outcome !== undefined;
       },
       { timeout, interval: 500, timeoutMsg: 'The Contact Form neither closed nor cleared.' },
     );
-    return outcome!;
+    const end = Date.now() + settleMs;
+    while (Date.now() < end) {
+      await collect();
+      await this.driver.pause(500);
+    }
+    return { outcome: outcome!, textsSeen: [...seen] };
   }
 }

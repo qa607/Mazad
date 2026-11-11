@@ -2,6 +2,7 @@ import type { ContactFormField } from '@mobile/screens/contact-form.screen';
 import { testRecordPrefix } from '@test-data/backend-common.data';
 import { contactUsPhone } from '@test-data/contact-us-web.data';
 import type { Language } from '@typings';
+import type { FaqCategory } from '@typings/mazad';
 import { digitsAsLetters, uniqueDigits } from '@utils/unique';
 
 /**
@@ -20,8 +21,12 @@ import { digitsAsLetters, uniqueDigits } from '@utils/unique';
  *   checked by the app before sending.
  * - Mobile Number has a fixed "+966" beside it, ignores letters and takes at most 10 characters.
  *   Name drops digits and symbols, as on the website.
- * - It posts to the same endpoint as the website (v1/contact-form/submit, type contact_us), so
- *   messages land in the back office's Contact us list.
+ * - It posts to the same endpoint as the website (v1/contact-form/submit, type contact_us).
+ *
+ * Backend: this build (8.2.2-stage) has no stg-154 address. Its compiled-in staging default is
+ * mazad-v3.motory.dev, which resolves to the same internal IP as stg-154 but is another environment:
+ * the one approved send on 2026-11-11 showed the confirmation dialog, yet never reached stg-154's
+ * back office. The back-office reflection test cannot pass until the app runs against stg-154.
  *
  * Messages sent by the approved send test use the agreed synthetic values: a "QA AUTO" name,
  * a qa.mobile.<runId>@example.invalid email, the website tests' synthetic phone and a QA-AUTO
@@ -42,6 +47,12 @@ export const mobileContactUsText: Record<
     placeholders: Record<ContactFormField, string>;
     mobilePrefix: string;
     send: string;
+    /**
+     * Confirmation dialog after a successful send: the form closes and this dialog opens over the
+     * category page. App text (string resources thank_you, we_will_contact_you_as_soon_as_possible,
+     * close); English seen on the emulator 2026-11-11, Arabic from the same resources.
+     */
+    sent: { title: string; message: string; close: string };
   }
 > = {
   en: {
@@ -60,6 +71,11 @@ export const mobileContactUsText: Record<
     },
     mobilePrefix: '+966',
     send: 'Send',
+    sent: {
+      title: 'Thank You!',
+      message: 'We will contact you as soon as possible',
+      close: 'Close',
+    },
   },
   ar: {
     helpCenter: 'مركز المساعدة',
@@ -77,6 +93,7 @@ export const mobileContactUsText: Record<
     },
     mobilePrefix: '+966',
     send: 'أرسل',
+    sent: { title: 'شكراً لك!', message: 'سيتم التواصل معك في أقرب وقت', close: 'إغلاق' },
   },
 };
 
@@ -128,3 +145,12 @@ export const mobileContactInputs = {
   tooLongMobile: '055000000012',
   mobileMaxLength: 10,
 } as const;
+
+/**
+ * The Help Center category used to reach the form: the last one the API lists, skipping test
+ * records (other suites create and remove temporary QA-AUTO categories, which may be gone by the
+ * time the app loads its list).
+ */
+export function contactUsCategory(categories: readonly FaqCategory[]): FaqCategory | undefined {
+  return categories.filter((c) => !c.name.startsWith(testRecordPrefix)).at(-1);
+}

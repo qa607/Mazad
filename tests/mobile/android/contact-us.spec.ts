@@ -6,6 +6,7 @@ import {
   draftValues,
   emptyFieldCases,
   mobileContactInputs,
+  contactUsCategory,
   mobileContactUsText,
 } from '@test-data/mobile-contact-us.data';
 import type { Language } from '@typings';
@@ -23,9 +24,9 @@ for (const lang of languages) {
 
   test.describe(`Contact Us - Android app (${lang})`, { tag: '@regression' }, () => {
     test.beforeEach(async ({ driver, appShell, helpCenterScreen, contactFormScreen, mazadApi }) => {
-      // Help Center categories are served by the API; any of them leads to Contact Us.
+      // Help Center categories are served by the API; any real one leads to Contact Us.
       const { body } = await mazadApi.getFaqCategories(lang);
-      const category = body.data.at(-1);
+      const category = contactUsCategory(body.data);
       expect(category, 'Help Center has at least one category').toBeDefined();
 
       await openContactForm(

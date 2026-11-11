@@ -4,7 +4,11 @@ import { contactTypes } from '@pages/backend/content/contact-us.page';
 import { contactUsText } from '@test-data/backend-contact-us.data';
 import { contactUsViewLabels, createdAtToleranceMinutes } from '@test-data/contact-us-web.data';
 import { languageOptions } from '@test-data/mobile-app.data';
-import { mobileContactUsText, newMobileContactMessage } from '@test-data/mobile-contact-us.data';
+import {
+  contactUsCategory,
+  mobileContactUsText,
+  newMobileContactMessage,
+} from '@test-data/mobile-contact-us.data';
 import { blockedBy, MOBILE_CONTACT_SUBMIT_BLOCKED } from '@utils/account-actions';
 import { minutesBetween, parseRiyadhDateTime } from '@utils/date';
 import type { Language } from '@typings';
@@ -47,7 +51,7 @@ for (const lang of languages) {
 
           const sentAt = await test.step('send the form from the app', async () => {
             const { body } = await mazadApi.getFaqCategories(lang);
-            const category = body.data.at(-1);
+            const category = contactUsCategory(body.data);
             expect(category, 'Help Center has at least one category').toBeDefined();
             await openContactForm(
               driver,
@@ -68,10 +72,23 @@ for (const lang of languages) {
             await form.send(text.send);
             const time = Date.now();
 
-            // The app's confirmation wording comes from the server and has not been recorded
-            // yet (no send before sign-off): record it here on the first approved run.
-            const outcome = await form.waitForSendOutcome(text.formTitle);
+            await testInfo.attach('app-after-send.png', {
+              body: await form.screenshot(),
+              contentType: 'image/png',
+            });
+
+            // Every text seen on screen while the send finished is attached as evidence.
+            const { outcome, textsSeen } = await form.waitForSendOutcome(text.formTitle);
             testInfo.annotations.push({ type: 'app-send-outcome', description: outcome });
+            await testInfo.attach('app-texts-after-send.json', {
+              body: JSON.stringify(textsSeen, null, 2),
+              contentType: 'application/json',
+            });
+            // Recorded 2026-11-11: the form closes and a "Thank You!" dialog opens.
+            expect(outcome).toBe('closed');
+            expect(textsSeen).toEqual(
+              expect.arrayContaining([text.sent.title, text.sent.message, text.sent.close]),
+            );
             return time;
           });
 
