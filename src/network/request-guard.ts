@@ -18,7 +18,7 @@ import { type BodyRule, bodyRuleProblem, type BodySummary, summarizeBody } from 
  *               test fails and the whole run is halted.
  */
 
-export type GuardKind = 'expected' | 'unexpected';
+export type GuardKind = 'expected' | 'unexpected' | 'allowed-exception';
 
 export interface NetworkEvent {
   kind: GuardKind;
@@ -88,6 +88,20 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
  */
 export const EXPECTED_BLOCKED_SCRIPT = { host: 'apis.google.com', path: '/js/api.js' } as const;
 
+/**
+ * The ONE Firebase endpoint the Web registration spec may allow through, and nothing else on
+ * Firebase: creating an anonymous auth session, which the registration UI needs to render step 2
+ * onward (confirmed 2026-11-10; staging project `mazad-v3`, not shared with production). This is
+ * never enabled by default: only `installGuestGuard`'s `allowFirebaseAnonymousSignup` flag, set by
+ * the registration spec's own fixture option, can turn it on. Every other Firebase/Firestore path,
+ * and every Mazad account-creation endpoint, stays blocked exactly as before.
+ */
+export const FIREBASE_ANONYMOUS_SIGNUP = {
+  host: 'identitytoolkit.googleapis.com',
+  path: '/v1/accounts:signUp',
+  method: 'POST',
+} as const;
+
 /** Blocked for every method; seen on every guest page load, so blocking them is expected. */
 export const EXPECTED_BLOCKED_DOMAINS: readonly string[] = [
   'googletagmanager.com',
@@ -111,6 +125,16 @@ function hostMatches(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
 }
 
+/** Whether a request is exactly the one Firebase call the registration spec may allow. */
+export function isFirebaseAnonymousSignupRequest(method: string, url: URL): boolean {
+  return (
+    method === FIREBASE_ANONYMOUS_SIGNUP.method &&
+    url.protocol === 'https:' &&
+    url.host === FIREBASE_ANONYMOUS_SIGNUP.host &&
+    url.pathname === FIREBASE_ANONYMOUS_SIGNUP.path
+  );
+}
+
 export function describeTarget(rawUrl: string): string {
   try {
     const url = new URL(rawUrl);
@@ -126,6 +150,8 @@ export function classifyRequest(
   stagingHost: string,
   approved: readonly ApprovedRequest[] = [],
   body: RequestBody = {},
+  /** Off by default everywhere; only the Web registration spec's fixture option turns it on. */
+  allowFirebaseAnonymousSignup = false,
 ): RequestVerdict {
   let url: URL;
   try {
@@ -150,6 +176,9 @@ export function classifyRequest(
     url.pathname === EXPECTED_BLOCKED_SCRIPT.path
   ) {
     return { action: 'block', kind: 'expected', reason: 'Google API loader (guest guard)' };
+  }
+  if (allowFirebaseAnonymousSignup && isFirebaseAnonymousSignupRequest(method, url)) {
+    return { action: 'allow' };
   }
   if (EXPECTED_BLOCKED_DOMAINS.some((d) => hostMatches(url.hostname, d))) {
     return { action: 'block', kind: 'expected', reason: 'analytics/Firebase (guest guard)' };
@@ -223,6 +252,16 @@ export async function installGuestGuard(
   approved: readonly ApprovedRequest[] = [],
   /** Synthetic test values, by name, flagged (never shown) in body summaries. */
   synthetic: Readonly<Record<string, string>> = {},
+  /** Off by default; only the Web registration spec's fixture option turns this on. */
+  allowFirebaseAnonymousSignup = false,
+  /**
+   * Called once, only for the allowed Firebase anonymous-signup exception, with the uid and ID
+   * token FROM ITS RESPONSE, and the Firebase Web API key FROM THE REQUEST (not a secret: Firebase
+   * Web API keys only identify the project and are always visible in client-side traffic) — held
+   * in memory for the caller's own cleanup (accounts:delete). The ID token must not be logged or
+   * attached to a report; this module never does so itself via onEvent.
+   */
+  onFirebaseSignup?: (result: { localId: string; idToken: string; apiKey: string }) => void,
 ): Promise<void> {
   const block = async (route: Route, kind: GuardKind, target: string, reason: string) => {
     const request = route.request();
@@ -236,16 +275,44 @@ export async function installGuestGuard(
   await context.route('**/*', async (route) => {
     const request = route.request();
     const method = request.method();
+    const url = request.url();
     // The body is inspected here, in the route handler, before anything is sent.
-    const verdict = classifyRequest(method, request.url(), stagingHost, approved, {
-      contentType: request.headers()['content-type'],
-      postData: request.postData(),
-    });
+    const verdict = classifyRequest(
+      method,
+      url,
+      stagingHost,
+      approved,
+      { contentType: request.headers()['content-type'], postData: request.postData() },
+      allowFirebaseAnonymousSignup,
+    );
     if (verdict.action !== 'allow') {
-      await block(route, verdict.kind, describeTarget(request.url()), verdict.reason);
+      await block(route, verdict.kind, describeTarget(url), verdict.reason);
       return;
     }
-    if (!/^https?:/.test(request.url())) {
+    let parsedUrl: URL | undefined;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      /* already classified above; only used below to recognise the Firebase exception */
+    }
+    const isFirebaseSignup =
+      allowFirebaseAnonymousSignup &&
+      parsedUrl !== undefined &&
+      isFirebaseAnonymousSignupRequest(method, parsedUrl);
+    if (isFirebaseSignup) {
+      // Audit trail only: method and host+path (no query string, so the API key never appears
+      // here), and the request body's field names/types only (never values) — no ID token, no
+      // response content. This is the one place a Firebase request is logged despite being allowed.
+      onEvent({
+        kind: 'allowed-exception',
+        method,
+        target: describeTarget(url),
+        reason: 'Firebase anonymous signup (registration spec exception)',
+        page: framePage(request),
+        body: summarizeBody(request.headers()['content-type'], request.postData(), synthetic),
+      });
+    }
+    if (!/^https?:/.test(url)) {
       await route.fallback(); // data:, blob: never leave the browser.
       return;
     }
@@ -256,6 +323,21 @@ export async function installGuestGuard(
     } catch {
       await route.abort('failed');
       return;
+    }
+    if (isFirebaseSignup && onFirebaseSignup && first.ok()) {
+      // Read-only: the real response the app itself receives is unaffected (route.fulfill below
+      // still sends the original APIResponse). Never logged, never attached to a report.
+      try {
+        const parsed: unknown = await first.json();
+        const localId = (parsed as { localId?: unknown })?.localId;
+        const idToken = (parsed as { idToken?: unknown })?.idToken;
+        const apiKey = parsedUrl?.searchParams.get('key');
+        if (typeof localId === 'string' && typeof idToken === 'string' && apiKey) {
+          onFirebaseSignup({ localId, idToken, apiKey });
+        }
+      } catch {
+        /* Unexpected response shape: cleanup simply has nothing to clean up. */
+      }
     }
     let hop = first;
     let hopUrl = request.url();

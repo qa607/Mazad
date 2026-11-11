@@ -47,12 +47,16 @@ const LANGUAGES = [
   { language: 'ar', locale: 'ar-SA' },
 ] as const;
 
+// Phase 1 scope was Login and Forgot Password only; Registration (signup.ui.spec.ts) was added
+// 2026-11-10 (both account-type steps, including Step 2 under the same Firebase anonymous-session
+// exception as the functional suite — see ui-tests/support/fixtures.ts). Other web specs stay
+// excluded for now.
+const WEB_SPECS = ['web/login.ui.spec.ts', 'web/signup.ui.spec.ts'];
+
 const webProjects: UiProject[] = LANGUAGES.flatMap(({ language, locale }) =>
   VIEWPORTS.map((vp) => ({
     name: `web-${language}-${vp.id}`,
-    // Phase 1 scope: Login and Forgot Password only. The other web specs stay in ui-tests/web/
-    // but are excluded from the run.
-    testMatch: 'web/login.ui.spec.ts',
+    testMatch: WEB_SPECS,
     use: {
       ...devices['Desktop Chrome'],
       ...(vp.phone
@@ -64,6 +68,28 @@ const webProjects: UiProject[] = LANGUAGES.flatMap(({ language, locale }) =>
             deviceScaleFactor: 3,
           }
         : { deviceScaleFactor: 1 }),
+      viewport: { width: vp.width, height: vp.height },
+      language,
+      locale,
+      phone: vp.phone,
+    },
+  })),
+);
+
+/**
+ * Cross-browser check (added 2026-11-10): Playwright's WebKit engine across the same 5 viewport
+ * tiers as Chromium. This is NOT real Apple Safari — Playwright has no way to drive the actual
+ * Safari.app (only Apple's own, separate `safaridriver`/WebDriver toolchain can, which this
+ * project does not have). Reported as "Playwright WebKit", never "Safari". Scoped to Registration
+ * only (the spec under active comparison); Login/Forgot Password stay Chromium-only for now.
+ */
+const webkitProjects: UiProject[] = LANGUAGES.flatMap(({ language, locale }) =>
+  VIEWPORTS.map((vp) => ({
+    name: `web-${language}-webkit-${vp.id}`,
+    testMatch: 'web/signup.ui.spec.ts',
+    use: {
+      ...devices['Desktop Safari'],
+      deviceScaleFactor: 1,
       viewport: { width: vp.width, height: vp.height },
       language,
       locale,
@@ -133,7 +159,7 @@ export default defineConfig<UiOptions>({
     video: 'off',
   },
 
-  projects: run.suite === 'selfcheck' ? [selfcheckProject] : webProjects,
+  projects: run.suite === 'selfcheck' ? [selfcheckProject] : [...webProjects, ...webkitProjects],
 });
 
 // Fail fast in the runner if a capture would reuse a folder (workers see it already created).

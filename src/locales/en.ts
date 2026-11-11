@@ -18,6 +18,22 @@ export const en = {
   logout: 'Log out',
   /** Header prompt shown instead of the account name when signed out (home page, any page). */
   headerGuestPrompt: 'Create an Account / Log In',
+  // Registration, step 1 (recorded from staging, 2026-11-10). Later steps are not yet verified.
+  chooseAccountType: 'Choose Account Type',
+  personalAccountChoice: 'Personal Account',
+  companyAccountChoice: 'Company Account',
+  registrationNext: 'Next',
+  // Registration, step 2 (recorded from staging, 2026-11-10, via the approved Firebase
+  // anonymous-session exception; no account was created). Shared by both account types.
+  registrationFullNameLabel: 'Full Name',
+  registrationIdIqamaLabel: 'ID/ Iqama Number',
+  registrationCityRegionLabel: 'City/ Region',
+  registrationMobileNumberLabel: 'Mobile Number',
+  registrationPasswordLabel: 'Password',
+  registrationCrNumberLabel: 'Commercial Registry Number',
+  registrationTaxIdLabel: 'Tax ID',
+  registrationCreateAccountButton: 'Create Account',
+  registrationSelectCityPlaceholder: 'Select City/ Region',
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
