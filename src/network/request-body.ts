@@ -22,10 +22,43 @@ export interface BodySummary {
   fields: BodyFieldSummary[];
 }
 
+/**
+ * An allowed value: an exact synthetic value, or a pattern for synthetic values generated per
+ * test (for example a unique "@example.invalid" email). Patterns must be anchored (^…$) so they
+ * describe the whole value; see unanchoredPattern().
+ */
+export type AllowedValue = string | RegExp;
+
 /** An approved body shape: the exact set of fields, and the allowed synthetic value(s) of each. */
 export interface BodyRule {
   format: 'json' | 'form';
-  fields: Readonly<Record<string, readonly string[]>>;
+  fields: Readonly<Record<string, readonly AllowedValue[]>>;
+}
+
+/**
+ * The field of the first pattern that could match more than whole values (missing ^ or $, or
+ * the m flag) or that keeps state between calls (g or y flag), if any.
+ */
+export function unanchoredPattern(rule: BodyRule): string | undefined {
+  for (const [field, allowed] of Object.entries(rule.fields)) {
+    for (const value of allowed) {
+      if (
+        value instanceof RegExp &&
+        (!value.source.startsWith('^') ||
+          !value.source.endsWith('$') ||
+          value.multiline ||
+          value.global ||
+          value.sticky)
+      ) {
+        return safeName(field);
+      }
+    }
+  }
+  return undefined;
+}
+
+function isAllowed(allowed: readonly AllowedValue[], value: string): boolean {
+  return allowed.some((a) => (typeof a === 'string' ? a === value : a.test(value)));
 }
 
 const MAX_FIELDS = 100;
@@ -155,7 +188,7 @@ export function bodyRuleProblem(
   for (const f of scalars) {
     const allowed = rule.fields[f.name];
     if (!allowed) return `unexpected field ${safeName(f.name)}`;
-    if ((f.type !== 'string' && f.type !== 'number') || !allowed.includes(String(f.value))) {
+    if ((f.type !== 'string' && f.type !== 'number') || !isAllowed(allowed, String(f.value))) {
       return `field ${safeName(f.name)} is not an approved synthetic value`;
     }
   }

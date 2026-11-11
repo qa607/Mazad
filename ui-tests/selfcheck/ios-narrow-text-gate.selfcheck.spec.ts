@@ -77,6 +77,21 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       favoritesUpcoming: 'Upcoming',
       favoritesGuestMessage: 'Create a new account or log in to add the auction to your favorites',
       favoritesGuestLogin: 'Login/ Create an account',
+      contactHelpCenter: 'Help Center',
+      contactCategory: 'About Company',
+      contactCantFindAnswer: 'Can’t find your answer?',
+      contactUsLink: 'Contact Us',
+      contactFormTitle: 'Contact Form',
+      contactIntro: "Or enter your information & we'll contact you",
+      contactNameLabel: 'Name',
+      contactEmailLabel: 'E-mail',
+      contactMobileLabel: 'Mobile Number',
+      contactMessageLabel: 'Message',
+      contactNamePlaceholder: 'Enter your name',
+      contactEmailPlaceholder: 'Enter your email',
+      contactMobilePlaceholder: 'e.g. 0554235678',
+      contactMessagePlaceholder: 'Enter your message',
+      contactMobilePrefix: '+966',
     });
     expect(IOS_GUEST_FORM_TEXT.ar).toEqual({
       homeTab: 'الرئيسية',
@@ -117,6 +132,21 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       favoritesUpcoming: 'القادمة',
       favoritesGuestMessage: 'قم بإنشاء حساب أو تسجيل الدخول لإضافة مزاد إلى المفضلة',
       favoritesGuestLogin: 'تسجيل الدخول/ إنشاء حساب',
+      contactHelpCenter: 'مركز المساعدة',
+      contactCategory: 'عن الشركة',
+      contactCantFindAnswer: 'لم تجد إجابة على استفسارك؟',
+      contactUsLink: 'تواصل معنا',
+      contactFormTitle: 'نموذج الاتصال',
+      contactIntro: 'أو أدخل معلوماتك وسنتواصل معك',
+      contactNameLabel: 'الاسم',
+      contactEmailLabel: 'البريد الإلكتروني',
+      contactMobileLabel: 'رقم الجوال',
+      contactMessageLabel: 'الرسالة',
+      contactNamePlaceholder: 'أدخل الاسم',
+      contactEmailPlaceholder: 'أدخل البريد الإلكتروني',
+      contactMobilePlaceholder: 'مثال: 0554235678',
+      contactMessagePlaceholder: 'أدخل رسالتك',
+      contactMobilePrefix: '+966',
     });
     expect(guestFormTextProblem()).toBeUndefined();
   });
@@ -187,6 +217,7 @@ function declaredTitles(): string[] {
     'tests-ios/forgot-password.spec.ts',
     'tests-ios/registration.spec.ts',
     'tests-ios/guest-tabs.spec.ts',
+    'tests-ios/contact-us.spec.ts',
   ]) {
     const source = read(file);
     const pattern =
@@ -236,6 +267,7 @@ test.describe('iOS narrow text gate cannot unblock other tests (selfcheck)', () 
       'tests-ios/forgot-password.spec.ts',
       'tests-ios/registration.spec.ts',
       'tests-ios/guest-tabs.spec.ts',
+      'tests-ios/contact-us.spec.ts',
     ]) {
       const source = read(file);
       expect(source, file).toContain(

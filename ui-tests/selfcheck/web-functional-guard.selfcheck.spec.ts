@@ -26,12 +26,63 @@ const LOGIN: ApprovedRequest = {
 };
 
 test.describe('Web functional request guard (selfcheck)', () => {
-  test('no endpoint is approved yet: every website POST is blocked', () => {
-    expect(APPROVED_WEB_REQUESTS).toEqual([]);
-    expect(classifyRequest('POST', `https://${STAGING}/api/v1/login`, STAGING, [])).toMatchObject({
-      action: 'block',
-      kind: 'unexpected',
-    });
+  test('only the Contact Us submit is approved: every other website POST is blocked', () => {
+    expect(APPROVED_WEB_REQUESTS.map((r) => `${r.method} ${r.pathPrefix}`)).toEqual([
+      'POST /api/v1/contact-form/submit',
+    ]);
+    const approved = activeWebRequests(APPROVED_WEB_REQUESTS);
+    for (const path of ['/api/v1/login', '/api/v1/forgot-password', '/api/v1/contact-form']) {
+      expect(
+        classifyRequest('POST', `https://${STAGING}${path}`, STAGING, approved),
+        path,
+      ).toMatchObject({
+        action: 'block',
+        kind: 'unexpected',
+      });
+    }
+  });
+
+  test('the Contact Us submit passes only with the synthetic QA-AUTO values', () => {
+    const approved = activeWebRequests(APPROVED_WEB_REQUESTS);
+    const url = `https://${STAGING}/api/v1/contact-form/submit`;
+    const form = 'application/x-www-form-urlencoded';
+    const body = (values: Record<string, string>) => new URLSearchParams(values).toString();
+    const synthetic = {
+      name: 'QA AUTO Contact BCDEFGH',
+      email: 'qa.contact.1234567@example.invalid',
+      phone: '0509999999',
+      message: 'QA-AUTO Contact Us message 1234567. Automated test, please ignore.',
+    };
+    expect(
+      classifyRequest('POST', url, STAGING, approved, {
+        contentType: form,
+        postData: body(synthetic),
+      }),
+    ).toEqual({ action: 'allow' });
+
+    for (const [field, value] of [
+      ['name', 'Real Person'],
+      ['email', 'someone@motory.com'],
+      ['email', 'qa.contact.1234567@example.invalid.evil.com'],
+      ['phone', '0551234567'],
+      ['message', 'Hello'],
+    ] as const) {
+      const verdict = classifyRequest('POST', url, STAGING, approved, {
+        contentType: form,
+        postData: body({ ...synthetic, [field]: value }),
+      });
+      expect(verdict, `${field}`).toMatchObject({ action: 'block', kind: 'unexpected' });
+      expect(JSON.stringify(verdict)).not.toContain(value);
+    }
+  });
+
+  test('a loose pattern in a rule is refused', () => {
+    for (const pattern of [/qa\.contact/, /^qa$/g, /^qa$/m]) {
+      const list: WebApprovedRequest[] = [
+        { ...LOGIN, approval: 'test', body: { format: 'form', fields: { email: [pattern] } } },
+      ];
+      expect(() => activeWebRequests(list), String(pattern)).toThrow(/must be anchored/);
+    }
   });
 
   test('an approved endpoint allows only its exact method, the staging host and https', () => {

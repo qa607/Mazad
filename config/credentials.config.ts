@@ -225,6 +225,32 @@ export function roleMissingReason(role: BackendRole): string {
   return `${label} account is not set: add ${env}_PHONE and ${env}_PASSWORD to the local .env file.`;
 }
 
+export const SUPER_ADMIN_MISSING_REASON =
+  'Super Admin account is not set: add SUPER_ADMIN_PHONE and SUPER_ADMIN_PASSWORD to the local .env file.';
+
+/**
+ * A staging back-office account with the superAdmin role, used to check that permissions
+ * granted to that role reach its users. Null when it is not configured in .env.
+ */
+export function getSuperAdminAccount(): BackendAccount | null {
+  const phone = localEnv.SUPER_ADMIN_PHONE?.trim();
+  const password = localEnv.SUPER_ADMIN_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+export const QC_MISSING_REASON =
+  'QC account is not set: add QC_PHONE and QC_PASSWORD to the local .env file.';
+
+/**
+ * A staging QC (quality control) account, used to check that QC accounts cannot sign in to the
+ * Backend. Null when it is not configured in .env.
+ */
+export function getQcAccount(): BackendAccount | null {
+  const phone = localEnv.QC_PHONE?.trim();
+  const password = localEnv.QC_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
 export const SUPPLIER_MISSING_REASON =
   'Supplier account is not set: add SUPPLIER_PHONE and SUPPLIER_PASSWORD to the local .env file.';
 

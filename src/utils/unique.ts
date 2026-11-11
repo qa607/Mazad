@@ -12,3 +12,13 @@ export function uniqueDigits(length: number): string {
   const seconds = Math.floor(Date.now() / 1000).toString();
   return `${seconds.slice(-(length - 2)).padStart(length - 2, '0')}${worker}${counter}`;
 }
+
+/**
+ * The same digits written as capital letters (0 → A … 9 → J), for fields that accept letters
+ * only, so a unique stamp can still be read back: "4071" → "EAHB".
+ */
+export function digitsAsLetters(digits: string): string {
+  if (!/^\d+$/.test(digits))
+    throw new Error(`digitsAsLetters expects digits only, got "${digits}".`);
+  return digits.replace(/\d/g, (d) => String.fromCharCode(65 + Number(d)));
+}

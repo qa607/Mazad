@@ -20,6 +20,7 @@ Before running tests, set `TEST_ENV` to an approved staging environment (current
 | `npm run test:backend`                | Back office only                                               |
 | `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)        |
 | `npm run test:android`                | Mazad Android app through Appium (see Mobile below)            |
+| `npm run test:android:backoffice`     | Android app sends checked in the back office (approval needed) |
 | `npm run test:headless`               | All tests, headless                                            |
 | `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)    |
 
@@ -52,6 +53,10 @@ Still unverified (do not assume they cannot change the app's backend): Firebase 
 | `npm run allure:generate && npm run allure:open` | Allure report from `allure-results/` (Java required)                         |
 | `npm run allure:clean`                           | Delete old `allure-results/` before a run, so the report shows only that run |
 | `npm run test:customer-group`                    | Run only the Customer Group specs (signs in first)                           |
+| `npm run test:taxonomy`                          | Run only the Taxonomy specs (signs in first)                                 |
+| `npm run test:traffic-office`                    | Run only the Traffic Office specs (signs in first)                           |
+| `npm run test:faq`                               | Help Center FAQ: back office, permissions and website (EN Desktop)           |
+| `npm run test:frontend`                          | Website + back office specs: EN/AR × Desktop/Pixel 7 (signs in first)        |
 
 JUnit XML is written to `reports/junit.xml` for CI.
 
@@ -143,6 +148,8 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - The app is started with `noReset`: nothing is reinstalled or cleared. The specs switch the app language themselves (More → Language).
 - Logged-in checks need a buyer account (`MAZAD_BUYER_PHONE`, `MAZAD_BUYER_PASSWORD`); without one they are skipped.
 - One device per run: the mobile spec runs in serial mode.
+- The app keeps its own backend setting (a hidden menu: long press on the More tab), and the 8.2.2-stage build defaults to `mazad-v3.motory.dev`, another environment. Before any test, the session sets it to the selected environment's approved origin and reads it back (`src/mobile/ensure-app-backend.ts`); if it still differs, every Android test fails. The setting is kept on the device after the run.
+- Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
 
 ### Emulator and NetBird
 

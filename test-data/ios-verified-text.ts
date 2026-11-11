@@ -1,5 +1,5 @@
 import type { Language } from '@typings';
-import { type IosAppText, iosAppText } from '@test-data/ios-app.data';
+import { IOS_CONTACT_MOBILE_PREFIX, type IosAppText, iosAppText } from '@test-data/ios-app.data';
 
 /**
  * NARROW iOS text gate: the exact English and Arabic text that the two guest display tests need,
@@ -56,6 +56,12 @@ export const GUEST_FORM_TEST_TITLES = [
   'A single digit already enables Send',
   // Recovery: closing the screen and opening it again (navigation and local typing only; nothing is sent).
   'Reopening Forgot Password after Close shows an empty phone field',
+  // Contact Us (More -> Help Center -> a category -> Contact Us): navigation, display and typing only. The
+  // text below was observed on the device on 2026-11-11 in both languages; only synthetic values are
+  // typed and Send is never tapped (it has no accessible name, so it cannot even be located yet).
+  'Help Center opens the Contact Form with its fields and labels',
+  'Contact Form Name keeps letters only',
+  'Contact Form Mobile Number ignores letters and stops at 10 digits',
 ] as const;
 
 export const IOS_GUEST_FORM_TEXT = {
@@ -99,6 +105,21 @@ export const IOS_GUEST_FORM_TEXT = {
     favoritesUpcoming: 'Upcoming',
     favoritesGuestMessage: 'Create a new account or log in to add the auction to your favorites',
     favoritesGuestLogin: 'Login/ Create an account',
+    contactHelpCenter: 'Help Center',
+    contactCategory: 'About Company',
+    contactCantFindAnswer: 'Can’t find your answer?',
+    contactUsLink: 'Contact Us',
+    contactFormTitle: 'Contact Form',
+    contactIntro: "Or enter your information & we'll contact you",
+    contactNameLabel: 'Name',
+    contactEmailLabel: 'E-mail',
+    contactMobileLabel: 'Mobile Number',
+    contactMessageLabel: 'Message',
+    contactNamePlaceholder: 'Enter your name',
+    contactEmailPlaceholder: 'Enter your email',
+    contactMobilePlaceholder: 'e.g. 0554235678',
+    contactMessagePlaceholder: 'Enter your message',
+    contactMobilePrefix: '+966',
   },
   ar: {
     homeTab: 'الرئيسية',
@@ -138,6 +159,21 @@ export const IOS_GUEST_FORM_TEXT = {
     favoritesUpcoming: 'القادمة',
     favoritesGuestMessage: 'قم بإنشاء حساب أو تسجيل الدخول لإضافة مزاد إلى المفضلة',
     favoritesGuestLogin: 'تسجيل الدخول/ إنشاء حساب',
+    contactHelpCenter: 'مركز المساعدة',
+    contactCategory: 'عن الشركة',
+    contactCantFindAnswer: 'لم تجد إجابة على استفسارك؟',
+    contactUsLink: 'تواصل معنا',
+    contactFormTitle: 'نموذج الاتصال',
+    contactIntro: 'أو أدخل معلوماتك وسنتواصل معك',
+    contactNameLabel: 'الاسم',
+    contactEmailLabel: 'البريد الإلكتروني',
+    contactMobileLabel: 'رقم الجوال',
+    contactMessageLabel: 'الرسالة',
+    contactNamePlaceholder: 'أدخل الاسم',
+    contactEmailPlaceholder: 'أدخل البريد الإلكتروني',
+    contactMobilePlaceholder: 'مثال: 0554235678',
+    contactMessagePlaceholder: 'أدخل رسالتك',
+    contactMobilePrefix: '+966',
   },
 } as const;
 
@@ -181,6 +217,21 @@ function currentText(text: IosAppText) {
     favoritesUpcoming: text.favoritesUpcoming,
     favoritesGuestMessage: text.favoritesGuestMessage,
     favoritesGuestLogin: text.favoritesGuestLogin,
+    contactHelpCenter: text.contactUs.contactHelpCenter,
+    contactCategory: text.contactUs.contactCategory,
+    contactCantFindAnswer: text.contactUs.contactCantFindAnswer,
+    contactUsLink: text.contactUs.contactUsLink,
+    contactFormTitle: text.contactUs.contactFormTitle,
+    contactIntro: text.contactUs.contactIntro,
+    contactNameLabel: text.contactUs.contactNameLabel,
+    contactEmailLabel: text.contactUs.contactEmailLabel,
+    contactMobileLabel: text.contactUs.contactMobileLabel,
+    contactMessageLabel: text.contactUs.contactMessageLabel,
+    contactNamePlaceholder: text.contactUs.contactNamePlaceholder,
+    contactEmailPlaceholder: text.contactUs.contactEmailPlaceholder,
+    contactMobilePlaceholder: text.contactUs.contactMobilePlaceholder,
+    contactMessagePlaceholder: text.contactUs.contactMessagePlaceholder,
+    contactMobilePrefix: IOS_CONTACT_MOBILE_PREFIX,
   };
 }
 

@@ -91,11 +91,36 @@ export class RolePermissionsPage extends BackendPage {
     return this.page.locator(`input.checkboxPermission[title="${route}"]`);
   }
 
-  /** Clicks a permission checkbox and waits for the change to be saved. */
-  async togglePermission(route: string): Promise<void> {
-    await Promise.all([
+  /** Routes ticked on the open role permission page, sorted (to record and compare a role). */
+  async checkedPermissions(): Promise<string[]> {
+    const routes = await this.page
+      .locator('input.checkboxPermission:checked')
+      .evaluateAll((boxes) => boxes.map((box) => box.getAttribute('title') ?? ''));
+    return routes.sort();
+  }
+
+  /**
+   * Clicks a permission checkbox, waits for the change to be saved and returns the server's
+   * reply ("permission added" or "permission removed"). The server toggles: it adds the
+   * permission when the role lacks it and removes it otherwise.
+   */
+  async togglePermission(route: string): Promise<string> {
+    const [response] = await Promise.all([
       this.page.waitForResponse((r) => r.url().includes('/access/role/permission')),
       this.permission(route).click(),
     ]);
+    const body = (await response.json()) as { data?: unknown };
+    return typeof body.data === 'string' ? body.data : JSON.stringify(body.data ?? null);
+  }
+
+  /**
+   * Gives or takes away a permission of the open role page, judged by the server's reply rather
+   * than by the checkbox (some boxes do not show the permission they toggle). Toggles once and,
+   * if that went the wrong way, once more. Returns the last reply, which names the final state.
+   */
+  async setPermission(route: string, granted: boolean): Promise<string> {
+    const wanted = granted ? /added/i : /removed/i;
+    const reply = await this.togglePermission(route);
+    return wanted.test(reply) ? reply : this.togglePermission(route);
   }
 }

@@ -43,4 +43,10 @@ export const IOS_ACCESSIBILITY_IDS = {
     passwordInput: '',
     saveAndLoginButton: '',
   },
+  // Contact Form (Help Center -> category -> Contact Us), inspected 2026-11-11: Send and the WhatsApp
+  // button are both Buttons with NO accessible name or label (their text is not exposed), so
+  // neither can be told apart without position. Send stays id-only until the iOS team adds one.
+  contactForm: {
+    sendButton: '',
+  },
 } as const satisfies Record<string, Record<string, string>>;

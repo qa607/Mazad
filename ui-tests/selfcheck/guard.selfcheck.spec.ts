@@ -87,6 +87,7 @@ test.describe('S3 image rule (selfcheck)', () => {
     `${S3}/app-auctions.motory.com/2026/Jul/screenshot_1.jpg`,
     `${S3}/v3-auction-common.motory.com/makes/17/3330db337abe5a4548298e4f0e9710bb.png`,
     `${S3}/v3-auction-common.motory.com/supplier-profile/782/548c2f1c65cdc6e28cd5ea88b755639e.png`,
+    `${S3}/v3-auction-common.motory.com/faq-category-icon/about_auctions.png`,
   ];
 
   test('1. allows GET and HEAD to the exact allowed paths', () => {
@@ -104,7 +105,9 @@ test.describe('S3 image rule (selfcheck)', () => {
       `${S3}/app-auctions.motory.com/../other-bucket/x.jpg`,
       `${S3}/app-auctions.motory.com/%2e%2e/other-bucket/x.jpg`,
       `${S3}/`,
-      // The second bucket: only makes/ and supplier-profile/ are allowed.
+      // The second bucket: only makes/, supplier-profile/ and faq-category-icon/ are allowed.
+      `${S3}/v3-auction-common.motory.com/faq-category-icon-evil/x.png`,
+      `${S3}/v3-auction-common.motory.com/faq-category-icon/../secret/x.png`,
       `${S3}/v3-auction-common.motory.com/`,
       `${S3}/v3-auction-common.motory.com/other/x.png`,
       `${S3}/v3-auction-common.motory.com/makes`,

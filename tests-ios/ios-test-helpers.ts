@@ -3,6 +3,7 @@ import { inventory } from '@mobile/ios/ios-inspection';
 import type { IosDriver } from '@mobile/ios/ios.session';
 import { parseIosSource } from '@mobile/ios/page-source';
 import type { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
+import type { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
 import type { IosLoginScreen } from '@mobile/ios/screens/login.screen';
 import { type IosAppText, iosAppText } from '@test-data/ios-app.data';
 import type { Language } from '@typings';
@@ -71,6 +72,29 @@ export const PASSWORD_TOGGLE_PENDING = pendingReason(
   IDS.login.passwordVisibilityToggle,
   'the Login password visibility control',
 );
+/** The Contact Form's Send has no accessible name (inspected 2026-11-11): its tests wait for an id. */
+export const CONTACT_SEND_PENDING = pendingReason(
+  IDS.contactForm.sendButton,
+  'the Contact Form Send button',
+);
+
+/**
+ * Opens the Contact Form as a guest: language, guest state on More, then Help Center → the
+ * recorded category → Contact Us. Navigation only; waits for the form's title.
+ */
+export async function openGuestContactForm(
+  appShell: IosAppShellScreen,
+  form: IosContactFormScreen,
+  language: Language,
+  text: IosAppText,
+): Promise<void> {
+  await appShell.setLanguage(language, LANGUAGE_OPTIONS, MORE_TABS, HOME_TABS);
+  await appShell.requireGuest(text.tabs.more, text.tabs.home, text.guestPrompt);
+  await form.openHelpCenter(text.contactUs.contactHelpCenter);
+  await form.openCategory(text.contactUs.contactCategory);
+  await form.openContactUs(text.contactUs.contactUsLink);
+  await form.onlyText(text.contactUs.contactFormTitle);
+}
 
 /**
  * Test details that record why a test is pending: the pending-selector note and the typed
