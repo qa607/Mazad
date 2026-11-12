@@ -48,7 +48,7 @@ for (const lang of LANGUAGES) {
         await openGuestHelpCenter(appShell, helpCenterScreen, lang, text);
       });
 
-      test(GUEST_FORM_TEST_TITLES[25], async ({ helpCenterScreen: help, mazadApi, text }) => {
+      test(GUEST_FORM_TEST_TITLES[33], async ({ helpCenterScreen: help, mazadApi, text }) => {
         const { body } = await mazadApi.getFaqCategories(lang);
         const expected = realFaqCategories(body.data).map((c) => c.name);
         expect(expected.length, 'categories from the API').toBeGreaterThan(0);
@@ -60,7 +60,7 @@ for (const lang of LANGUAGES) {
         expect(listed).toEqual(expected);
       });
 
-      test(GUEST_FORM_TEST_TITLES[26], async ({ helpCenterScreen: help, mazadApi, text }) => {
+      test(GUEST_FORM_TEST_TITLES[34], async ({ helpCenterScreen: help, mazadApi, text }) => {
         const { body } = await mazadApi.getFaqCategories(lang);
         const category = realFaqCategories(body.data).at(-1)!;
         const questions = (await mazadApi.getFaqCategory(lang, category.id))?.questions ?? [];
@@ -83,7 +83,7 @@ for (const lang of LANGUAGES) {
         expect(await (await help.onlyText(text.contactUs.contactUsLink)).isDisplayed()).toBe(true);
       });
 
-      test(GUEST_FORM_TEST_TITLES[27], async ({ helpCenterScreen: help, mazadApi }) => {
+      test(GUEST_FORM_TEST_TITLES[35], async ({ helpCenterScreen: help, mazadApi }) => {
         const { body } = await mazadApi.getFaqCategories(lang);
         const category = realFaqCategories(body.data).at(-1)!;
         const [first] = (await mazadApi.getFaqCategory(lang, category.id))?.questions ?? [];
@@ -100,7 +100,7 @@ for (const lang of LANGUAGES) {
       // Back is identified in English only: Arabic is declared pending (never a positional tap).
       /* eslint-disable @typescript-eslint/unbound-method, playwright/no-standalone-expect */
       (lang === 'ar' ? test.fixme : test)(
-        GUEST_FORM_TEST_TITLES[28],
+        GUEST_FORM_TEST_TITLES[36],
         pendingDetails(lang === 'ar' ? HELP_CENTER_BACK_PENDING_AR : undefined),
         async ({ helpCenterScreen: help, mazadApi, text }) => {
           const { body } = await mazadApi.getFaqCategories(lang);
