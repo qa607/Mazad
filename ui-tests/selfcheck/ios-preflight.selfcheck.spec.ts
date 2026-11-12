@@ -2,6 +2,7 @@ import { expect, test } from '../support/fixtures';
 import { type IosConfig, iosCapabilities, wdaCapabilities } from '../../src/mobile/ios/ios.config';
 import {
   APPROVED_IOS_BUILDS,
+  APPROVED_IOS_DEVICES,
   installedBuildProblem,
   IOS_DEVICE_RUNS_APPROVED,
   IOS_GATES,
@@ -33,6 +34,14 @@ test.describe('iOS allowlist and preflight (selfcheck)', () => {
     expect(() =>
       readIosConfig({ IOS_BUNDLE_ID: APPROVED.bundleId, IOS_UDID: "QA's iPhone" }),
     ).toThrow(/not a device UDID/);
+    for (const device of APPROVED_IOS_DEVICES) {
+      expect(readIosConfig({ IOS_BUNDLE_ID: APPROVED.bundleId, IOS_UDID: device.udid }).udid).toBe(
+        device.udid,
+      );
+    }
+    expect(() =>
+      readIosConfig({ IOS_BUNDLE_ID: APPROVED.bundleId, IOS_UDID: '00008030-0000000000000000' }),
+    ).toThrow(/not on the APPROVED_IOS_DEVICES/);
   });
 
   test('the installed build must match the approved bundle, version and build exactly', () => {
@@ -213,6 +222,22 @@ test.describe('iOS WebDriverAgent capabilities (selfcheck)', () => {
     });
     for (const key of ['appium:xcodeOrgId', 'appium:xcodeSigningId', 'appium:processArguments']) {
       expect(caps, key).not.toHaveProperty(key);
+    }
+  });
+
+  test('device + IOS_WDA_URL: attaches to the running runner, private addresses only', () => {
+    const caps = iosCapabilities(
+      readIosConfig({
+        ...base,
+        IOS_WDA_URL: 'http://192.168.100.188:8100',
+        IOS_WDA_BUNDLE_ID: WDA,
+      }),
+    );
+    expect(caps['appium:webDriverAgentUrl']).toBe('http://192.168.100.188:8100');
+    expect(caps).not.toHaveProperty('appium:usePreinstalledWDA');
+    expect(caps).not.toHaveProperty('appium:xcodeOrgId');
+    for (const bad of ['https://example.com:8100', 'http://8.8.8.8:8100', 'http://192.168.1.2']) {
+      expect(() => readIosConfig({ ...base, IOS_WDA_URL: bad }), bad).toThrow(/IOS_WDA_URL/);
     }
   });
 

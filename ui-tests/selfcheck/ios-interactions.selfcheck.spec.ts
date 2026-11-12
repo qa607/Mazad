@@ -69,6 +69,16 @@ const SCREENS: Record<string, string[]> = {
     'openForgotPassword.click', // navigation
   ],
   'src/mobile/ios/screens/guest-tabs.screen.ts': ['openTab.click', 'openHeaderIcon.click'], // navigation: a tab-bar button, a header icon
+  'src/mobile/ios/screens/more.screen.ts': [
+    'openRow.click', // navigation: an in-app row by exact label (Change Environment and Rate us refused)
+    'goBack.click', // navigation: the page's Back button
+  ],
+  'src/mobile/ios/screens/contact-form.screen.ts': [
+    'openHelpCenter.click', // navigation: More -> Help Center
+    'openCategory.click', // navigation: a category
+    'openContactUs.click', // navigation: the Contact Us link
+    'enter.setValue', // typing only: Send is read-only and id-only, so nothing can be sent
+  ],
   'src/mobile/ios/screens/registration.screen.ts': [
     'openFromGuestPrompt.click', // navigation: guest prompt, then the registration choice
     'openFromGuestPrompt.click',
@@ -227,7 +237,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(8);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(10);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);

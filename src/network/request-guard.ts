@@ -75,6 +75,8 @@ export const S3_IMAGE_PATH_PREFIXES: readonly string[] = [
   // Make logos and supplier images on /auctions/ (seen in capture step3-capture-2).
   '/v3-auction-common.motory.com/makes/',
   '/v3-auction-common.motory.com/supplier-profile/',
+  // Help Center category icons on /help-center/ (seen 2026-11-11 on stg-154).
+  '/v3-auction-common.motory.com/faq-category-icon/',
 ];
 
 /** Redirect chains longer than this are treated as unexpected. */
@@ -391,7 +393,13 @@ export async function installGuestGuard(
         navigation: request.isNavigationRequest(),
       });
     }
-    await route.fulfill({ response: request.isNavigationRequest() ? first : hop });
+    try {
+      await route.fulfill({ response: request.isNavigationRequest() ? first : hop });
+    } catch (error) {
+      // The test ended (its page or context closed) while this already allowed response was
+      // still being delivered; there is nothing left to deliver it to. Any other error stands.
+      if (!/has been disposed|has been closed/i.test(String(error))) throw error;
+    }
   });
 
   // Backstop: report any redirect hop the browser sent to a target that is not allowed.

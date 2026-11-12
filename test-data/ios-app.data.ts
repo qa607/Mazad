@@ -13,6 +13,82 @@ import type { Language } from '@typings';
  */
 export const IOS_TEXT_VERIFIED = false;
 
+export type IosContactField = 'name' | 'email' | 'mobile' | 'message';
+
+/**
+ * Help Center and Contact Form text, observed on the device 2026-11-11 (build 8.3 (1491)). Flat, with
+ * contact-prefixed keys: the coverage selfchecks read every app text one level deep, by key.
+ */
+export interface IosContactUsText {
+  contactHelpCenter: string;
+  /** A Help Center category (served by GET /v1/faq-list; recorded so the iOS run needs no API call). */
+  contactCategory: string;
+  contactCantFindAnswer: string;
+  contactUsLink: string;
+  contactFormTitle: string;
+  contactIntro: string;
+  contactNameLabel: string;
+  contactEmailLabel: string;
+  contactMobileLabel: string;
+  contactMessageLabel: string;
+  contactNamePlaceholder: string;
+  contactEmailPlaceholder: string;
+  contactMobilePlaceholder: string;
+  contactMessagePlaceholder: string;
+}
+
+/** The fixed country code beside Mobile Number (the same in both languages; not language text). */
+export const IOS_CONTACT_MOBILE_PREFIX = '+966';
+
+/** Each field's label, from the recorded text. */
+export function contactLabels(text: IosContactUsText): Record<IosContactField, string> {
+  return {
+    name: text.contactNameLabel,
+    email: text.contactEmailLabel,
+    mobile: text.contactMobileLabel,
+    message: text.contactMessageLabel,
+  };
+}
+
+/** Each field's placeholder, from the recorded text. */
+export function contactPlaceholders(text: IosContactUsText): Record<IosContactField, string> {
+  return {
+    name: text.contactNamePlaceholder,
+    email: text.contactEmailPlaceholder,
+    mobile: text.contactMobilePlaceholder,
+    message: text.contactMessagePlaceholder,
+  };
+}
+
+/**
+ * The More tab (guest), observed on the device 2026-11-11 (iPhone 11 Pro Max, build 8.3 (1491)), in
+ * both languages. Flat, more-prefixed keys (the coverage selfchecks read app text one level deep).
+ * The About Us and Terms pages carry the row's label as their title. "Change Environment" and
+ * "Rate us" are recorded to be CHECKED, never tapped.
+ */
+export interface IosMoreText {
+  moreTitle: string;
+  moreSettings: string;
+  moreLanguage: string;
+  moreSocialHeading: string;
+  moreImportantLinks: string;
+  moreAboutUs: string;
+  moreTerms: string;
+  morePrivacy: string;
+  moreRateUs: string;
+  moreChangeEnvironment: string;
+  moreBack: string;
+  moreVersionLabel: string;
+}
+
+/**
+ * The More tab's version line for an installed version. Arabic places the number first and wraps
+ * the word in Unicode first-strong isolates, exactly as the app shows it: "8.3 \u2068الإصدار\u2069".
+ */
+export function iosVersionLine(language: Language, version: string, label: string): string {
+  return language === 'ar' ? `${version} \u2068${label}\u2069` : `${label} ${version}`;
+}
+
 export interface IosAppText {
   tabs: { home: string; more: string };
   languageOption: string;
@@ -73,6 +149,8 @@ export interface IosAppText {
   favoritesGuestMessage: string;
   favoritesGuestLogin: string;
   fingerprintPromptDismiss: string;
+  contactUs: IosContactUsText;
+  more: IosMoreText;
   // Backend-driven text, identical on web and Android (confirmed), assumed shared by iOS.
   invalidCredentials: string;
   unregisteredPhone: string;
@@ -181,6 +259,76 @@ const OBSERVED_GUEST_SCREENS = {
   },
 } as const;
 
+/**
+ * Help Center and Contact Form (guest inspection 2026-11-11, iPhone 11 Pro Max, build 8.3 (1491)).
+ * The English intro uses a straight apostrophe ("we'll"), unlike the Android app's curly one.
+ */
+const OBSERVED_CONTACT_US: Record<Language, IosContactUsText> = {
+  en: {
+    contactHelpCenter: 'Help Center',
+    contactCategory: 'About Company',
+    contactCantFindAnswer: 'Can’t find your answer?',
+    contactUsLink: 'Contact Us',
+    contactFormTitle: 'Contact Form',
+    contactIntro: "Or enter your information & we'll contact you",
+    contactNameLabel: 'Name',
+    contactEmailLabel: 'E-mail',
+    contactMobileLabel: 'Mobile Number',
+    contactMessageLabel: 'Message',
+    contactNamePlaceholder: 'Enter your name',
+    contactEmailPlaceholder: 'Enter your email',
+    contactMobilePlaceholder: 'e.g. 0554235678',
+    contactMessagePlaceholder: 'Enter your message',
+  },
+  ar: {
+    contactHelpCenter: 'مركز المساعدة',
+    contactCategory: 'عن الشركة',
+    contactCantFindAnswer: 'لم تجد إجابة على استفسارك؟',
+    contactUsLink: 'تواصل معنا',
+    contactFormTitle: 'نموذج الاتصال',
+    contactIntro: 'أو أدخل معلوماتك وسنتواصل معك',
+    contactNameLabel: 'الاسم',
+    contactEmailLabel: 'البريد الإلكتروني',
+    contactMobileLabel: 'رقم الجوال',
+    contactMessageLabel: 'الرسالة',
+    contactNamePlaceholder: 'أدخل الاسم',
+    contactEmailPlaceholder: 'أدخل البريد الإلكتروني',
+    contactMobilePlaceholder: 'مثال: 0554235678',
+    contactMessagePlaceholder: 'أدخل رسالتك',
+  },
+};
+
+const OBSERVED_MORE: Record<Language, IosMoreText> = {
+  en: {
+    moreTitle: 'More',
+    moreSettings: 'Settings',
+    moreLanguage: 'Language',
+    moreSocialHeading: 'Follow us on Social Media',
+    moreImportantLinks: 'Important Links',
+    moreAboutUs: 'About Us',
+    moreTerms: 'Terms & Conditions',
+    morePrivacy: 'Privacy Policy',
+    moreRateUs: 'Rate us in the App Store',
+    moreChangeEnvironment: 'Change Environment',
+    moreBack: 'Back',
+    moreVersionLabel: 'Version',
+  },
+  ar: {
+    moreTitle: 'المزيد',
+    moreSettings: 'الإعدادات',
+    moreLanguage: 'اللغة',
+    moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+    moreImportantLinks: 'روابط مهمة',
+    moreAboutUs: 'من نحن',
+    moreTerms: 'الشروط و الأحكام',
+    morePrivacy: 'سياسة الخصوصية',
+    moreRateUs: 'قيّم التطبيق في المتجر',
+    moreChangeEnvironment: 'تغيير البيئة',
+    moreBack: 'عودة',
+    moreVersionLabel: 'الإصدار',
+  },
+};
+
 export function iosAppText(language: Language): IosAppText {
   const app = mobileAppText[language];
   const t = getTranslator(language);
@@ -212,6 +360,8 @@ export function iosAppText(language: Language): IosAppText {
     ...OBSERVED_GUEST_TABS[language],
     ...OBSERVED_GUEST_SCREENS[language],
     fingerprintPromptDismiss: app.loginFlow.fingerprintPromptDismiss,
+    contactUs: OBSERVED_CONTACT_US[language],
+    more: OBSERVED_MORE[language],
     invalidCredentials: t('invalidCredentials'),
     unregisteredPhone: t('unregisteredPhone'),
     incorrectOtp: t('incorrectOtp'),

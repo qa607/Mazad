@@ -9,18 +9,29 @@ import {
   getDevRootAccount,
   getErpAccount,
   getRoleAccount,
+  getSuperAdminAccount,
   roleMissingReason,
   roleSessionFile,
+  SUPER_ADMIN_MISSING_REASON,
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
+import { type FreshSignIn, signInFresh } from '@fixtures/backend-sign-in';
 import { ErpClient } from '@api/erp.client';
 import { MazadApiClient } from '@api/mazad-api.client';
 import { getTranslator, type Translator } from '@locales';
 import { PermissionListPage } from '@pages/backend/access/permission-list.page';
 import { RolePermissionsPage } from '@pages/backend/access/role-permissions.page';
+import { SuperAdminFormPage } from '@pages/backend/admins/super-admin-form.page';
+import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page';
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
+import { FailedInvoicePage } from '@pages/backend/invoice/failed-invoice.page';
+import { PricingUpdatePage } from '@pages/backend/vehicle/pricing-update.page';
+import { DeliveryCompanyFormPage } from '@pages/backend/delivery/delivery-company-form.page';
+import { DeliveryCompanyListPage } from '@pages/backend/delivery/delivery-company-list.page';
+import { DeliveryCompanyViewPage } from '@pages/backend/delivery/delivery-company-view.page';
+import { DeliveryTrackingPage } from '@pages/backend/delivery/delivery-tracking.page';
 import { LivePage } from '@pages/backend/auctions/live.page';
 import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
@@ -31,8 +42,19 @@ import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import { CustomerGroupFormPage } from '@pages/backend/customer-group/customer-group-form.page';
 import { CustomerGroupListPage } from '@pages/backend/customer-group/customer-group-list.page';
 import { CustomerGroupMembersPage } from '@pages/backend/customer-group/customer-group-members.page';
+import { DealerFormPage } from '@pages/backend/customers/dealer-form.page';
+import { DealerListPage } from '@pages/backend/customers/dealer-list.page';
+import { DeletedUserListPage } from '@pages/backend/customers/deleted-user-list.page';
+import { QcListPage } from '@pages/backend/qc/qc-list.page';
+import { QcViewPage } from '@pages/backend/qc/qc-view.page';
+import { InspectorListPage } from '@pages/backend/inspector/inspector-list.page';
+import { InspectorViewPage } from '@pages/backend/inspector/inspector-view.page';
+import { ConfigPage } from '@pages/backend/config/config.page';
+import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
+import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
+import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
 import { MazadVehicleViewPage } from '@pages/backend/mazad-vehicle-view.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
@@ -52,6 +74,19 @@ import { SupplierListPage } from '@pages/backend/suppliers/supplier-list.page';
 import { SupplierMemberFormPage } from '@pages/backend/suppliers/supplier-member-form.page';
 import { SupplierMemberListPage } from '@pages/backend/suppliers/supplier-member-list.page';
 import { SupplierViewPage } from '@pages/backend/suppliers/supplier-view.page';
+import { TaxonomyFormPage } from '@pages/backend/taxonomy/taxonomy-form.page';
+import { TaxonomyListPage } from '@pages/backend/taxonomy/taxonomy-list.page';
+import { TaxonomyTypesPage } from '@pages/backend/taxonomy/taxonomy-types.page';
+import { TaxonomyViewPage } from '@pages/backend/taxonomy/taxonomy-view.page';
+import type { TaxonomyTermData } from '@test-data/taxonomy.data';
+import { TrafficOfficeFormPage } from '@pages/backend/traffic-office/traffic-office-form.page';
+import { TrafficOfficeListPage } from '@pages/backend/traffic-office/traffic-office-list.page';
+import { TrafficOfficeViewPage } from '@pages/backend/traffic-office/traffic-office-view.page';
+import type { TrafficOfficeData } from '@test-data/traffic-office.data';
+import { FaqCategoryPage } from '@pages/backend/help-center/faq-category.page';
+import { FaqQuestionPage } from '@pages/backend/help-center/faq-question.page';
+import { faqIconFile, type FaqCategoryData, type FaqQuestionData } from '@test-data/faq.data';
+import { faqCleanup as createFaqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
 import type { Language } from '@typings';
 
 /** Options set per project in playwright.config.ts. */
@@ -85,6 +120,8 @@ export const devRootSession = {
 export interface BackendPages {
   mazadLoginPage: MazadLoginPage;
   mazadDashboardPage: MazadDashboardPage;
+  operationListPage: OperationListPage;
+  operationFormPage: OperationFormPage;
   mazadSoldListPage: MazadSoldListPage;
   mazadVehicleViewPage: MazadVehicleViewPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
@@ -95,6 +132,12 @@ export interface BackendPages {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  failedInvoicePage: FailedInvoicePage;
+  pricingUpdatePage: PricingUpdatePage;
+  deliveryTrackingPage: DeliveryTrackingPage;
+  deliveryCompanyListPage: DeliveryCompanyListPage;
+  deliveryCompanyFormPage: DeliveryCompanyFormPage;
+  deliveryCompanyViewPage: DeliveryCompanyViewPage;
   waitingApprovalPage: WaitingApprovalPage;
   auctionClosedReportPage: AuctionClosedReportPage;
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
@@ -108,6 +151,8 @@ export interface BackendPages {
   supplierListPage: SupplierListPage;
   supplierFormPage: SupplierFormPage;
   supplierViewPage: SupplierViewPage;
+  superAdminListPage: SuperAdminListPage;
+  superAdminFormPage: SuperAdminFormPage;
   supplierAuctionInfoPage: SupplierAuctionInfoPage;
   supplierCompanyListPage: SupplierCompanyListPage;
   supplierCompanyFormPage: SupplierCompanyFormPage;
@@ -119,12 +164,32 @@ export interface BackendPages {
   customerGroupFormPage: CustomerGroupFormPage;
   customerGroupViewPage: CustomerGroupViewPage;
   customerGroupMembersPage: CustomerGroupMembersPage;
+  individualListPage: IndividualListPage;
+  dealerListPage: DealerListPage;
+  dealerFormPage: DealerFormPage;
+  deletedUserListPage: DeletedUserListPage;
+  qcListPage: QcListPage;
+  qcViewPage: QcViewPage;
+  inspectorListPage: InspectorListPage;
+  inspectorViewPage: InspectorViewPage;
+  configPage: ConfigPage;
+  taxonomyTypesPage: TaxonomyTypesPage;
+  taxonomyListPage: TaxonomyListPage;
+  taxonomyFormPage: TaxonomyFormPage;
+  taxonomyViewPage: TaxonomyViewPage;
+  trafficOfficeListPage: TrafficOfficeListPage;
+  trafficOfficeFormPage: TrafficOfficeFormPage;
+  trafficOfficeViewPage: TrafficOfficeViewPage;
+  faqCategoryPage: FaqCategoryPage;
+  faqQuestionPage: FaqQuestionPage;
 }
 
 function createBackendPages(page: Page): BackendPages {
   return {
     mazadLoginPage: new MazadLoginPage(page),
     mazadDashboardPage: new MazadDashboardPage(page),
+    operationListPage: new OperationListPage(page),
+    operationFormPage: new OperationFormPage(page),
     mazadSoldListPage: new MazadSoldListPage(page),
     mazadVehicleViewPage: new MazadVehicleViewPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
@@ -135,6 +200,12 @@ function createBackendPages(page: Page): BackendPages {
     awaitingPage: new AwaitingPage(page),
     livePage: new LivePage(page),
     failedPage: new FailedPage(page),
+    failedInvoicePage: new FailedInvoicePage(page),
+    pricingUpdatePage: new PricingUpdatePage(page),
+    deliveryTrackingPage: new DeliveryTrackingPage(page),
+    deliveryCompanyListPage: new DeliveryCompanyListPage(page),
+    deliveryCompanyFormPage: new DeliveryCompanyFormPage(page),
+    deliveryCompanyViewPage: new DeliveryCompanyViewPage(page),
     waitingApprovalPage: new WaitingApprovalPage(page),
     auctionClosedReportPage: new AuctionClosedReportPage(page),
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
@@ -148,6 +219,8 @@ function createBackendPages(page: Page): BackendPages {
     supplierListPage: new SupplierListPage(page),
     supplierFormPage: new SupplierFormPage(page),
     supplierViewPage: new SupplierViewPage(page),
+    superAdminListPage: new SuperAdminListPage(page),
+    superAdminFormPage: new SuperAdminFormPage(page),
     supplierAuctionInfoPage: new SupplierAuctionInfoPage(page),
     supplierCompanyListPage: new SupplierCompanyListPage(page),
     supplierCompanyFormPage: new SupplierCompanyFormPage(page),
@@ -159,6 +232,24 @@ function createBackendPages(page: Page): BackendPages {
     customerGroupFormPage: new CustomerGroupFormPage(page),
     customerGroupViewPage: new CustomerGroupViewPage(page),
     customerGroupMembersPage: new CustomerGroupMembersPage(page),
+    individualListPage: new IndividualListPage(page),
+    dealerListPage: new DealerListPage(page),
+    dealerFormPage: new DealerFormPage(page),
+    deletedUserListPage: new DeletedUserListPage(page),
+    qcListPage: new QcListPage(page),
+    qcViewPage: new QcViewPage(page),
+    inspectorListPage: new InspectorListPage(page),
+    inspectorViewPage: new InspectorViewPage(page),
+    configPage: new ConfigPage(page),
+    taxonomyTypesPage: new TaxonomyTypesPage(page),
+    taxonomyListPage: new TaxonomyListPage(page),
+    taxonomyFormPage: new TaxonomyFormPage(page),
+    taxonomyViewPage: new TaxonomyViewPage(page),
+    trafficOfficeListPage: new TrafficOfficeListPage(page),
+    trafficOfficeFormPage: new TrafficOfficeFormPage(page),
+    trafficOfficeViewPage: new TrafficOfficeViewPage(page),
+    faqCategoryPage: new FaqCategoryPage(page),
+    faqQuestionPage: new FaqQuestionPage(page),
   };
 }
 
@@ -179,6 +270,56 @@ interface MazadFixtures extends BackendPages {
    * group with one of those names is deleted through the list page.
    */
   customerGroupCleanup: { track: (name: string) => void };
+  /**
+   * Records the taxonomy terms a test creates (type key and Title En); after the test (passed or
+   * failed) every term of that type with that Title En is deleted through its list page.
+   */
+  taxonomyCleanup: { track: (type: string, titleEn: string) => void };
+  /**
+   * Creates a taxonomy term through the form, registers it for clean-up and returns its id.
+   * For tests that need an existing term; tests of the create flow itself use the form page.
+   */
+  createTaxonomyTerm: (type: string, data: TaxonomyTermData) => Promise<string>;
+  /**
+   * Records the Office Name En of each traffic office a test creates or renames to; after the
+   * test (passed or failed) every office with one of those names is deleted from its View page.
+   */
+  trafficOfficeCleanup: { track: (officeNameEn: string) => void };
+  /**
+   * Creates a traffic office through the form, registers it for clean-up and returns its id.
+   * For tests that need an existing office; tests of the create flow itself use the form page.
+   */
+  createTrafficOffice: (data: TrafficOfficeData) => Promise<string>;
+  /**
+   * Records the FAQ categories and questions a test creates or renames to (by English text);
+   * after the test, passed or failed, they are deleted (questions first) in this test's tab.
+   */
+  faqCleanup: FaqTracker;
+  /** Creates a FAQ category (with the synthetic icon), registers it for clean-up, returns its id. */
+  createFaqCategory: (data: FaqCategoryData) => Promise<string>;
+  /**
+   * Creates a FAQ question in a category (by its English name), published unless publish is
+   * false, registers it for clean-up and returns its id.
+   */
+  createFaqQuestion: (
+    categoryNameEn: string,
+    data: FaqQuestionData,
+    publish?: boolean,
+  ) => Promise<string>;
+  /**
+   * Registers permissions a role must have once the test is over. After the test, passed or
+   * failed, each one is granted on the role's permission page (in this test's tab, which must
+   * be signed in as Dev Root), judged by the server's reply, so a test may take them away and
+   * the role still ends with all of them.
+   */
+  keepRolePermissionsGranted: (role: string, routes: readonly string[]) => void;
+  /**
+   * Signs the Super Admin account from .env in to the Backend in a new, signed-out browser
+   * context and returns the result (error null on success). Skips the test without the
+   * account. The context is closed after the test; on failure a screenshot with the login
+   * fields and account header masked is attached.
+   */
+  signInAsSuperAdmin: () => Promise<FreshSignIn>;
   /**
    * A back office session signed in as Dev Root, made read-only: after login every request
    * that is not a GET (except logout) is aborted, so tests cannot change back office data.
@@ -228,6 +369,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   mazadDashboardPage: async ({ page }, use) => {
     await use(new MazadDashboardPage(page));
   },
+  operationListPage: async ({ page }, use) => {
+    await use(new OperationListPage(page));
+  },
+  operationFormPage: async ({ page }, use) => {
+    await use(new OperationFormPage(page));
+  },
   mazadSoldListPage: async ({ page }, use) => {
     await use(new MazadSoldListPage(page));
   },
@@ -258,6 +405,24 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   failedPage: async ({ page }, use) => {
     await use(new FailedPage(page));
   },
+  failedInvoicePage: async ({ page }, use) => {
+    await use(new FailedInvoicePage(page));
+  },
+  pricingUpdatePage: async ({ page }, use) => {
+    await use(new PricingUpdatePage(page));
+  },
+  deliveryTrackingPage: async ({ page }, use) => {
+    await use(new DeliveryTrackingPage(page));
+  },
+  deliveryCompanyListPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyListPage(page));
+  },
+  deliveryCompanyFormPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyFormPage(page));
+  },
+  deliveryCompanyViewPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyViewPage(page));
+  },
   supplierListPage: async ({ page }, use) => {
     await use(new SupplierListPage(page));
   },
@@ -266,6 +431,12 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   supplierViewPage: async ({ page }, use) => {
     await use(new SupplierViewPage(page));
+  },
+  superAdminListPage: async ({ page }, use) => {
+    await use(new SuperAdminListPage(page));
+  },
+  superAdminFormPage: async ({ page }, use) => {
+    await use(new SuperAdminFormPage(page));
   },
   supplierAuctionInfoPage: async ({ page }, use) => {
     await use(new SupplierAuctionInfoPage(page));
@@ -329,6 +500,149 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   customerGroupMembersPage: async ({ page }, use) => {
     await use(new CustomerGroupMembersPage(page));
+  },
+  individualListPage: async ({ page }, use) => {
+    await use(new IndividualListPage(page));
+  },
+  dealerListPage: async ({ page }, use) => {
+    await use(new DealerListPage(page));
+  },
+  dealerFormPage: async ({ page }, use) => {
+    await use(new DealerFormPage(page));
+  },
+  deletedUserListPage: async ({ page }, use) => {
+    await use(new DeletedUserListPage(page));
+  },
+  qcListPage: async ({ page }, use) => {
+    await use(new QcListPage(page));
+  },
+  qcViewPage: async ({ page }, use) => {
+    await use(new QcViewPage(page));
+  },
+  inspectorListPage: async ({ page }, use) => {
+    await use(new InspectorListPage(page));
+  },
+  inspectorViewPage: async ({ page }, use) => {
+    await use(new InspectorViewPage(page));
+  },
+  configPage: async ({ page }, use) => {
+    await use(new ConfigPage(page));
+  },
+  taxonomyTypesPage: async ({ page }, use) => {
+    await use(new TaxonomyTypesPage(page));
+  },
+  taxonomyListPage: async ({ page }, use) => {
+    await use(new TaxonomyListPage(page));
+  },
+  taxonomyFormPage: async ({ page }, use) => {
+    await use(new TaxonomyFormPage(page));
+  },
+  taxonomyViewPage: async ({ page }, use) => {
+    await use(new TaxonomyViewPage(page));
+  },
+  trafficOfficeListPage: async ({ page }, use) => {
+    await use(new TrafficOfficeListPage(page));
+  },
+  trafficOfficeFormPage: async ({ page }, use) => {
+    await use(new TrafficOfficeFormPage(page));
+  },
+  trafficOfficeViewPage: async ({ page }, use) => {
+    await use(new TrafficOfficeViewPage(page));
+  },
+  trafficOfficeCleanup: async ({ trafficOfficeListPage, trafficOfficeViewPage }, use) => {
+    const names = new Set<string>();
+    await use({ track: (officeNameEn) => names.add(officeNameEn) });
+    for (const name of names) {
+      for (const id of await trafficOfficeListPage.idsOfOfficesNamedEn(name)) {
+        await trafficOfficeViewPage.deleteOffice(id);
+      }
+    }
+  },
+  faqCategoryPage: async ({ page }, use) => {
+    await use(new FaqCategoryPage(page));
+  },
+  faqQuestionPage: async ({ page }, use) => {
+    await use(new FaqQuestionPage(page));
+  },
+  faqCleanup: async ({ faqCategoryPage, faqQuestionPage }, use) => {
+    const cleanup = createFaqCleanup({ faqCategoryPage, faqQuestionPage });
+    await use(cleanup.tracker);
+    await cleanup.run();
+  },
+  createFaqCategory: async ({ faqCategoryPage, faqCleanup }, use) => {
+    await use(async (data) => {
+      faqCleanup.trackCategory(data.nameEn);
+      return faqCategoryPage.createCategory(data, faqIconFile);
+    });
+  },
+  createFaqQuestion: async ({ faqQuestionPage, faqCleanup }, use) => {
+    await use(async (categoryNameEn, data, publish = true) => {
+      faqCleanup.trackQuestion(data.questionEn);
+      return faqQuestionPage.createQuestion(categoryNameEn, data, publish);
+    });
+  },
+  createTrafficOffice: async ({ trafficOfficeFormPage, trafficOfficeCleanup }, use) => {
+    await use(async (data) => {
+      trafficOfficeCleanup.track(data.officeNameEn);
+      return trafficOfficeFormPage.createOffice(data);
+    });
+  },
+  keepRolePermissionsGranted: async ({ rolePermissionsPage }, use) => {
+    const kept = new Map<string, Set<string>>();
+    await use((role, routes) => {
+      const set = kept.get(role) ?? new Set<string>();
+      for (const route of routes) set.add(route);
+      kept.set(role, set);
+    });
+    for (const [role, routes] of kept) {
+      await rolePermissionsPage.gotoPermissions(role);
+      for (const route of routes) await rolePermissionsPage.setPermission(route, true);
+    }
+  },
+  signInAsSuperAdmin: async ({ browser, pagesOn }, use, testInfo) => {
+    const account = getSuperAdminAccount();
+    testInfo.skip(!account, SUPER_ADMIN_MISSING_REASON);
+    if (!account) return; // Not reached: skip() ends the test.
+    const opened: FreshSignIn[] = [];
+    await use(async () => {
+      const signIn = await signInFresh(browser, pagesOn, account.phone, account.password);
+      opened.push(signIn);
+      return signIn;
+    });
+    for (const { tab, context } of opened) {
+      if (testInfo.status !== testInfo.expectedStatus) {
+        const { mazadLoginPage, mazadDashboardPage } = pagesOn(tab);
+        const image = await tab
+          .screenshot({
+            fullPage: true,
+            mask: [...mazadLoginPage.sensitiveAreas(), ...mazadDashboardPage.sensitiveAreas()],
+          })
+          .catch(() => null);
+        if (image) {
+          await testInfo.attach('Super Admin screenshot (account details masked)', {
+            body: image,
+            contentType: 'image/png',
+          });
+        }
+      }
+      await context.close();
+    }
+  },
+  taxonomyCleanup: async ({ taxonomyListPage }, use) => {
+    const terms = new Map<string, { type: string; titleEn: string }>();
+    await use({
+      track: (type, titleEn) => terms.set(`${type}|${titleEn.trim()}`, { type, titleEn }),
+    });
+    for (const { type, titleEn } of terms.values()) {
+      await taxonomyListPage.deleteTermsTitledEn(type, titleEn);
+    }
+  },
+  createTaxonomyTerm: async ({ taxonomyFormPage, taxonomyListPage, taxonomyCleanup }, use) => {
+    await use(async (type, data) => {
+      taxonomyCleanup.track(type, data.titleEn);
+      await taxonomyFormPage.createTerm(type, data);
+      return taxonomyListPage.idOfTermTitledEn(type, data.titleEn);
+    });
   },
   customerGroupCleanup: async ({ customerGroupListPage }, use) => {
     const names = new Set<string>();

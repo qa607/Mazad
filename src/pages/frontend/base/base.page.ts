@@ -23,7 +23,25 @@ export abstract class BasePage {
    * redirect between them) — there is no cookie, header or UI toggle to set instead.
    */
   protected async open(path: string): Promise<void> {
-    const prefixed = `/${this.language}${path.startsWith('/') ? path : `/${path}`}`;
-    await this.page.goto(prefixed);
+    await this.page.goto(this.localizedPath(path));
+  }
+
+  /**
+   * Makes the current page show in this page object's language: when the URL carries another
+   * language prefix (or none), the same path is reopened with the right one. Does nothing
+   * when the page is already in the language.
+   */
+  async applyLanguage(): Promise<void> {
+    const url = new URL(this.page.url());
+    const [first, ...rest] = url.pathname.split('/').filter(Boolean);
+    if (first === this.language) return;
+    const path = first === 'en' || first === 'ar' ? rest : [first, ...rest].filter(Boolean);
+    const trailing = url.pathname.endsWith('/') ? '/' : '';
+    await this.open(`/${path.join('/')}${path.length ? trailing : ''}${url.search}`);
+  }
+
+  /** "/contact-us/" → "/ar/contact-us/" for the Arabic page object. */
+  protected localizedPath(path: string): string {
+    return `/${this.language}${path.startsWith('/') ? path : `/${path}`}`;
   }
 }

@@ -31,6 +31,13 @@ export interface AppConfiguration {
   notification: { empty?: { logged?: EmptyState; guest?: EmptyState } }[];
 }
 
+/** A Help Center category from GET /v1/faq-list (the app lists them, then adds its own). */
+export interface FaqCategory {
+  id: number;
+  name: string;
+  icon: string;
+}
+
 /** Sections and tabs accepted by GET /v1/auction/list (from the OpenAPI spec). */
 export type AuctionSection = 'home' | 'my_bids' | 'favorite' | 'listings';
 export type AuctionTab = 'live' | 'upcoming' | 'past' | 'lost' | 'won' | 'tap_waiting_approval';

@@ -15,7 +15,12 @@
     "test:backend": "playwright test --project=backend",
     "test:integration": "playwright test --project=integration",
     "test:android": "playwright test --project=android",
+    "test:android:backoffice": "playwright test --project=android-backoffice --workers=1",
     "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
+    "test:taxonomy": "playwright test --project=backend tests/backend/taxonomy.spec.ts",
+    "test:traffic-office": "playwright test --project=backend tests/backend/traffic-office.spec.ts",
+    "test:faq": "playwright test --project=backend --project=frontend-en-desktop --workers=1 faq",
+    "test:frontend": "playwright test --project=frontend-*",
     "emulator:start": "bash scripts/android-emulator.sh start",
     "emulator:check": "bash scripts/android-emulator.sh check",
     "ios:sim": "bash scripts/ios-sim.sh",
@@ -44,6 +49,7 @@
     "ios:dealer-config": "cross-env IOS_ACCOUNT_REPORT=true IOS_DEALER_CONFIG=true playwright test -c playwright.ios.config.ts --project=ios-account-report tests-ios/ios-dealer-config.report.ts"
   },
   "devDependencies": {
+    "@e965/xlsx": "0.20.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",

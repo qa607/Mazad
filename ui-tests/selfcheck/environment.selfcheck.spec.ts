@@ -166,24 +166,41 @@ test.describe('Staging-only environments (selfcheck)', () => {
     });
   });
 
+  test('every CI workflow sets TEST_ENV to an approved environment, literally', () => {
+    const dir = path.join(ROOT, '.github', 'workflows');
+    const workflows = fs.readdirSync(dir).filter((f) => /\.ya?ml$/.test(f));
+    expect(workflows.length, 'workflows found').toBeGreaterThan(0);
+    for (const file of workflows) {
+      const text = fs.readFileSync(path.join(dir, file), 'utf8');
+      const values = [...text.matchAll(/^\s*TEST_ENV:\s*(.*?)\s*$/gm)].map((m) => m[1]);
+      // A workflow that runs Playwright must choose the environment itself.
+      if (/playwright\s+test/.test(text)) expect(values.length, file).toBeGreaterThan(0);
+      for (const value of values) {
+        // A plain approved name: no ${{ }} expression, fallback, repository variable or secret.
+        expect(environmentFileNames(), `${file}: TEST_ENV: ${value}`).toContain(value);
+      }
+    }
+  });
+
   test('no code reads ALLOW_PRODUCTION and no old environment file or import remains', () => {
-    const dirs = ['config', 'src', 'tests', 'tests-ios', 'ui-tests', 'scripts'];
+    const dirs = ['config', 'src', 'tests', 'tests-ios', 'ui-tests', 'scripts', '.github'];
     const files = dirs.flatMap((d) =>
       fs
         .readdirSync(path.join(ROOT, d), { recursive: true, encoding: 'utf8' })
-        .filter((f) => /\.(ts|mjs|js|sh|json)$/.test(f))
+        .filter((f) => /\.(ts|mjs|js|sh|json|ya?ml)$/.test(f))
         .map((f) => path.join(d, f)),
     );
     const rootFiles = fs
       .readdirSync(ROOT)
-      .filter((f) => /^(playwright.*\.ts|package\.json)$/.test(f));
+      .filter((f) => /^(playwright.*\.ts|package\.json|\.env\.example)$/.test(f));
     const offenders = [...files, ...rootFiles].filter((f) => {
       if (f.endsWith('environment.selfcheck.spec.ts')) return false;
       const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
       return (
         /env\.ALLOW_PRODUCTION|env\[['"]ALLOW_PRODUCTION['"]\]|ALLOW_PRODUCTION\s*=/.test(text) ||
         /environments\/(staging|prod|dev)\.json/.test(text) ||
-        /TEST_ENV=(staging|prod|dev)\b/.test(text)
+        // TEST_ENV=staging (shell, .env) or TEST_ENV: ... 'staging' (YAML, incl. fallbacks).
+        /TEST_ENV\s*[=:][^\n]*\b(staging|prod|dev)\b/.test(text)
       );
     });
     expect(offenders).toEqual([]);

@@ -1,8 +1,11 @@
 import type { TestInfo } from '@playwright/test';
+import type { IosConfig } from '@mobile/ios/ios.config';
 import { inventory } from '@mobile/ios/ios-inspection';
+import { readInstalledApps } from '@mobile/ios/ios-preflight';
 import type { IosDriver } from '@mobile/ios/ios.session';
 import { parseIosSource } from '@mobile/ios/page-source';
 import type { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
+import type { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
 import type { IosLoginScreen } from '@mobile/ios/screens/login.screen';
 import { type IosAppText, iosAppText } from '@test-data/ios-app.data';
 import type { Language } from '@typings';
@@ -71,6 +74,46 @@ export const PASSWORD_TOGGLE_PENDING = pendingReason(
   IDS.login.passwordVisibilityToggle,
   'the Login password visibility control',
 );
+/** The Contact Form's Send has no accessible name (inspected 2026-11-11): its tests wait for an id. */
+export const CONTACT_SEND_PENDING = pendingReason(
+  IDS.contactForm.sendButton,
+  'the Contact Form Send button',
+);
+/** More's header and social icons have no accessible name (inspected 2026-11-11): they wait for ids. */
+export const MORE_HEADER_ICONS_PENDING = pendingReason(
+  IDS.more.favoritesIcon && IDS.more.notificationsIcon,
+  'the More header icons (Favorites, Notifications)',
+);
+export const MORE_SOCIAL_ICONS_PENDING = pendingReason(
+  IDS.more.facebookIcon && IDS.more.instagramIcon && IDS.more.tiktokIcon && IDS.more.linkedinIcon,
+  'the More social media icons',
+);
+
+/** The installed app's version on the device (devicectl, read-only), e.g. "8.3". */
+export async function installedIosVersion(config: IosConfig): Promise<string> {
+  const apps = await readInstalledApps(config.udid);
+  const version = apps.find((a) => a.bundleIdentifier === config.bundleId)?.version;
+  if (!version) throw new Error(`Could not read the installed version of ${config.bundleId}.`);
+  return version;
+}
+
+/**
+ * Opens the Contact Form as a guest: language, guest state on More, then Help Center → the
+ * recorded category → Contact Us. Navigation only; waits for the form's title.
+ */
+export async function openGuestContactForm(
+  appShell: IosAppShellScreen,
+  form: IosContactFormScreen,
+  language: Language,
+  text: IosAppText,
+): Promise<void> {
+  await appShell.setLanguage(language, LANGUAGE_OPTIONS, MORE_TABS, HOME_TABS);
+  await appShell.requireGuest(text.tabs.more, text.tabs.home, text.guestPrompt);
+  await form.openHelpCenter(text.contactUs.contactHelpCenter);
+  await form.openCategory(text.contactUs.contactCategory);
+  await form.openContactUs(text.contactUs.contactUsLink);
+  await form.onlyText(text.contactUs.contactFormTitle);
+}
 
 /**
  * Test details that record why a test is pending: the pending-selector note and the typed

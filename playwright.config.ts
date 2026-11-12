@@ -15,8 +15,21 @@ const BACKEND_SPECS = '**/backend/**/*.spec.ts';
 const INTEGRATION_SPECS = '**/integration/**/*.spec.ts';
 /** Native app specs, driven through Appium; the app language is switched inside the specs. */
 const MOBILE_SPECS = '**/mobile/**/*.spec.ts';
+/** Native app specs that also check the back office, after backend-setup (Dev Root session). */
+const MOBILE_BACKOFFICE_SPECS = '**/mobile/**/*.backoffice.spec.ts';
 /** Signs in once per run and saves the session (see config/credentials.config.ts). */
 const BACKEND_SETUP = '**/backend/**/*.setup.ts';
+/**
+ * Website specs that also check the back office (tests/frontend): every language on Desktop
+ * Chrome and on a phone (Pixel 7), after backend-setup has saved the Dev Root session.
+ */
+const FRONTEND_SPECS = '**/frontend/**/*.spec.ts';
+const FRONTEND_DEVICES = {
+  desktop: { device: devices['Desktop Chrome'], grepInvert: /@mobile-only/ },
+  mobile: { device: devices['Pixel 7'], grepInvert: /@desktop-only/ },
+} as const;
+/** Tests tagged for one language only (e.g. @en-only) are skipped in the other's projects. */
+const LANGUAGE_ONLY: Record<Language, RegExp> = { en: /@ar-only/, ar: /@en-only/ };
 
 export default defineConfig<LanguageOptions>({
   testDir: './tests',
@@ -58,13 +71,27 @@ export default defineConfig<LanguageOptions>({
     // Customer website: one project per language, so every spec runs in English and in Arabic.
     ...(Object.keys(LANGUAGES) as Language[]).map((language) => ({
       name: language,
-      testIgnore: [BACKEND_SPECS, INTEGRATION_SPECS, MOBILE_SPECS],
+      testIgnore: [BACKEND_SPECS, INTEGRATION_SPECS, MOBILE_SPECS, FRONTEND_SPECS],
       use: {
         ...devices['Desktop Chrome'],
         language,
         locale: LANGUAGES[language].locale,
       },
     })),
+    // Website + back office: frontend-<language>-<desktop|mobile>.
+    ...(Object.keys(LANGUAGES) as Language[]).flatMap((language) =>
+      (Object.keys(FRONTEND_DEVICES) as (keyof typeof FRONTEND_DEVICES)[]).map((kind) => ({
+        name: `frontend-${language}-${kind}`,
+        testMatch: FRONTEND_SPECS,
+        dependencies: ['backend-setup'],
+        grepInvert: [FRONTEND_DEVICES[kind].grepInvert, LANGUAGE_ONLY[language]],
+        use: {
+          ...FRONTEND_DEVICES[kind].device,
+          language,
+          locale: LANGUAGES[language].locale,
+        },
+      })),
+    ),
     // Back office: signs in as Dev Root once per run; signed-in specs reuse that session.
     {
       name: 'backend-setup',
@@ -88,7 +115,15 @@ export default defineConfig<LanguageOptions>({
     {
       name: 'android',
       testMatch: MOBILE_SPECS,
+      testIgnore: MOBILE_BACKOFFICE_SPECS,
       timeout: 120_000,
+    },
+    // Android app + back office: kept apart so a plain Android run never signs in to the back office.
+    {
+      name: 'android-backoffice',
+      testMatch: MOBILE_BACKOFFICE_SPECS,
+      dependencies: ['backend-setup'],
+      timeout: 180_000,
     },
   ],
 });
