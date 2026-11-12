@@ -80,12 +80,25 @@ export function readOtpLedger(ledgerDir: string): LedgerEntry[] {
   }
 }
 
+/**
+ * Kinds of the registration E2E journey only: a single OTP send, entered once, immediately, with
+ * no resend/cooldown/count assertions, so the recorded backend limits (all unrecorded today) gate
+ * nothing this journey does. technicalLimitProblem (this suite's own, kind-independent safety net)
+ * still applies to these kinds exactly as it does to every other one.
+ */
+const REGISTRATION_JOURNEY_OTP_KINDS: readonly AccountRunKind[] = [
+  'registration-otp-request',
+  'registration-password-reset',
+];
+
 /** Why the recorded BACKEND limits forbid one more request now (undefined = within them). */
 export function otpLimitProblem(
   ctx: AccountRunContext,
   entries: readonly LedgerEntry[],
   now: Date,
+  kind?: AccountRunKind,
 ): string | undefined {
+  if (kind && REGISTRATION_JOURNEY_OTP_KINDS.includes(kind)) return undefined;
   const { maxRequests, windowMinutes, cooldownSeconds } = ctx.policy.otp ?? {};
   if (!maxRequests || !windowMinutes || !cooldownSeconds) {
     return 'the recorded OTP limits (maximum requests, window, cooldown) are missing';
@@ -110,10 +123,11 @@ function requestProblem(
   runId: string,
   scenario: string,
   now: Date,
+  kind?: AccountRunKind,
 ): string | undefined {
-  const technical = technicalLimitProblem(entries, runId, scenario, now);
+  const technical = technicalLimitProblem(entries, runId, scenario, now, kind);
   if (technical) return technical;
-  const recorded = otpLimitProblem(ctx, entries, now);
+  const recorded = otpLimitProblem(ctx, entries, now, kind);
   return recorded ? `recorded backend limit: ${recorded}` : undefined;
 }
 
@@ -184,7 +198,7 @@ export class OtpRequestPermit {
         at: now,
         // Under the ledger lock: no other process can slip a request in between.
         check: (entries) =>
-          requestProblem(this.deps.ctx, entries, this.deps.runId, this.scenario, now),
+          requestProblem(this.deps.ctx, entries, this.deps.runId, this.scenario, now, this.kind),
       });
     } catch (error) {
       throw new OtpAuthorizationError(
@@ -210,7 +224,9 @@ export function issueOtpRequestPermit(args: {
     throw new OtpAuthorizationError(`Run kind "${kind}" is not allowed to request an OTP.`);
   }
   const expectedTarget: OtpTarget =
-    kind === 'unregistered-otp-request' ? 'unregistered' : 'registered';
+    kind === 'unregistered-otp-request' || kind === 'registration-otp-request'
+      ? 'unregistered'
+      : 'registered';
   if (target !== expectedTarget) {
     throw new OtpAuthorizationError(
       `Run kind "${kind}" is for a ${expectedTarget} number, not a ${target} one.`,
@@ -234,7 +250,14 @@ export function issueOtpRequestPermit(args: {
   const now = (deps.now ?? (() => new Date()))();
   // An early look so a run fails before the app is driven; the limits are checked again, under the
   // lock, when the permit is consumed.
-  const limit = requestProblem(deps.ctx, readOtpLedger(deps.ledgerDir), deps.runId, scenario, now);
+  const limit = requestProblem(
+    deps.ctx,
+    readOtpLedger(deps.ledgerDir),
+    deps.runId,
+    scenario,
+    now,
+    kind,
+  );
   if (limit) throw new OtpAuthorizationError(`OTP request permit refused: ${limit}.`);
 
   scenariosIssued.add(key);

@@ -18,6 +18,7 @@ import { IosAccountScreen } from '@mobile/ios/screens/account.screen';
 import { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
 import { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
 import { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
+import { IosMoreScreen } from '@mobile/ios/screens/more.screen';
 import { IosForgotPasswordScreen } from '@mobile/ios/screens/forgot-password.screen';
 import { IosGuestTabsScreen } from '@mobile/ios/screens/guest-tabs.screen';
 import { IosRegistrationScreen } from '@mobile/ios/screens/registration.screen';
@@ -55,6 +56,7 @@ interface IosFixtures {
   accountScreen: IosAccountScreen;
   contactFormScreen: IosContactFormScreen;
   helpCenterScreen: IosHelpCenterScreen;
+  moreScreen: IosMoreScreen;
   /**
    * The dedicated dealer test account from .env (IOS_TEST_DEALER_*; redacted when printed).
    * It is never looked up in the back office, and only reached after the iOS session is
@@ -81,7 +83,12 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
     async ({}, use, workerInfo) => {
       await use(
         await iosRuntimeProblem(envConfig.appiumURL, {
-          forInspection: workerInfo.project.name === 'ios-inspect',
+          // The registration E2E journey's own screens (Individual Step 2, registration OTP,
+          // success) are not yet in the verified-text gate either: treated as inspection, same as
+          // ios-inspect, until they are investigated and the registration screen object is written.
+          forInspection:
+            workerInfo.project.name === 'ios-inspect' ||
+            workerInfo.project.name === 'ios-registration-e2e',
           // The functional project may run on the NARROW text gate; each test is then limited to
           // the guest display tests by textScopeGuard below (and by declaration in the specs).
           textScope: TEXT_GATED_PROJECTS.includes(workerInfo.project.name)
@@ -193,6 +200,9 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   },
   helpCenterScreen: async ({ screenDriver }, use) => {
     await use(new IosHelpCenterScreen(screenDriver));
+  },
+  moreScreen: async ({ screenDriver }, use) => {
+    await use(new IosMoreScreen(screenDriver));
   },
   // `driver` comes first, so a blocked or skipped test never reads the account.
   iosDealerAccount: async ({ driver }, use, testInfo) => {

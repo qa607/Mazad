@@ -1,5 +1,7 @@
 import type { TestInfo } from '@playwright/test';
+import type { IosConfig } from '@mobile/ios/ios.config';
 import { inventory } from '@mobile/ios/ios-inspection';
+import { readInstalledApps } from '@mobile/ios/ios-preflight';
 import type { IosDriver } from '@mobile/ios/ios.session';
 import { parseIosSource } from '@mobile/ios/page-source';
 import type { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
@@ -78,6 +80,23 @@ export const CONTACT_SEND_PENDING = pendingReason(
   IDS.contactForm.sendButton,
   'the Contact Form Send button',
 );
+/** More's header and social icons have no accessible name (inspected 2026-11-11): they wait for ids. */
+export const MORE_HEADER_ICONS_PENDING = pendingReason(
+  IDS.more.favoritesIcon && IDS.more.notificationsIcon,
+  'the More header icons (Favorites, Notifications)',
+);
+export const MORE_SOCIAL_ICONS_PENDING = pendingReason(
+  IDS.more.facebookIcon && IDS.more.instagramIcon && IDS.more.tiktokIcon && IDS.more.linkedinIcon,
+  'the More social media icons',
+);
+
+/** The installed app's version on the device (devicectl, read-only), e.g. "8.3". */
+export async function installedIosVersion(config: IosConfig): Promise<string> {
+  const apps = await readInstalledApps(config.udid);
+  const version = apps.find((a) => a.bundleIdentifier === config.bundleId)?.version;
+  if (!version) throw new Error(`Could not read the installed version of ${config.bundleId}.`);
+  return version;
+}
 
 /**
  * Opens Help Center as a guest: language, guest state on More, then Help Center. Navigation only;

@@ -27,6 +27,12 @@ export const PASSWORD_RESET_BLOCKED = blocked(
 /** Logs a shared test account out (successful-login flow; signing out a signed-in app). */
 export const LOGOUT_BLOCKED = blocked('MAZAD_ALLOW_LOGOUT', 'logging a shared test account out');
 
+/** Submits registration (creates a new account) instead of only inspecting Step 2 state. */
+export const ACCOUNT_CREATION_BLOCKED = blocked(
+  'MAZAD_ALLOW_ACCOUNT_CREATION',
+  'submitting registration to create a new test account',
+);
+
 /**
  * Sends a Contact Us message from the Android app to staging. Not an account change, but it
  * creates a back-office record the app tests cannot guard the way the website's request guard

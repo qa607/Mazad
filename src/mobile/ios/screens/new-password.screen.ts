@@ -6,9 +6,10 @@ import { IosScreen, type ReadOnlyElement } from '@mobile/ios/screens/ios.screen'
 
 /**
  * Forgot Password, step 3 (new password). Web and Android have a single new-password field and
- * no confirmation field; a confirmation field is only added here if the iOS app has one. The
- * screen has never been seen on iOS (it needs a real OTP), so each control is the ONE match, or
- * the lookup fails.
+ * no confirmation field; a confirmation field is only added here if the iOS app has one. Each
+ * control is the ONE match, or the lookup fails. Confirmed live (2026-11-11, English, physical
+ * device): one SecureTextField, and the Save/Login button carries no accessible name at all, the
+ * same shape as every other submit button in this app (Login, Forgot Password, OTP Verify).
  */
 export class IosNewPasswordScreen extends IosScreen {
   heading(label: string) {
@@ -34,12 +35,15 @@ export class IosNewPasswordScreen extends IosScreen {
     );
   }
 
-  /** The Save and Login button: the recorded id, or else the ONE Button with exactly this label. */
+  /**
+   * The Save and Login button: the recorded id, or else the ONE Button without an accessible name
+   * (2026-11-11 device evidence). `label` is kept for the error message only.
+   */
   private async saveButtonElement(label: string) {
     return this.idOrOnly(
       IDS.newPassword.saveAndLoginButton,
-      this.buttonSelector(label),
-      `New Password: the "${label}" button`,
+      this.unlabeledButtonSelector(),
+      `New Password: the "${label}" button (the only Button without an accessible name)`,
     );
   }
 
@@ -70,8 +74,43 @@ export class IosNewPasswordScreen extends IosScreen {
       accountContext,
     );
     await (await this.newPasswordInput()).setValue(password);
+    // iOS's own "Suggested strong password" AutoFill popup (observed 2026-11-11) opens over the
+    // field as soon as it is focused, and its "Dismiss" control sits visually on top of the
+    // Save/Login button's area below; left open, it was observed to swallow every tap aimed at
+    // that button (the screen never advanced, not even the keyboard dismissed).
+    const dismissSuggestion = this.driver.$(
+      '-ios predicate string:type == "XCUIElementTypeOther" AND name == "Dismiss"',
+    );
+    if (await dismissSuggestion.isExisting().catch(() => false)) {
+      await dismissSuggestion.click();
+      await this.driver.pause(500);
+    }
+    // The keyboard's own "next"/Return key (observed 2026-11-11: labeled "next", accessible name
+    // "Next:") is tried next: a native element.click() on the Save/Login button itself, and a
+    // coordinate tap at its center, were both observed not to register at all while this field
+    // still held focus.
+    const nextKey = this.driver.$(
+      '-ios predicate string:type == "XCUIElementTypeButton" AND name == "Next:"',
+    );
+    if (await nextKey.isExisting().catch(() => false)) {
+      await nextKey.click();
+      await this.driver.pause(1_000);
+    }
     await this.hideKeyboard();
-    await (await this.saveButtonElement(saveLabel)).click();
+    if (
+      !(await this.newPasswordInput()
+        .then((el) => el.isDisplayed())
+        .catch(() => false))
+    )
+      return;
+    const button = await this.saveButtonElement(saveLabel);
+    const [location, size] = await Promise.all([button.getLocation(), button.getSize()]);
+    await this.tapAtCenterOf({
+      x: location.x,
+      y: location.y,
+      width: size.width,
+      height: size.height,
+    });
   }
 
   /** Dismisses a one-time prompt (e.g. "enable Face ID login") by its button text, if shown. */

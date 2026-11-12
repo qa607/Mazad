@@ -470,11 +470,25 @@ export const TECHNICAL_LIMITS = {
 };
 
 /** Why the suite's own TECHNICAL limits forbid one more request (undefined = within them). */
+/**
+ * Kinds exempted from the "requests without a valid OTP" count and its 24-hour window only (see
+ * technicalLimitProblem): the registration E2E journey's own two OTP-sending kinds. Explicit,
+ * repeated QA-owner authorization (2026-11-11 - "Explicit Authorization - Remove Suite-Owned OTP
+ * Limits"), scoped to this journey's shared test OTP (1111) on the one newly generated Individual
+ * test account, staging build 8.3 (1491) / environment "stg-154" only (its approved backend
+ * origin at the time: config/environments/stg-154.json). This is this SUITE's own margin
+ * (the comment above TECHNICAL_LIMITS explains why it existed): it is not a backend fact, is never
+ * read as one, and nothing here can make the real backend accept a request it would otherwise
+ * refuse. A plain string, not AccountRunKind: this file stays standalone (no project imports).
+ */
+const UNMETERED_KINDS = ['registration-otp-request', 'registration-password-reset'] as const;
+
 export function technicalLimitProblem(
   entries: readonly LedgerEntry[],
   runId: string,
   scenario: string,
   now: Date,
+  kind?: string,
 ): string | undefined {
   const requests = entries.filter((e) => e.kind !== VALID_OTP_MARKER_KIND);
   if (requests.some((e) => e.runId === runId && e.scenario === scenario)) {
@@ -483,17 +497,19 @@ export function technicalLimitProblem(
   if (requests.filter((e) => e.runId === runId).length >= TECHNICAL_LIMITS.maxRequestsPerRun) {
     return `technical safety limit: this run already made ${TECHNICAL_LIMITS.maxRequestsPerRun} OTP-path requests (a limit of this suite, not of the backend)`;
   }
-  // Requests since the last valid OTP entry, within the last 24 hours (the reported lock period).
-  const day = 24 * 3_600_000;
-  const lastValid = Math.max(
-    0,
-    ...entries.filter((e) => e.kind === VALID_OTP_MARKER_KIND).map((e) => Date.parse(e.at)),
-  );
-  const withoutValid = requests.filter(
-    (e) => Date.parse(e.at) > lastValid && now.getTime() - Date.parse(e.at) < day,
-  ).length;
-  if (withoutValid >= TECHNICAL_LIMITS.maxRequestsWithoutValidOtp) {
-    return `technical safety limit: ${withoutValid} OTP-path request(s) were made since the last valid OTP entry; a valid OTP must be entered before more are requested (a limit of this suite, not of the backend)`;
+  if (!kind || !(UNMETERED_KINDS as readonly string[]).includes(kind)) {
+    // Requests since the last valid OTP entry, within the last 24 hours (the reported lock period).
+    const day = 24 * 3_600_000;
+    const lastValid = Math.max(
+      0,
+      ...entries.filter((e) => e.kind === VALID_OTP_MARKER_KIND).map((e) => Date.parse(e.at)),
+    );
+    const withoutValid = requests.filter(
+      (e) => Date.parse(e.at) > lastValid && now.getTime() - Date.parse(e.at) < day,
+    ).length;
+    if (withoutValid >= TECHNICAL_LIMITS.maxRequestsWithoutValidOtp) {
+      return `technical safety limit: ${withoutValid} OTP-path request(s) were made since the last valid OTP entry; a valid OTP must be entered before more are requested (a limit of this suite, not of the backend)`;
+    }
   }
   const last = Math.max(0, ...requests.map((e) => Date.parse(e.at)));
   if (last && now.getTime() - last < TECHNICAL_LIMITS.minMillisBetweenRequests) {

@@ -47,6 +47,28 @@ export const mobileAppText: Record<
        * to be confirmed on first run — the dismissal is optional, so a mismatch is harmless. */
       fingerprintPromptDismiss: string;
     };
+    /**
+     * Registration text confirmed on staging, 2026-11-10/11, that is specific to the app's own
+     * Step 2 screens (not shared with the website): screen headings, section headings, the
+     * mobile-verification hint, the fuller password note, the City/Region placeholder, and the
+     * Commercial Registry label (the app adds "(The 700 Number)" in English where the website's
+     * `registrationCrNumberLabel` does not). Everything else on Step 2 (field labels, Tax ID,
+     * the submit buttons) reads identically to the website and is read from `t()` instead — see
+     * src/mobile/screens/registration.screen.ts.
+     */
+    registrationFlow: {
+      screenHeadingPersonal: string;
+      screenHeadingCompany: string;
+      personalInfoSectionHeading: string;
+      companyInfoSectionHeading: string;
+      mobileVerificationHint: string;
+      passwordNote: string;
+      cityPlaceholder: string;
+      commercialRegistryLabel: string;
+      /** Shown after a successful registration OTP (Individual; confirmed 2026-11-11). */
+      accountCreatedMessage: string;
+      continueButtonLabel: string;
+    };
   }
 > = {
   en: {
@@ -76,6 +98,19 @@ export const mobileAppText: Record<
       logoutCancel: 'Back',
       fingerprintPromptDismiss: 'Not now',
     },
+    registrationFlow: {
+      screenHeadingPersonal: 'Create Personal Account',
+      screenHeadingCompany: 'Create Company Account',
+      personalInfoSectionHeading: 'Personal Information',
+      companyInfoSectionHeading: 'Company Information',
+      mobileVerificationHint: 'A verification code will be sent to verify the mobile number.',
+      passwordNote:
+        'Password must be at least 6 digits. We recommend using lowercase and uppercase letters, special characters, and numbers',
+      cityPlaceholder: 'Select from the list',
+      commercialRegistryLabel: 'Commercial Registry Number (The 700 Number)',
+      accountCreatedMessage: 'Your account has been successfully created!',
+      continueButtonLabel: 'Continue',
+    },
   },
   ar: {
     languageOption: 'العربية',
@@ -99,6 +134,19 @@ export const mobileAppText: Record<
       logoutConfirm: 'تسجيل الخروج',
       logoutCancel: 'عودة',
       fingerprintPromptDismiss: 'ليس الآن',
+    },
+    registrationFlow: {
+      screenHeadingPersonal: 'إنشاء حساب شخصي',
+      screenHeadingCompany: 'إنشاء حساب شركة',
+      personalInfoSectionHeading: 'المعلومات الشخصية',
+      companyInfoSectionHeading: 'معلومات الشركة',
+      mobileVerificationHint: 'سيتم إرسال رمز للتحقق من رقم الجوال.',
+      passwordNote:
+        'يجب أن تتكون كلمة المرور من 6 خانات على الأقل. لزيادة قوة كلمة المرور، ينصح باستخدام أحرف صغيرة وكبيرة، ورموز خاصة وأرقام',
+      cityPlaceholder: 'اختر من القائمة',
+      commercialRegistryLabel: 'رقم السجل التجاري (رقم الـ 700)',
+      accountCreatedMessage: 'تم إنشاء حسابك بنجاح!',
+      continueButtonLabel: 'استمرار',
     },
   },
 };

@@ -5,9 +5,11 @@ import { type ActionAuthorization, authorizeAccountAction } from '@mobile/ios/ac
 import { IosScreen, type ReadOnlyElement } from '@mobile/ios/screens/ios.screen';
 
 /**
- * Forgot Password, step 2 (OTP). Android shows four separate fields and the website one field
- * with four boxes; the iOS layout has never been seen (it needs an OTP request), so this accepts
- * exactly those two shapes and fails on anything else, rather than guessing.
+ * OTP entry, shared by Forgot Password and the registration journey. Android shows four separate
+ * fields and the website one field with four boxes; this accepts exactly those two shapes and
+ * fails on anything else, rather than guessing. Confirmed live on the registration OTP screen
+ * (2026-11-11, English, physical device): the Verify button carries no accessible name at all
+ * (same shape as Login/Forgot Password's submit button); the field layout entered without error.
  */
 export class IosOtpScreen extends IosScreen {
   heading(label: string) {
@@ -61,12 +63,17 @@ export class IosOtpScreen extends IosScreen {
     return texts.length === 1;
   }
 
-  /** The Verify button: the recorded id, or else the ONE Button with exactly this label. */
+  /**
+   * The Verify button: the recorded id, or else the ONE Button without an accessible name (2026-11-11
+   * device evidence, registration OTP screen, English: the button carries no label at all, same shape
+   * as Login's Log In and Forgot Password's Send). `label` is kept for the error message only; it was
+   * never the real selector once an id is missing.
+   */
   private async verifyButtonElement(label: string) {
     return this.idOrOnly(
       IDS.otp.verifyButton,
-      this.buttonSelector(label),
-      `OTP: the "${label}" button`,
+      this.unlabeledButtonSelector(),
+      `OTP: the "${label}" button (the only Button without an accessible name)`,
     );
   }
 

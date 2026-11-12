@@ -14,6 +14,7 @@ export type Feature =
   | 'Registration'
   | 'Guest tabs'
   | 'Contact Us'
+  | 'More'
   | 'Help Center FAQs';
 export type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
 export type Platform = 'web' | 'android' | 'ios';

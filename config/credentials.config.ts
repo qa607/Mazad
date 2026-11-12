@@ -118,6 +118,21 @@ export function getDevRootAccount(): BackendAccount | null {
   return phone && password ? new BackendAccount(phone, password) : null;
 }
 
+/**
+ * The Android Individual test account created by the registration E2E journey
+ * (tests/mobile/android/registration-e2e.spec.ts), or null when it is not configured in .env.
+ * Its password is kept in sync manually after any Forgot Password reset the journey performs.
+ */
+export function getAndroidTestIndividual(): BackendAccount | null {
+  const phone = localEnv.ANDROID_TEST_INDIVIDUAL_PHONE?.trim();
+  const password = localEnv.ANDROID_TEST_INDIVIDUAL_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+export const ANDROID_TEST_INDIVIDUAL_MISSING_REASON =
+  'The Android Individual test account is not set: add ANDROID_TEST_INDIVIDUAL_PHONE and ' +
+  'ANDROID_TEST_INDIVIDUAL_PASSWORD to the local .env file (see registration-e2e.spec.ts).';
+
 export const OTP_MISSING_REASON =
   'The staging OTP is not set: add OTP_CODE to the local .env file.';
 

@@ -32,7 +32,16 @@ export type AccountRunKind =
   | 'login'
   | 'otp-flow-chain'
   | 'otp-reset-chain'
-  | 'negative-chain';
+  | 'negative-chain'
+  // The three kinds below belong only to the one-time registration -> forgot password -> login
+  // journey (its own QA-owner switch, IOS_ALLOW_REGISTRATION_E2E_JOURNEY). They are deliberately
+  // NOT unioned with 'otp-request'/'otp-validation': those backend facts (config/ios-account-policy.ts)
+  // are unrecorded (null) and that file is kept unchanged, so requiring them would make this journey
+  // permanently unrunnable. The journey only ever sends one OTP and enters it once immediately (no
+  // cooldown/resend/attempt-limit assertions), so those facts would not gate anything this journey does.
+  | 'registration-otp-request'
+  | 'registration-password-reset'
+  | 'registration-login';
 
 /** Why a run is blocked, by the category the test report uses. */
 export type BlockerCategory = 'policy-blocked' | 'authorization-blocked';
@@ -75,6 +84,9 @@ export const RUN_KIND_SETS: Record<AccountRunKind, readonly PolicySet[]> = {
   'otp-flow-chain': ['always', 'otp-request', 'otp-validation'],
   'negative-chain': ['always', 'otp-request', 'otp-validation', 'otp-negative', 'login'],
   'otp-reset-chain': ['always', 'otp-request', 'otp-validation', 'login', 'password-reset'],
+  'registration-otp-request': ['always'],
+  'registration-password-reset': ['always'],
+  'registration-login': ['always', 'login'],
 };
 
 /** The approval switches each kind needs (all must be exactly "true"). */
@@ -94,23 +106,41 @@ export const SWITCHES: Record<AccountRunKind, readonly string[]> = {
     'MAZAD_ALLOW_LOGOUT',
   ],
   'negative-chain': ['IOS_ALLOW_ACCOUNT_ACTIONS', 'MAZAD_ALLOW_OTP_REQUESTS'],
+  // The registration E2E journey: one dedicated switch, separate from every permit above, scoped
+  // only to the account this journey creates for itself.
+  'registration-otp-request': ['IOS_ALLOW_ACCOUNT_ACTIONS', 'IOS_ALLOW_REGISTRATION_E2E_JOURNEY'],
+  'registration-password-reset': [
+    'IOS_ALLOW_ACCOUNT_ACTIONS',
+    'IOS_ALLOW_REGISTRATION_E2E_JOURNEY',
+  ],
+  'registration-login': ['IOS_ALLOW_ACCOUNT_ACTIONS', 'IOS_ALLOW_REGISTRATION_E2E_JOURNEY'],
 };
 
 /** The kinds allowed to submit a login (the Log In button): see action-guard.ts. */
-export const LOGIN_KINDS: readonly AccountRunKind[] = ['unregistered-login', 'login'];
+export const LOGIN_KINDS: readonly AccountRunKind[] = [
+  'unregistered-login',
+  'login',
+  'registration-login',
+];
 /** The kinds allowed to submit an OTP for verification (the Verify button). */
 export const OTP_VALIDATION_KINDS: readonly AccountRunKind[] = [
   'otp-flow-chain',
   'otp-reset-chain',
   'negative-chain',
+  'registration-otp-request',
+  'registration-password-reset',
 ];
 /** An invalid new password may be tried by chains that stop before saving, or by a reset chain. */
 export const PASSWORD_ATTEMPT_KINDS: readonly AccountRunKind[] = [
   'otp-flow-chain',
   'otp-reset-chain',
+  'registration-password-reset',
 ];
-/** Only a reset chain may SAVE a new password. */
-export const PASSWORD_SAVE_KINDS: readonly AccountRunKind[] = ['otp-reset-chain'];
+/** Only a reset chain, or the registration journey's own reset step, may SAVE a new password. */
+export const PASSWORD_SAVE_KINDS: readonly AccountRunKind[] = [
+  'otp-reset-chain',
+  'registration-password-reset',
+];
 
 /** The kinds that can send an OTP: only these may be issued an OTP request permit. */
 export const OTP_REQUEST_KINDS: readonly AccountRunKind[] = [
@@ -118,6 +148,8 @@ export const OTP_REQUEST_KINDS: readonly AccountRunKind[] = [
   'otp-flow-chain',
   'otp-reset-chain',
   'negative-chain',
+  'registration-otp-request',
+  'registration-password-reset',
 ];
 
 /** The kind a chain is DECLARED as (all its steps). See effectiveChain for what can run. */
@@ -281,7 +313,15 @@ export function accountRunBlockers(kind: AccountRunKind, ctx: AccountRunContext)
 
   add('policy-blocked', accountPolicyProblem(ctx.policy, ctx.exists, ctx.now, RUN_KIND_SETS[kind]));
 
-  const needsDealer = kind !== 'unregistered-login' && kind !== 'unregistered-otp-request';
+  const REGISTRATION_JOURNEY_KINDS: readonly AccountRunKind[] = [
+    'registration-otp-request',
+    'registration-password-reset',
+    'registration-login',
+  ];
+  const needsDealer =
+    kind !== 'unregistered-login' &&
+    kind !== 'unregistered-otp-request' &&
+    !REGISTRATION_JOURNEY_KINDS.includes(kind);
   const needsOtp = kind.endsWith('-chain');
   const missing = ctx.missingLocalEnv([
     ...(needsDealer ? DEALER_VARIABLES : []),

@@ -93,6 +93,18 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       contactMobilePlaceholder: 'e.g. 0554235678',
       contactMessagePlaceholder: 'Enter your message',
       contactMobilePrefix: '+966',
+      moreTitle: 'More',
+      moreSettings: 'Settings',
+      moreLanguage: 'Language',
+      moreSocialHeading: 'Follow us on Social Media',
+      moreImportantLinks: 'Important Links',
+      moreAboutUs: 'About Us',
+      moreTerms: 'Terms & Conditions',
+      morePrivacy: 'Privacy Policy',
+      moreRateUs: 'Rate us in the App Store',
+      moreChangeEnvironment: 'Change Environment',
+      moreBack: 'Back',
+      moreVersionLabel: 'Version',
     });
     expect(IOS_GUEST_FORM_TEXT.ar).toEqual({
       homeTab: 'الرئيسية',
@@ -148,6 +160,18 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       contactMobilePlaceholder: 'مثال: 0554235678',
       contactMessagePlaceholder: 'أدخل رسالتك',
       contactMobilePrefix: '+966',
+      moreTitle: 'المزيد',
+      moreSettings: 'الإعدادات',
+      moreLanguage: 'اللغة',
+      moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+      moreImportantLinks: 'روابط مهمة',
+      moreAboutUs: 'من نحن',
+      moreTerms: 'الشروط و الأحكام',
+      morePrivacy: 'سياسة الخصوصية',
+      moreRateUs: 'قيّم التطبيق في المتجر',
+      moreChangeEnvironment: 'تغيير البيئة',
+      moreBack: 'عودة',
+      moreVersionLabel: 'الإصدار',
     });
     expect(guestFormTextProblem()).toBeUndefined();
   });
@@ -219,6 +243,7 @@ function declaredTitles(): string[] {
     'tests-ios/registration.spec.ts',
     'tests-ios/guest-tabs.spec.ts',
     'tests-ios/contact-us.spec.ts',
+    'tests-ios/more.spec.ts',
     // Help Center FAQs: every test is a guest display test (no full-gate section), so these files
     // are listed here for their titles but not in the safe-test-first structure check below.
     'tests-ios/faq.spec.ts',
@@ -273,6 +298,7 @@ test.describe('iOS narrow text gate cannot unblock other tests (selfcheck)', () 
       'tests-ios/registration.spec.ts',
       'tests-ios/guest-tabs.spec.ts',
       'tests-ios/contact-us.spec.ts',
+      'tests-ios/more.spec.ts',
     ]) {
       const source = read(file);
       expect(source, file).toContain(

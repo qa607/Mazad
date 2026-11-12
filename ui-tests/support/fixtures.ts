@@ -9,12 +9,21 @@ import {
   type RedirectRecord,
 } from './guest-guard';
 import { assertStagingTarget, resolveUiRun, snapshotSettingsProblem, type UiRun } from './ui-run';
+import {
+  deleteFirebaseAnonymousUser,
+  type FirebaseAnonymousSession,
+} from '../../src/network/firebase-anonymous-cleanup';
 
 /** Options set per project in playwright.ui.config.ts. */
 export interface UiOptions {
   language: 'en' | 'ar';
   /** True for the phone-emulated viewports (390, 360). */
   phone: boolean;
+  /**
+   * Off by default everywhere; only ui-tests/web/signup.ui.spec.ts turns this on, for its own
+   * Step 2 tests, mirroring src/fixtures/website.fixture.ts's same-named option exactly.
+   */
+  allowFirebaseAnonymousSignup: boolean;
 }
 
 interface UiTestFixtures {
@@ -23,6 +32,9 @@ interface UiTestFixtures {
   /** Layout and localization findings for this test; attached to the report at the end. */
   findings: Findings;
   _haltCheck: void;
+  /** Same contract as the functional fixture: sessions this test's own signup created, cleaned up
+   * (with their own ID token) when the test ends, pass or fail. */
+  firebaseAnonymousSessions: FirebaseAnonymousSession[];
 }
 
 interface UiWorkerFixtures {
@@ -54,6 +66,27 @@ function writeHalt(file: string, event: NetworkEvent, testTitle: string): void {
 export const test = base.extend<UiOptions & UiTestFixtures, UiWorkerFixtures>({
   language: ['en', { option: true }],
   phone: [false, { option: true }],
+  allowFirebaseAnonymousSignup: [false, { option: true }],
+
+  // eslint-disable-next-line no-empty-pattern
+  firebaseAnonymousSessions: async ({}, use, testInfo) => {
+    const sessions: FirebaseAnonymousSession[] = [];
+    await use(sessions);
+    if (!sessions.length) return;
+    const results = await Promise.all(sessions.map((s) => deleteFirebaseAnonymousUser(s)));
+    await testInfo.attach('firebase-anonymous-cleanup.json', {
+      body: JSON.stringify(results, null, 2),
+      contentType: 'application/json',
+    });
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length) {
+      throw new Error(
+        `Firebase anonymous-user cleanup failed for ${failed.length} session(s): ${failed
+          .map((f) => `${f.localIdPrefix}… (${f.error})`)
+          .join('; ')}`,
+      );
+    }
+  },
 
   uiRun: [
     // eslint-disable-next-line no-empty-pattern
@@ -91,7 +124,11 @@ export const test = base.extend<UiOptions & UiTestFixtures, UiWorkerFixtures>({
   ],
 
   networkLog: [
-    async ({ context, baseURL, uiRun }, use, testInfo) => {
+    async (
+      { context, baseURL, uiRun, allowFirebaseAnonymousSignup, firebaseAnonymousSessions },
+      use,
+      testInfo,
+    ) => {
       const events: NetworkEvent[] = [];
       // Web tests: re-check the exact staging target before the browser opens anything.
       if (testInfo.project.name.startsWith('web-')) assertStagingTarget(baseURL);
@@ -111,6 +148,10 @@ export const test = base.extend<UiOptions & UiTestFixtures, UiWorkerFixtures>({
           if (event.kind === 'unexpected') writeHalt(uiRun.haltFile, event, testInfo.title);
         },
         (record) => redirects.push(record),
+        [],
+        {},
+        allowFirebaseAnonymousSignup,
+        (session) => firebaseAnonymousSessions.push(session),
       );
 
       await use(events);

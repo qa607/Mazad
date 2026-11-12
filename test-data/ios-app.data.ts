@@ -60,6 +60,35 @@ export function contactPlaceholders(text: IosContactUsText): Record<IosContactFi
   };
 }
 
+/**
+ * The More tab (guest), observed on the device 2026-11-11 (iPhone 11 Pro Max, build 8.3 (1491)), in
+ * both languages. Flat, more-prefixed keys (the coverage selfchecks read app text one level deep).
+ * The About Us and Terms pages carry the row's label as their title. "Change Environment" and
+ * "Rate us" are recorded to be CHECKED, never tapped.
+ */
+export interface IosMoreText {
+  moreTitle: string;
+  moreSettings: string;
+  moreLanguage: string;
+  moreSocialHeading: string;
+  moreImportantLinks: string;
+  moreAboutUs: string;
+  moreTerms: string;
+  morePrivacy: string;
+  moreRateUs: string;
+  moreChangeEnvironment: string;
+  moreBack: string;
+  moreVersionLabel: string;
+}
+
+/**
+ * The More tab's version line for an installed version. Arabic places the number first and wraps
+ * the word in Unicode first-strong isolates, exactly as the app shows it: "8.3 \u2068الإصدار\u2069".
+ */
+export function iosVersionLine(language: Language, version: string, label: string): string {
+  return language === 'ar' ? `${version} \u2068${label}\u2069` : `${label} ${version}`;
+}
+
 export interface IosAppText {
   tabs: { home: string; more: string };
   languageOption: string;
@@ -78,6 +107,22 @@ export interface IosAppText {
   registrationHeading: string;
   chooseAccountType: string;
   registrationNext: string;
+  /**
+   * Individual ("Personal") Step 2 and its City/Region picker (registration-E2E-journey
+   * inspection, 2026-11-11, build 8.3 (1491), English and Arabic, physical device). See
+   * src/mobile/ios/screens/registration.screen.ts for how each is located.
+   */
+  personalStep2Heading: string;
+  fullNamePlaceholder: string;
+  iqamaPlaceholder: string;
+  mobilePlaceholder: string;
+  registrationPasswordPlaceholder: string;
+  cityRegionLabel: string;
+  /** The City/Region opener's own text (inside the Button, before a city is chosen). */
+  cityRegionPlaceholder: string;
+  createAccountButton: string;
+  /** The city picked in the registration E2E journey (confirmed present 2026-11-11, both languages). */
+  registrationCityOption: string;
   /** The guest My Bids and My Actions tabs, observed 2026-11-09 (build 8.3 (1491)). */
   bidsTab: string;
   actionsTab: string;
@@ -105,6 +150,7 @@ export interface IosAppText {
   favoritesGuestLogin: string;
   fingerprintPromptDismiss: string;
   contactUs: IosContactUsText;
+  more: IosMoreText;
   // Backend-driven text, identical on web and Android (confirmed), assumed shared by iOS.
   invalidCredentials: string;
   unregisteredPhone: string;
@@ -120,6 +166,35 @@ const OBSERVED_LOGOUT_BACK = { en: 'Back', ar: 'عودة' } as const;
 const OBSERVED_REGISTRATION = {
   en: { heading: 'Create a new account', chooseAccountType: 'Choose Account Type', next: 'Next' },
   ar: { heading: 'إنشاء حساب جديد', chooseAccountType: 'اختر نوع الحساب', next: 'التالي' },
+} as const;
+
+/**
+ * Individual ("Personal") Step 2 and its City/Region picker (registration-E2E-journey inspection,
+ * 2026-11-11, build 8.3 (1491), English and Arabic, physical device, QA's iPhone).
+ */
+const OBSERVED_PERSONAL_STEP2 = {
+  en: {
+    heading: 'Create Personal Account',
+    fullNamePlaceholder: 'e.g. Mohammed Abdullah Salem Saleh',
+    iqamaPlaceholder: 'e.g. 1234567890',
+    mobilePlaceholder: 'e.g. 0554235678',
+    passwordPlaceholder: 'Enter password',
+    cityRegionLabel: 'City/ Region',
+    cityRegionPlaceholder: 'Select from the list',
+    createAccountButton: 'Create Account',
+    registrationCityOption: 'Riyadh',
+  },
+  ar: {
+    heading: 'إنشاء حساب شخصي',
+    fullNamePlaceholder: 'مثال: محمد عبدالله سالم صالح',
+    iqamaPlaceholder: 'مثال: 1234567890',
+    mobilePlaceholder: 'مثال: 0554235678',
+    passwordPlaceholder: 'أدخل كلمة المرور',
+    cityRegionLabel: 'المدينة/ المنطقة',
+    cityRegionPlaceholder: 'اختر من القائمة',
+    createAccountButton: 'إنشاء حساب',
+    registrationCityOption: 'الرياض',
+  },
 } as const;
 
 /** The guest My Bids and My Actions tabs (guest inspection 2026-11-09, build 8.3 (1491)). */
@@ -223,6 +298,37 @@ const OBSERVED_CONTACT_US: Record<Language, IosContactUsText> = {
   },
 };
 
+const OBSERVED_MORE: Record<Language, IosMoreText> = {
+  en: {
+    moreTitle: 'More',
+    moreSettings: 'Settings',
+    moreLanguage: 'Language',
+    moreSocialHeading: 'Follow us on Social Media',
+    moreImportantLinks: 'Important Links',
+    moreAboutUs: 'About Us',
+    moreTerms: 'Terms & Conditions',
+    morePrivacy: 'Privacy Policy',
+    moreRateUs: 'Rate us in the App Store',
+    moreChangeEnvironment: 'Change Environment',
+    moreBack: 'Back',
+    moreVersionLabel: 'Version',
+  },
+  ar: {
+    moreTitle: 'المزيد',
+    moreSettings: 'الإعدادات',
+    moreLanguage: 'اللغة',
+    moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+    moreImportantLinks: 'روابط مهمة',
+    moreAboutUs: 'من نحن',
+    moreTerms: 'الشروط و الأحكام',
+    morePrivacy: 'سياسة الخصوصية',
+    moreRateUs: 'قيّم التطبيق في المتجر',
+    moreChangeEnvironment: 'تغيير البيئة',
+    moreBack: 'عودة',
+    moreVersionLabel: 'الإصدار',
+  },
+};
+
 export function iosAppText(language: Language): IosAppText {
   const app = mobileAppText[language];
   const t = getTranslator(language);
@@ -242,10 +348,20 @@ export function iosAppText(language: Language): IosAppText {
     registrationHeading: OBSERVED_REGISTRATION[language].heading,
     chooseAccountType: OBSERVED_REGISTRATION[language].chooseAccountType,
     registrationNext: OBSERVED_REGISTRATION[language].next,
+    personalStep2Heading: OBSERVED_PERSONAL_STEP2[language].heading,
+    fullNamePlaceholder: OBSERVED_PERSONAL_STEP2[language].fullNamePlaceholder,
+    iqamaPlaceholder: OBSERVED_PERSONAL_STEP2[language].iqamaPlaceholder,
+    mobilePlaceholder: OBSERVED_PERSONAL_STEP2[language].mobilePlaceholder,
+    registrationPasswordPlaceholder: OBSERVED_PERSONAL_STEP2[language].passwordPlaceholder,
+    cityRegionLabel: OBSERVED_PERSONAL_STEP2[language].cityRegionLabel,
+    cityRegionPlaceholder: OBSERVED_PERSONAL_STEP2[language].cityRegionPlaceholder,
+    createAccountButton: OBSERVED_PERSONAL_STEP2[language].createAccountButton,
+    registrationCityOption: OBSERVED_PERSONAL_STEP2[language].registrationCityOption,
     ...OBSERVED_GUEST_TABS[language],
     ...OBSERVED_GUEST_SCREENS[language],
     fingerprintPromptDismiss: app.loginFlow.fingerprintPromptDismiss,
     contactUs: OBSERVED_CONTACT_US[language],
+    more: OBSERVED_MORE[language],
     invalidCredentials: t('invalidCredentials'),
     unregisteredPhone: t('unregisteredPhone'),
     incorrectOtp: t('incorrectOtp'),

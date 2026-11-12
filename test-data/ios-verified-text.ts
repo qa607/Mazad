@@ -62,6 +62,17 @@ export const GUEST_FORM_TEST_TITLES = [
   'Help Center opens the Contact Form with its fields and labels',
   'Contact Form Name keeps letters only',
   'Contact Form Mobile Number ignores letters and stops at 10 digits',
+  // More tab (guest): navigation and display only. The text below was observed on the device on
+  // 2026-11-11 in both languages. Rate us, the social icons and "Change Environment" are never tapped;
+  // About Us, Terms, Help Center and Privacy Policy (an in-app browser on iOS) stay inside the app.
+  'More tab shows its sections and links',
+  'More is the selected tab',
+  'About Us opens inside the app and Back returns to More',
+  'Terms & Conditions opens inside the app and Back returns to More',
+  'Help Center opens from More with its categories',
+  'Privacy Policy opens the staging site in the in-app browser',
+  'More shows the installed app version',
+  'Switching the language on More changes the app and survives a restart',
   // Help Center FAQs (guest): navigation and display only. The fixed text used (Help Center,
   // "Can't find your answer?", Contact Us) is the Contact Us text above, observed 2026-11-11; the
   // categories, questions and answers come from GET /v1/faq-list or from records the back office
@@ -132,6 +143,18 @@ export const IOS_GUEST_FORM_TEXT = {
     contactMobilePlaceholder: 'e.g. 0554235678',
     contactMessagePlaceholder: 'Enter your message',
     contactMobilePrefix: '+966',
+    moreTitle: 'More',
+    moreSettings: 'Settings',
+    moreLanguage: 'Language',
+    moreSocialHeading: 'Follow us on Social Media',
+    moreImportantLinks: 'Important Links',
+    moreAboutUs: 'About Us',
+    moreTerms: 'Terms & Conditions',
+    morePrivacy: 'Privacy Policy',
+    moreRateUs: 'Rate us in the App Store',
+    moreChangeEnvironment: 'Change Environment',
+    moreBack: 'Back',
+    moreVersionLabel: 'Version',
   },
   ar: {
     homeTab: 'الرئيسية',
@@ -186,6 +209,18 @@ export const IOS_GUEST_FORM_TEXT = {
     contactMobilePlaceholder: 'مثال: 0554235678',
     contactMessagePlaceholder: 'أدخل رسالتك',
     contactMobilePrefix: '+966',
+    moreTitle: 'المزيد',
+    moreSettings: 'الإعدادات',
+    moreLanguage: 'اللغة',
+    moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+    moreImportantLinks: 'روابط مهمة',
+    moreAboutUs: 'من نحن',
+    moreTerms: 'الشروط و الأحكام',
+    morePrivacy: 'سياسة الخصوصية',
+    moreRateUs: 'قيّم التطبيق في المتجر',
+    moreChangeEnvironment: 'تغيير البيئة',
+    moreBack: 'عودة',
+    moreVersionLabel: 'الإصدار',
   },
 } as const;
 
@@ -244,6 +279,18 @@ function currentText(text: IosAppText) {
     contactMobilePlaceholder: text.contactUs.contactMobilePlaceholder,
     contactMessagePlaceholder: text.contactUs.contactMessagePlaceholder,
     contactMobilePrefix: IOS_CONTACT_MOBILE_PREFIX,
+    moreTitle: text.more.moreTitle,
+    moreSettings: text.more.moreSettings,
+    moreLanguage: text.more.moreLanguage,
+    moreSocialHeading: text.more.moreSocialHeading,
+    moreImportantLinks: text.more.moreImportantLinks,
+    moreAboutUs: text.more.moreAboutUs,
+    moreTerms: text.more.moreTerms,
+    morePrivacy: text.more.morePrivacy,
+    moreRateUs: text.more.moreRateUs,
+    moreChangeEnvironment: text.more.moreChangeEnvironment,
+    moreBack: text.more.moreBack,
+    moreVersionLabel: text.more.moreVersionLabel,
   };
 }
 

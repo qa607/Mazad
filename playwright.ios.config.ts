@@ -90,5 +90,17 @@ export default defineConfig<LanguageOptions>({
           },
         ]
       : []),
+    // Registration -> Forgot Password -> login E2E journey, scoped to the one account it creates
+    // for itself. Present only when requested explicitly: IOS_REGISTRATION_E2E=true. Gated at run
+    // time by its own switch, IOS_ALLOW_REGISTRATION_E2E_JOURNEY (default false; see .env).
+    ...(process.env.IOS_REGISTRATION_E2E === 'true'
+      ? [
+          {
+            name: 'ios-registration-e2e',
+            testMatch: '**/*.e2e.ts',
+            use: { language: 'en' as const },
+          },
+        ]
+      : []),
   ],
 });

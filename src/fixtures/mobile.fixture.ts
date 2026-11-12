@@ -18,9 +18,12 @@ import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
 import { EnvironmentScreen } from '@mobile/screens/environment.screen';
 import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
+import { MoreScreen } from '@mobile/screens/more.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
 import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
 import { NotificationsScreen } from '@mobile/screens/notifications.screen';
+import { MazadRegistrationScreen } from '@mobile/screens/registration.screen';
+import { StaticPageScreen } from '@mobile/screens/static-page.screen';
 
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
@@ -40,9 +43,12 @@ interface MobileFixtures {
   myActionsScreen: MyActionsScreen;
   notificationsScreen: NotificationsScreen;
   loginScreen: MazadLoginScreen;
+  registrationScreen: MazadRegistrationScreen;
   accountScreen: MazadAccountScreen;
   helpCenterScreen: HelpCenterScreen;
   contactFormScreen: ContactFormScreen;
+  moreScreen: MoreScreen;
+  staticPageScreen: StaticPageScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
 }
@@ -115,6 +121,9 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   loginScreen: async ({ driver }, use) => {
     await use(new MazadLoginScreen(driver));
   },
+  registrationScreen: async ({ driver }, use) => {
+    await use(new MazadRegistrationScreen(driver));
+  },
   accountScreen: async ({ driver }, use) => {
     await use(new MazadAccountScreen(driver));
   },
@@ -123,6 +132,12 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   contactFormScreen: async ({ driver }, use) => {
     await use(new ContactFormScreen(driver));
+  },
+  moreScreen: async ({ driver }, use) => {
+    await use(new MoreScreen(driver));
+  },
+  staticPageScreen: async ({ driver }, use) => {
+    await use(new StaticPageScreen(driver));
   },
   // eslint-disable-next-line no-empty-pattern
   buyer: async ({}, use, testInfo) => {
