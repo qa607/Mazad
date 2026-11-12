@@ -9,10 +9,10 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
-      # The config needs an environment with a baseURL; only staging has one so far.
-      # Override with the TEST_ENV / BASE_URL repository variables.
-      TEST_ENV: ${{ vars.TEST_ENV || 'staging' }}
-      BASE_URL: ${{ vars.BASE_URL }}
+      # The approved staging environment (config/environments/stg-154.json), set here explicitly:
+      # no fallback and no repository-variable override. BASE_URL is not set; it defaults to the
+      # environment's approved baseURL. Checked by ui-tests/selfcheck/environment.selfcheck.spec.ts.
+      TEST_ENV: stg-154
       # Dev Root credentials are read from a local .env only (never from CI variables),
       # so specs that need them are skipped here.
     steps:
@@ -24,6 +24,11 @@ jobs:
         run: npm ci
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+      # Configuration-only checks (environment selection, guards, rules). Offline: the target is
+      # https://selfcheck.invalid and no staging access is needed, so a broken configuration
+      # fails here, before any test that needs staging runs.
+      - name: Self-check configuration (offline)
+        run: npm run ui:selfcheck
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v4
