@@ -70,7 +70,7 @@ for (const lang of LANGUAGES) {
       });
 
       test(
-        GUEST_FORM_TEST_TITLES[29],
+        GUEST_FORM_TEST_TITLES[37],
         async ({
           driver,
           iosConfig,
@@ -139,7 +139,7 @@ test.describe(
     });
 
     test(
-      GUEST_FORM_TEST_TITLES[30],
+      GUEST_FORM_TEST_TITLES[38],
       async ({
         driver,
         iosConfig,
@@ -174,7 +174,7 @@ test.describe(
     );
 
     test(
-      GUEST_FORM_TEST_TITLES[31],
+      GUEST_FORM_TEST_TITLES[39],
       async ({
         driver,
         iosConfig,
@@ -208,7 +208,7 @@ test.describe(
     );
 
     test(
-      GUEST_FORM_TEST_TITLES[32],
+      GUEST_FORM_TEST_TITLES[40],
       async ({
         driver,
         iosConfig,
