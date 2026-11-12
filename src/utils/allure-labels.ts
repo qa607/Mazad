@@ -8,7 +8,13 @@
  * Xray: no test keys are added until the QA owner provides the key format.
  */
 export type Feature =
-  'Login' | 'Forgot Password' | 'Dealer' | 'Registration' | 'Guest tabs' | 'Contact Us';
+  | 'Login'
+  | 'Forgot Password'
+  | 'Dealer'
+  | 'Registration'
+  | 'Guest tabs'
+  | 'Contact Us'
+  | 'Help Center FAQs';
 export type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
 export type Platform = 'web' | 'android' | 'ios';
 

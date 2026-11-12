@@ -7,6 +7,7 @@ import {
   IOS_GATES,
   iosStaticProblem,
   outOfTextScopeReason,
+  TEXT_GATED_PROJECTS,
 } from '../../src/mobile/ios/ios-preflight';
 import type { IosDriver } from '../../src/mobile/ios/ios.session';
 import { IosForgotPasswordScreen } from '../../src/mobile/ios/screens/forgot-password.screen';
@@ -218,6 +219,10 @@ function declaredTitles(): string[] {
     'tests-ios/registration.spec.ts',
     'tests-ios/guest-tabs.spec.ts',
     'tests-ios/contact-us.spec.ts',
+    // Help Center FAQs: every test is a guest display test (no full-gate section), so these files
+    // are listed here for their titles but not in the safe-test-first structure check below.
+    'tests-ios/faq.spec.ts',
+    'tests-ios/faq.backoffice.spec.ts',
   ]) {
     const source = read(file);
     const pattern =
@@ -318,9 +323,17 @@ test.describe('iOS narrow text gate cannot unblock other tests (selfcheck)', () 
     expect(fixture).toMatch(
       /textScopeGuard:\s*\[[\s\S]*outOfTextScopeReason\([\s\S]*\{ auto: true \}/,
     );
-    expect(fixture).toContain(
-      "textScope: workerInfo.project.name === 'ios' ? GUEST_FORM_TEXT_SCOPE : undefined",
+    expect(fixture).toMatch(
+      /textScope: TEXT_GATED_PROJECTS\.includes\(workerInfo\.project\.name\)\s*\?\s*GUEST_FORM_TEXT_SCOPE\s*:\s*undefined/,
     );
+    // Exactly the two functional projects; the back-office one is gated like the guest one.
+    expect([...TEXT_GATED_PROJECTS].sort()).toEqual(['ios', 'ios-backoffice']);
+    for (const project of TEXT_GATED_PROJECTS) {
+      expect(
+        outOfTextScopeReason(project, 'not a guest display test', STG, gates({}), verifiedDevice),
+        project,
+      ).toMatch(/outside the narrow guest display text scope/);
+    }
   });
 });
 

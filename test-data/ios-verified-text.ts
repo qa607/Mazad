@@ -62,6 +62,18 @@ export const GUEST_FORM_TEST_TITLES = [
   'Help Center opens the Contact Form with its fields and labels',
   'Contact Form Name keeps letters only',
   'Contact Form Mobile Number ignores letters and stops at 10 digits',
+  // Help Center FAQs (guest): navigation and display only. The fixed text used (Help Center,
+  // "Can't find your answer?", Contact Us) is the Contact Us text above, observed 2026-11-11; the
+  // categories, questions and answers come from GET /v1/faq-list or from records the back office
+  // creates (ios-backoffice project) and deletes after each test.
+  'Help Center lists exactly the FAQ categories of the API',
+  'A Help Center category lists its questions, then Contact Us',
+  'A Help Center question opens to its answer and closes again',
+  'Back returns from a Help Center category to Help Center, then More',
+  'A published FAQ and its category show in the app, and the question opens and closes',
+  'Two published FAQ questions of a category are both listed',
+  'A category whose only FAQ question is unpublished is not listed',
+  'An edited FAQ question shows its new text, and unpublishing it removes the category',
 ] as const;
 
 export const IOS_GUEST_FORM_TEXT = {

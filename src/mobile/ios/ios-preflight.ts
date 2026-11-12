@@ -112,9 +112,15 @@ export function iosStaticProblem(
 }
 
 /**
- * Why a test of the physical-device functional suite (project "ios") must not run: with the
- * narrow text gate, only the guest display tests may run while IOS_TEXT_VERIFIED is still
- * closed; every other test stays blocked, before any hook or app action. Undefined = may run.
+ * The functional projects on the narrow text gate: "ios" (guest, the app only) and
+ * "ios-backoffice" (guest app checks of records the back office creates as Dev Root).
+ */
+export const TEXT_GATED_PROJECTS: readonly string[] = ['ios', 'ios-backoffice'];
+
+/**
+ * Why a test of a functional project (TEXT_GATED_PROJECTS) must not run: with the narrow text
+ * gate, only the guest display tests may run while IOS_TEXT_VERIFIED is still closed; every other
+ * test stays blocked, before any hook or app action. Undefined = may run.
  * Other projects (inspection, guarded launch) are not affected.
  */
 export function outOfTextScopeReason(
@@ -124,7 +130,7 @@ export function outOfTextScopeReason(
   gates: IosGates = IOS_GATES,
   readConfig?: (env: NodeJS.ProcessEnv) => IosConfig,
 ): string | undefined {
-  if (projectName !== 'ios') return undefined;
+  if (!TEXT_GATED_PROJECTS.includes(projectName)) return undefined;
   if ((GUEST_FORM_TEST_TITLES as readonly string[]).includes(title)) return undefined;
   const problem = iosStaticProblem(env, {}, gates, readConfig);
   return problem

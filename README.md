@@ -13,16 +13,17 @@ Before running tests, set `TEST_ENV` to an approved staging environment (current
 
 ## Running tests
 
-| Command                               | What it does                                                   |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `npm test`                            | All tests (website in English and Arabic, back office), headed |
-| `npm run test:en` / `npm run test:ar` | Customer website, one language only                            |
-| `npm run test:backend`                | Back office only                                               |
-| `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)        |
-| `npm run test:android`                | Mazad Android app through Appium (see Mobile below)            |
-| `npm run test:android:backoffice`     | Android app sends checked in the back office (approval needed) |
-| `npm run test:headless`               | All tests, headless                                            |
-| `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)    |
+| Command                               | What it does                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| `npm test`                            | All tests (website in English and Arabic, back office), headed                   |
+| `npm run test:en` / `npm run test:ar` | Customer website, one language only                                              |
+| `npm run test:backend`                | Back office only                                                                 |
+| `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)                          |
+| `npm run test:android`                | Mazad Android app through Appium (see Mobile below)                              |
+| `npm run test:android:backoffice`     | Android app checks of back-office records (FAQs; Contact Us sends need approval) |
+| `npm run test:ios:backoffice`         | iOS app checks of FAQs the back office creates, then deletes                     |
+| `npm run test:headless`               | All tests, headless                                                              |
+| `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)                      |
 
 Local overrides go in `.env` (copy `.env.example`). Supported variables:
 
