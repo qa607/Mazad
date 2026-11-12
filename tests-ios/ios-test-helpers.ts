@@ -6,6 +6,7 @@ import type { IosDriver } from '@mobile/ios/ios.session';
 import { parseIosSource } from '@mobile/ios/page-source';
 import type { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
 import type { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
+import type { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
 import type { IosLoginScreen } from '@mobile/ios/screens/login.screen';
 import { type IosAppText, iosAppText } from '@test-data/ios-app.data';
 import type { Language } from '@typings';
@@ -96,6 +97,26 @@ export async function installedIosVersion(config: IosConfig): Promise<string> {
   if (!version) throw new Error(`Could not read the installed version of ${config.bundleId}.`);
   return version;
 }
+
+/**
+ * Opens Help Center as a guest: language, guest state on More, then Help Center. Navigation only;
+ * waits for its title.
+ */
+export async function openGuestHelpCenter(
+  appShell: IosAppShellScreen,
+  help: IosHelpCenterScreen,
+  language: Language,
+  text: IosAppText,
+): Promise<void> {
+  await appShell.setLanguage(language, LANGUAGE_OPTIONS, MORE_TABS, HOME_TABS);
+  await appShell.requireGuest(text.tabs.more, text.tabs.home, text.guestPrompt);
+  await help.openHelpCenter(text.contactUs.contactHelpCenter);
+  await help.onlyText(text.contactUs.contactHelpCenter);
+}
+
+/** The Help Center Back button has an accessible name in English only (see help-center.screen.ts). */
+export const HELP_CENTER_BACK_PENDING_AR =
+  'Pending (Arabic): the Help Center Back button has no accessible name in Arabic (docs/ios-accessibility-ids-request.md); it is not located by position.';
 
 /**
  * Opens the Contact Form as a guest: language, guest state on More, then Help Center → the

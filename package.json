@@ -25,6 +25,7 @@
     "emulator:check": "bash scripts/android-emulator.sh check",
     "ios:sim": "bash scripts/ios-sim.sh",
     "test:ios": "playwright test -c playwright.ios.config.ts --project=ios",
+    "test:ios:backoffice": "playwright test -c playwright.ios.config.ts --project=ios-backoffice",
     "test:ios:inspect": "cross-env IOS_INSPECT=true playwright test -c playwright.ios.config.ts --project=ios-inspect",
     "ios:account-report": "cross-env IOS_ACCOUNT_REPORT=true playwright test -c playwright.ios.config.ts --project=ios-account-report",
     "ios:guarded-launch": "cross-env IOS_GUARDED_LAUNCH=true playwright test -c playwright.ios.config.ts --project=ios-guarded-launch",

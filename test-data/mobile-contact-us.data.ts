@@ -12,7 +12,7 @@ import { digitsAsLetters, uniqueDigits } from '@utils/unique';
  *
  * Where it is: More → Help Center → any category → "Can't find your answer?" → Contact Us.
  * A guest's More tab has no Contact Us row. The app also has a "Sell on Mazad" form type, but
- * no guest screen opens it (Help Center's "Selling on Mazad" is FAQ only), so only Contact Us
+ * no guest screen opens it (a "Selling on Mazad" Help Center category seen before the backend switch was FAQ only), so only Contact Us
  * is covered.
  *
  * How it differs from the website form (contact-us-web.data.ts):

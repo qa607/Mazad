@@ -154,8 +154,8 @@ test.describe('iOS Forgot Password guards: what each step may call (selfcheck)',
   });
 
   test('the narrow gate lists exactly the reviewed guest titles, the phone tests appended at the end', () => {
-    expect(GUEST_FORM_TEST_TITLES).toHaveLength(33);
-    expect(GUEST_FORM_TEST_TITLES.slice(25)).toEqual([
+    expect(GUEST_FORM_TEST_TITLES).toHaveLength(41);
+    expect(GUEST_FORM_TEST_TITLES.slice(25, 33)).toEqual([
       'More tab shows its sections and links',
       'More is the selected tab',
       'About Us opens inside the app and Back returns to More',
@@ -164,6 +164,16 @@ test.describe('iOS Forgot Password guards: what each step may call (selfcheck)',
       'Privacy Policy opens the staging site in the in-app browser',
       'More shows the installed app version',
       'Switching the language on More changes the app and survives a restart',
+    ]);
+    expect(GUEST_FORM_TEST_TITLES.slice(33)).toEqual([
+      'Help Center lists exactly the FAQ categories of the API',
+      'A Help Center category lists its questions, then Contact Us',
+      'A Help Center question opens to its answer and closes again',
+      'Back returns from a Help Center category to Help Center, then More',
+      'A published FAQ and its category show in the app, and the question opens and closes',
+      'Two published FAQ questions of a category are both listed',
+      'A category whose only FAQ question is unpublished is not listed',
+      'An edited FAQ question shows its new text, and unpublishing it removes the category',
     ]);
     expect(GUEST_FORM_TEST_TITLES.slice(22, 25)).toEqual([
       'Help Center opens the Contact Form with its fields and labels',

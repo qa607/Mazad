@@ -31,11 +31,19 @@ export interface AppConfiguration {
   notification: { empty?: { logged?: EmptyState; guest?: EmptyState } }[];
 }
 
-/** A Help Center category from GET /v1/faq-list (the app lists them, then adds its own). */
+/** A Help Center category from GET /v1/faq-list (the apps list exactly these, in this order). */
 export interface FaqCategory {
   id: number;
   name: string;
   icon: string;
+  /** Only filled when one category is asked for (GET /v1/faq-list?id=<id>); null in the list. */
+  questions?: FaqQuestionItem[] | null;
+}
+
+/** A published question of a Help Center category, in the order the app lists them. */
+export interface FaqQuestionItem {
+  question: string;
+  answer: string;
 }
 
 /** Sections and tabs accepted by GET /v1/auction/list (from the OpenAPI spec). */
