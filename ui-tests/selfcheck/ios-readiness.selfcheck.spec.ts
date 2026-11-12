@@ -39,6 +39,7 @@ const ALL_SWITCHES = {
   MAZAD_ALLOW_OTP_REQUESTS: 'true',
   MAZAD_ALLOW_PASSWORD_RESET: 'true',
   MAZAD_ALLOW_LOGOUT: 'true',
+  IOS_ALLOW_REGISTRATION_E2E_JOURNEY: 'true',
 };
 
 function context(
@@ -79,6 +80,18 @@ const CLEAR: Record<PolicySet, (p: AccountTestPolicy) => void> = {
 };
 
 test.describe('iOS run kinds: independent policy fact sets (selfcheck)', () => {
+  // The registration E2E journey's own kinds (its own switch, no backend otp-request/otp-validation
+  // facts: see account-preflight.ts). Kept apart from the pre-existing matrix below, which they do
+  // not change.
+  const REGISTRATION_KINDS = [
+    'registration-otp-request',
+    'registration-password-reset',
+    'registration-login',
+  ] as const;
+  const PRE_EXISTING_OTP_REQUEST_KINDS = OTP_REQUEST_KINDS.filter(
+    (k) => !(REGISTRATION_KINDS as readonly string[]).includes(k),
+  );
+
   test('the sets and switches of every run kind are exactly the approved ones', () => {
     expect(RUN_KIND_SETS).toEqual({
       'unregistered-login': ['always', 'login'],
@@ -87,13 +100,26 @@ test.describe('iOS run kinds: independent policy fact sets (selfcheck)', () => {
       'otp-flow-chain': ['always', 'otp-request', 'otp-validation'],
       'negative-chain': ['always', 'otp-request', 'otp-validation', 'otp-negative', 'login'],
       'otp-reset-chain': ['always', 'otp-request', 'otp-validation', 'login', 'password-reset'],
+      'registration-otp-request': ['always'],
+      'registration-password-reset': ['always'],
+      'registration-login': ['always', 'login'],
     });
     expect(SWITCHES['unregistered-login']).toEqual(['IOS_ALLOW_ACCOUNT_ACTIONS']);
-    // Every kind that can send an OTP needs MAZAD_ALLOW_OTP_REQUESTS and the account-action switch.
-    for (const kind of OTP_REQUEST_KINDS) {
+    // Every PRE-EXISTING kind that can send an OTP needs MAZAD_ALLOW_OTP_REQUESTS and the
+    // account-action switch.
+    for (const kind of PRE_EXISTING_OTP_REQUEST_KINDS) {
       expect(SWITCHES[kind], kind).toEqual(
         expect.arrayContaining(['IOS_ALLOW_ACCOUNT_ACTIONS', 'MAZAD_ALLOW_OTP_REQUESTS']),
       );
+    }
+    // The registration journey's kinds use their OWN dedicated switch instead, never the shared
+    // MAZAD_ALLOW_OTP_REQUESTS/MAZAD_ALLOW_LOGOUT ones: its permits are kept separate.
+    for (const kind of REGISTRATION_KINDS) {
+      expect(SWITCHES[kind], kind).toEqual(
+        expect.arrayContaining(['IOS_ALLOW_ACCOUNT_ACTIONS', 'IOS_ALLOW_REGISTRATION_E2E_JOURNEY']),
+      );
+      expect(SWITCHES[kind], kind).not.toContain('MAZAD_ALLOW_OTP_REQUESTS');
+      expect(SWITCHES[kind], kind).not.toContain('MAZAD_ALLOW_LOGOUT');
     }
     expect(SWITCHES['unregistered-otp-request']).toEqual([
       'IOS_ALLOW_ACCOUNT_ACTIONS',
@@ -133,7 +159,13 @@ test.describe('iOS run kinds: independent policy fact sets (selfcheck)', () => {
       noRecovery.recovery.procedure = null;
       for (const kind of Object.keys(RUN_KIND_SETS) as AccountRunKind[]) {
         const problem = accountRunProblem(kind, context(dir, { policy: noRecovery }));
-        if (OTP_REQUEST_KINDS.includes(kind)) {
+        // Q12 is filed under the 'otp-request' policy set (see ios-account-policy.ts); the
+        // registration journey's kinds deliberately do not require that set (see account-preflight.ts),
+        // so they are unaffected even though they are OTP-request kinds.
+        if (
+          OTP_REQUEST_KINDS.includes(kind) &&
+          !(REGISTRATION_KINDS as readonly string[]).includes(kind)
+        ) {
           expect(problem, kind).toMatch(/recovery and unlock procedure is not recorded/);
         } else {
           expect(problem, kind).toBeUndefined();

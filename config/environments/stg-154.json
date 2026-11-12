@@ -1,5 +1,5 @@
 {
-  "baseURL": "https://stg-mazad-v3-154.motory.dev",
+  "baseURL": "https://stg-mazad-v3-224.motory.dev",
   "erpURL": "https://erp-stg-fixed.motory.com",
   "erpStatus": "unconfirmed"
 }

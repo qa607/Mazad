@@ -16,6 +16,10 @@ import { FaqWebPage } from '@pages/frontend/help-center/faq-web.page';
 import { faqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
 import { installGuestGuard, type NetworkEvent } from '../network/request-guard';
 import {
+  deleteFirebaseAnonymousUser,
+  type FirebaseAnonymousSession,
+} from '../network/firebase-anonymous-cleanup';
+import {
   activeWebRequests,
   APPROVED_WEB_REQUESTS,
   WEB_SYNTHETIC_VALUES,
@@ -24,6 +28,7 @@ import { MazadLoginPage } from '@pages/backend/auth/mazad-login.page';
 import type { AccountRole, DirectoryAccount } from '@pages/backend/mazad-user-directory.page';
 import { MazadUserDirectoryPage } from '@pages/backend/mazad-user-directory.page';
 import { MazadWebsiteLoginPage } from '@pages/website/mazad-login.page';
+import { MazadRegistrationPage } from '@pages/website/mazad-registration.page';
 
 interface WebsiteWorkerFixtures {
   /** Finds a dedicated test account in the back office. Worker-scoped: one lookup per worker. */
@@ -32,6 +37,7 @@ interface WebsiteWorkerFixtures {
 
 interface WebsiteFixtures {
   mazadWebsiteLoginPage: MazadWebsiteLoginPage;
+  mazadRegistrationPage: MazadRegistrationPage;
   websiteContactUsPage: WebsiteContactUsPage;
   /**
    * Back-office page objects on a second tab, signed in as Dev Root from the session saved by
@@ -55,6 +61,18 @@ interface WebsiteFixtures {
   otpCode: string;
   /** Requests the web request guard blocked in this test (expected and unexpected). */
   webNetworkLog: NetworkEvent[];
+  /**
+   * Anonymous Firebase sessions this test's OWN allowed signup request created (populated only
+   * when allowFirebaseAnonymousSignup is on). Each is deleted, with its own ID token, when the
+   * test ends — pass or fail — and the result is attached to the report; a failed deletion fails
+   * the test instead of being silently swallowed.
+   */
+  firebaseAnonymousSessions: FirebaseAnonymousSession[];
+}
+
+/** test.use() option. Off everywhere by default; only tests/website/registration.spec.ts sets it. */
+interface WebsiteOptions {
+  allowFirebaseAnonymousSignup: boolean;
 }
 
 /** Written on the first unexpected request; every later website test then fails at once. */
@@ -75,10 +93,30 @@ function stagingHostOrThrow(): string {
   return allowed.host;
 }
 
-export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
+export const test = base.extend<WebsiteFixtures & WebsiteOptions, WebsiteWorkerFixtures>({
+  allowFirebaseAnonymousSignup: [false, { option: true }],
   // eslint-disable-next-line no-empty-pattern
   webNetworkLog: async ({}, use) => {
     await use([]);
+  },
+  // eslint-disable-next-line no-empty-pattern
+  firebaseAnonymousSessions: async ({}, use, testInfo) => {
+    const sessions: FirebaseAnonymousSession[] = [];
+    await use(sessions);
+    if (!sessions.length) return;
+    const results = await Promise.all(sessions.map((s) => deleteFirebaseAnonymousUser(s)));
+    await testInfo.attach('firebase-anonymous-cleanup.json', {
+      body: JSON.stringify(results, null, 2),
+      contentType: 'application/json',
+    });
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length) {
+      throw new Error(
+        `Firebase anonymous-user cleanup failed for ${failed.length} session(s): ${failed
+          .map((f) => `${f.localIdPrefix}… (${f.error})`)
+          .join('; ')}`,
+      );
+    }
   },
   // Every page and context the website tests open is guarded before the first navigation:
   // GET/HEAD to staging and the listed static hosts only; known analytics/Firebase traffic is
@@ -86,7 +124,16 @@ export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
   // active endpoint in src/network/web-approved-requests.ts) is blocked, fails the test and
   // halts the run. Redirect hops are checked too. The back-office lookup (findTestAccount)
   // uses its own context and is not affected.
-  context: async ({ context, webNetworkLog }, use, testInfo) => {
+  //
+  // allowFirebaseAnonymousSignup (default false) permits exactly one extra request, see
+  // src/network/request-guard.ts FIREBASE_ANONYMOUS_SIGNUP: only tests/website/registration.spec.ts
+  // turns it on. Its result (if any) is captured into firebaseAnonymousSessions for cleanup, never
+  // logged here beyond the audit entry request-guard.ts itself adds to webNetworkLog.
+  context: async (
+    { context, webNetworkLog, allowFirebaseAnonymousSignup, firebaseAnonymousSessions },
+    use,
+    testInfo,
+  ) => {
     const haltFile = path.join(testInfo.project.outputDir, WEB_GUARD_HALT_FILE);
     if (fs.existsSync(haltFile)) {
       throw new Error(
@@ -107,6 +154,8 @@ export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
       undefined,
       activeWebRequests(APPROVED_WEB_REQUESTS),
       WEB_SYNTHETIC_VALUES,
+      allowFirebaseAnonymousSignup,
+      (session) => firebaseAnonymousSessions.push(session),
     );
 
     await use(context);
@@ -167,6 +216,9 @@ export const test = base.extend<WebsiteFixtures, WebsiteWorkerFixtures>({
   },
   mazadWebsiteLoginPage: async ({ page, language }, use) => {
     await use(new MazadWebsiteLoginPage(page, language));
+  },
+  mazadRegistrationPage: async ({ page, language }, use) => {
+    await use(new MazadRegistrationPage(page, language));
   },
   // Its specs turn the automatic screenshot off (see devRootBackend), so a failing test attaches
   // one of the website tab here; the form only ever holds synthetic test values.
