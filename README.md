@@ -142,6 +142,24 @@ The Sold flow is checked in three places, each with its own project:
 
 Nothing in these suites creates, edits or deletes data. The ERP client can only read (and log in and out). Known application defects are marked with `test.fail` and a description, so they show as expected failures until they are fixed.
 
+## Live auction runs (Standard bidding, Android + iOS + web)
+
+`scripts/live-auction-run.mjs` creates a short Standard auction for a **new** car and has two test users bid on it alternately from the Android app and the iOS app until the price reaches the car's Reserve Price, while the website is followed as a guest; then it checks the back office. Staging only (`TEST_ENV=stg-154`), saved Dev Root session (`.auth/dev-root.json`).
+
+```bash
+TEST_ENV=stg-154 npm run live-auction                                     # dry run: bidders, car and bid plan only
+TEST_ENV=stg-154 npm run live-auction -- --go                             # Individuals
+TEST_ENV=stg-154 npm run live-auction -- --go --role dealer               # Dealers
+TEST_ENV=stg-154 npm run live-auction -- --go --user 3038,715             # pick the Android and iOS bidders
+```
+
+- **Car:** a test-supplier car never used by the script (`reports/live-auction/state.json`, gitignored), from the Failed list or Pricing Done (moved to Upcoming), choosing the fewest bids to the reserve. `--car <VIN>` picks one.
+- **Auction:** `QA-AUTO Live <n>`, Normal, Bidding Type Standard, starting `--start-in` minutes from now (default 3) for `--duration` minutes (default 5). When it goes live the item's **Auto Extend** switch in the Live list is turned off (`--keep-auto-extend` leaves it); auctions were still seen closing 1-2 minutes after their end while the global `auto_extend` setting is ON.
+- **Bids:** "Increase Price" > "Your Increase" (+ in Min Increment steps, at most 6 per bid) > "Confirm Bid" (bids cannot be cancelled). One-time dialogs ("Thank you for participating in your first auction" > Continue, tips > Ok) are closed.
+- **Checks:** all bids placed; the car in Sold after the end (Waiting Transfer, Type Auction, both bidders, highest bid minus fees >= reserve, winner = last bidder; a Dealer shows its company name); the website showed the car live, the bid count, and the ended auction. Not reaching the reserve sends the car to Failed.
+- **Users:** test Individuals (default) or Dealers with a deposit and no hold. A winner goes on hold while its sale is Waiting Transfer; `--fail-held-sales` frees a held candidate by marking its QA-AUTO sale Failed (Penalty 0, Block User off). The website cannot bid (a live car shows "Get the App"), and signing an account in on the website signs it out of the app.
+- **Devices:** the Android emulator through adb (screen reads time out after 20 s and retry; restart a frozen emulator with `adb -s <serial> emu kill` and `npm run emulator:start`) and the iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL`). Credentials only in `.env` (see `.env.example`).
+
 ## Mobile (Android)
 
 - Needs an Android device or emulator with the Mazad staging app installed (`com.app.motory.dealer.staging`), and an Appium 3 server with the UiAutomator2 driver.

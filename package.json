@@ -16,6 +16,7 @@
     "test:integration": "playwright test --project=integration",
     "test:android": "playwright test --project=android",
     "test:android:backoffice": "playwright test --project=android-backoffice --workers=1",
+    "live-auction": "node scripts/live-auction-run.mjs",
     "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
     "test:taxonomy": "playwright test --project=backend tests/backend/taxonomy.spec.ts",
     "test:traffic-office": "playwright test --project=backend tests/backend/traffic-office.spec.ts",
