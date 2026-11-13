@@ -35,9 +35,9 @@ export class MoreScreen extends MobileScreen {
   async headerIconCount(guestPromptLabel: string): Promise<number> {
     const prompt = await this.text(guestPromptLabel).getLocation();
     let count = 0;
-    for (const button of await this.driver.$$(
-      'android=new UiSelector().className("android.widget.Button")',
-    )) {
+    for (const button of await this.driver
+      .$$('android=new UiSelector().className("android.widget.Button")')
+      .getElements()) {
       // Wholly above the prompt's label: the prompt's own Button encloses its label.
       const { y } = await button.getLocation();
       const { height } = await button.getSize();
@@ -54,7 +54,9 @@ export class MoreScreen extends MobileScreen {
     const top = await this.text(headingLabel).getLocation();
     const bottom = await this.text(nextHeadingLabel).getLocation();
     let count = 0;
-    for (const element of await this.driver.$$('android=new UiSelector().clickable(true)')) {
+    for (const element of await this.driver
+      .$$('android=new UiSelector().clickable(true)')
+      .getElements()) {
       const { y } = await element.getLocation();
       if (y > top.y && y < bottom.y) count++;
     }

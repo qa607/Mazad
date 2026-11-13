@@ -167,6 +167,24 @@ npm run emulator:check   # any time, e.g. before npm run test:android
 - If NetBird disconnects while the emulator runs, the emulator loses all DNS. Reconnect NetBird, or restart the emulator (`adb -s <serial> emu kill`, then `npm run emulator:start`).
 - An emulator started from Android Studio's Device Manager does not use NetBird DNS. When the Mac reaches staging through the VPN but the device resolves it to the public endpoint, the Android tests are skipped with that reason instead of failing.
 
+## Buy Now runs (Upcoming, Individual and Dealer)
+
+`scripts/buy-now-run.mjs` buys an Upcoming car with Buy Now in the apps and checks it everywhere. Every run uses a **new car** and a **free user** (not on hold, least recently used); the cars and purchases already used are kept in `reports/buy-now/state.json` (gitignored). Staging only (`TEST_ENV=stg-154`); the back office is read with the saved Dev Root session (`.auth/dev-root.json`).
+
+```bash
+TEST_ENV=stg-154 npm run buy-now -- --platform both                       # dry run: prints the plan only
+TEST_ENV=stg-154 npm run buy-now -- --platform both --go                  # Individuals, Android + iOS
+TEST_ENV=stg-154 npm run buy-now -- --platform both --role dealer --go    # Dealers
+TEST_ENV=stg-154 npm run buy-now -- --push 2                              # only put 2 new cars in Awaiting
+TEST_ENV=stg-154 npm run buy-now -- --ui-only                             # only the website listing (add --app for the apps)
+```
+
+- **Car:** an unused Upcoming car with `buy_now = true`, otherwise the next Pricing Done car of a test supplier (`شركة تجريبية-<n>`): Buy Now price set above its reserve and supplier price, "Show Buy Now?" ticked, moved to Upcoming and put in a `QA-AUTO Buy Now <n>` auction (Awaiting). Buy Now only shows while a car is Upcoming.
+- **Checks per purchase:** website as a guest (Live & Upcoming Auctions > Upcoming, the auction page, `/en/car/<id>` with `buy_now` data and "Get the App"), the app (Upcoming > Cars, the car page, Buy it now sheet total), Bids > Won after the purchase, and the back office Sold row (Waiting Transfer, Buy Now, buyer, Sale Price). A Dealer's Sold row shows its company name.
+- **Holds:** a buyer is put on hold shortly after a purchase while the sale is Waiting Transfer. `--fail-held-sales` marks that user's QA-AUTO Buy Now sale Failed (Penalty 0, Block User off) to free it; the car moves to Failed and its history stays in the Failed Report.
+- **Options:** `--user <id[,id]>` picks the buyers, `--role individual|dealer` the rotation (Individuals by default).
+- **Devices:** Android emulator through adb (`ANDROID_UDID`, default `emulator-5554`, app pointed at the environment); iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL`). Credentials only in `.env` (see `.env.example`).
+
 ## UI design and localization (website)
 
 A separate, guest-only layer for visual regression, text layout and localization checks of the
