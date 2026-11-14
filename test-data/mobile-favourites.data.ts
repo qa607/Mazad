@@ -48,6 +48,14 @@ export const favouriteCarRules: ListedCarRules = {
 };
 
 /**
+ * Open defect of the guest scenario (both apps, EN and AR, 2026-11-14): the guest test is marked
+ * test.fail() with this note. Replace BUG-PENDING with the ticket ID; remove test.fail() once a
+ * guest's favourite is kept after signing in.
+ */
+export const guestFavouriteBug =
+  'BUG-PENDING: a car a guest adds to favourites is not in Favorite Auctions after signing in (the favourite is dropped at sign-in).';
+
+/**
  * The test titles, shared by both apps. iOS lets exactly these past its text gate, and only while
  * IOS_ALLOW_FAVOURITES is "true" (src/mobile/ios/ios-preflight.ts).
  */

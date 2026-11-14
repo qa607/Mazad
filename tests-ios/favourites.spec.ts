@@ -20,6 +20,7 @@ import {
   favouriteCarRules,
   favouritesAppText,
   favouritesTestTitles,
+  guestFavouriteBug,
 } from '@test-data/mobile-favourites.data';
 import { blockedBy, firstBlocked, LOGOUT_BLOCKED } from '@utils/account-actions';
 import { allureLabels } from '@utils/allure-labels';
@@ -166,7 +167,7 @@ for (const lang of LANGUAGES) {
 
       test(
         favouritesTestTitles.guest,
-        { tag: '@functional', annotation: blockedBy(GATE) },
+        { tag: ['@functional', '@known-bug'], annotation: blockedBy(GATE) },
         async (
           {
             driver,
@@ -183,6 +184,7 @@ for (const lang of LANGUAGES) {
           testInfo,
         ) => {
           test.setTimeout(TEST_TIMEOUT);
+          test.fail(true, guestFavouriteBug);
           // Read here, once the iOS session is confirmed usable (never in a blocked or skipped test).
           const account = getIosTestIndividual();
           test.skip(!account, IOS_TEST_INDIVIDUAL_MISSING_REASON);

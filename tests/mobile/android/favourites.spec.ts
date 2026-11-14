@@ -14,6 +14,7 @@ import {
   favouriteCarRules,
   favouritesAppText,
   favouritesTestTitles,
+  guestFavouriteBug,
 } from '@test-data/mobile-favourites.data';
 import { blockedBy, LOGOUT_BLOCKED } from '@utils/account-actions';
 import { allureLabels } from '@utils/allure-labels';
@@ -163,7 +164,7 @@ for (const lang of languages) {
 
       test(
         favouritesTestTitles.guest,
-        { tag: '@functional', annotation: blockedBy(LOGOUT_BLOCKED) },
+        { tag: ['@functional', '@known-bug'], annotation: blockedBy(LOGOUT_BLOCKED) },
         async (
           {
             driver,
@@ -178,6 +179,7 @@ for (const lang of languages) {
           testInfo,
         ) => {
           test.setTimeout(TEST_TIMEOUT);
+          test.fail(true, guestFavouriteBug);
           const car = await pickListedCar(mazadApi, lang);
           test.skip(
             !car,

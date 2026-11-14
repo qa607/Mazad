@@ -156,7 +156,7 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 
 `tests/mobile/android/favourites.spec.ts` and `tests-ios/favourites.spec.ts` run the same two tests in English and Arabic, on any car the app already lists (picked from the app API at run time: no favourites yet, a unique title, at least 15 minutes left; no car is created):
 
-- **A car a guest adds to favourites is in Favorite Auctions after signing in**: as a guest, tap the car's heart, sign in from the welcome sheet it opens, then the car must be in Favorite Auctions (and the API favourite count one higher). Fails on both apps since 2026-11-14: after signing in the car is not added.
+- **A car a guest adds to favourites is in Favorite Auctions after signing in**: as a guest, tap the car's heart, sign in from the welcome sheet it opens, then the car must be in Favorite Auctions (and the API favourite count one higher). Known bug on both apps since 2026-11-14 (after signing in the car is not added): tagged `@known-bug` with `test.fail()`, so it passes while the bug exists and fails once it is fixed; replace `BUG-PENDING` in `test-data/mobile-favourites.data.ts` with the ticket ID.
 - **A signed-in customer adds a car to Favorite Auctions with its heart**: the same check with the heart tapped after signing in (passes on both apps).
 
 Each test starts signed out (a signed-in app is logged out), signs in with the platform's Individual test account from `.env` (`ANDROID_TEST_INDIVIDUAL_*`, `IOS_TEST_INDIVIDUAL_*`) and removes the favourite again at the end.
