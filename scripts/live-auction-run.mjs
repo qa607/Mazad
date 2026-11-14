@@ -5,12 +5,14 @@
  * alternately from the Android app and the iOS app until the price reaches the car's Reserve Price, the website
  * is followed as a guest, and the back office is checked.
  *
- *   TEST_ENV=stg-154 node scripts/live-auction-run.mjs [--go] [--role individual|dealer] [--user <androidId>,<iosId>]
- *       [--bidding standard|price-offering] [--offers <android>,<ios>]
- *       [--car <VIN>] [--start-in 3] [--duration 5] [--fail-held-sales] [--keep-auto-extend] [--show]
+ *   TEST_ENV=stg-154 node scripts/live-auction-run.mjs [--role individual|dealer] [--bidding standard|price-offering]
+ *       [--go --accounts <androidId>,<iosId>] [--offers <android>,<ios>]
+ *       [--car <VIN>] [--start-in 3] [--duration 5] [--keep-auto-extend] [--show]
  *
- * - Default is a DRY RUN: prints the bidders, the car and the bid plan; changes nothing.
- * - --go: (1) signs the Android emulator and the iOS device in as the two bidders, (2) creates a "QA-AUTO Live <n>"
+ * - Default is a DRY RUN: prints the two NEW accounts it would use, the car and the bid plan; changes nothing.
+ * - --go --accounts <androidId>,<iosId> (the IDs the dry run printed; passing them approves resetting their
+ *   passwords): (1) sets a new random password on both accounts and signs the Android emulator and the iOS device in
+ *   with it, (2) creates a "QA-AUTO Live <n>"
  *   Normal auction (Bidding Type Standard) for the car, starting --start-in minutes from now and lasting --duration
  *   minutes, (3) when it goes live opens the car on both devices and turns that item's Auto Extend OFF in the Live
  *   list (unless --keep-auto-extend), (4) bids alternately Android/iOS ("Increase Price", "Your Increase" + steps of
@@ -23,10 +25,11 @@
  *   Amount > "Submit Bid"): by default reserve + admin fee + 500 rounded up to 500 on Android and 1,000 more on iOS
  *   (--offers sets both). Checks: both offers placed, Sold (Bidding Type Price Offering), Highest = the higher
  *   offer, winner = its bidder.
- * - Bidders: two verified test accounts with a deposit and no hold (--role individual by default, or dealer), least
- *   recently used first; --user picks them. A winner goes on hold while its sale is Waiting Transfer;
- *   --fail-held-sales frees a held candidate by marking its QA-AUTO sale Failed (Penalty 0, Block User off).
- *   Credentials come from .env only (see .env.example) and are never printed.
+ * - Bidders: two NEW accounts every run, never saved. From the back office list of the role: Individuals that are
+ *   active, Verified and registered by Deposit; Dealers that are active with their documents reviewed; neither on
+ *   hold nor used by an earlier run. Their password is replaced by a random one that lives only in this process (not
+ *   in .env, not in any file, never printed). Only the IDs are recorded (state.usedAccounts) so no account is used
+ *   twice. A winner is blocked by the app at once and put on hold, so it could not bid in the next run anyway.
  * - Car: a test-supplier car (شركة تجريبية-<n>) never used by this script, from the Failed list or Pricing Done
  *   (moved to Upcoming), choosing the one that needs the fewest bids; --car picks one. Used cars and runs are kept
  *   in reports/live-auction/state.json (gitignored).
@@ -47,11 +50,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback);
 const GO = argv.includes('--go');
-const FAIL_HELD = argv.includes('--fail-held-sales');
 const KEEP_AUTO_EXTEND = argv.includes('--keep-auto-extend');
 const SHOW = argv.includes('--show');
 const ROLE = opt('--role', 'individual');
-const USER_IDS = opt('--user', null)?.split(',');
+const ACCOUNT_IDS = opt('--accounts', null)?.split(',');
 const CAR_VIN = opt('--car', null);
 const START_IN = Number(opt('--start-in', 3));
 const DURATION = Number(opt('--duration', 5));
@@ -76,6 +78,12 @@ if (!['standard', 'price-offering'].includes(BIDDING))
   throw new Error('--bidding must be standard or price-offering');
 if (OFFERS && (OFFERS.length !== 2 || OFFERS.some((v) => !v)))
   throw new Error('--offers needs two amounts: <android>,<ios>');
+if (ACCOUNT_IDS && (ACCOUNT_IDS.length !== 2 || ACCOUNT_IDS.some((v) => !/^\d+$/.test(v))))
+  throw new Error('--accounts needs two back-office IDs: <androidId>,<iosId>');
+if (GO && !ACCOUNT_IDS)
+  throw new Error(
+    '--go needs --accounts <androidId>,<iosId>: run without --go first, check the two new accounts it prints, then pass their IDs (this approves resetting their passwords).',
+  );
 
 const DOTENV = Object.fromEntries(
   fs
@@ -87,28 +95,19 @@ const DOTENV = Object.fromEntries(
 );
 const env = (k, fallback) => process.env[k] || DOTENV[k] || fallback;
 
-/** Test accounts with a deposit (back-office type, ID, display names; credentials in .env as <prefix>_PHONE/_PASSWORD). */
-const USERS = [
-  {
-    prefix: 'ANDROID_TEST_INDIVIDUAL',
-    id: '7946',
-    name: 'Individual Motory test',
-    type: 'individual',
+/**
+ * Where new bidders come from: the role's back-office list, filtered to accounts that can bid. Each candidate's View
+ * page is checked again (status, hold, verification) before it is used.
+ */
+const ACCOUNT_LISTS = {
+  individual: {
+    model: 'IndividualSearch',
+    filters: { status: 'active', is_verified: '1', registration_type: 'deposit' },
   },
-  { prefix: 'IOS_TEST_INDIVIDUAL', id: '3038', name: 'Test iOS', type: 'individual' },
-  { prefix: 'TEST_ANDROID_B', id: '5450', name: 'test android', type: 'individual' },
-  { prefix: 'TEST_DEALER', id: '1331', name: 'Dealer Motory Test', type: 'dealer' },
-  // A Dealer's Sold row names its company (Company Name En), so that name is accepted too.
-  {
-    prefix: 'TEST_DEALER_B',
-    id: '779',
-    name: 'Test English Name',
-    alt: ['Test Arabic Name', 'Test Company Name En'],
-    type: 'dealer',
-  },
-  { prefix: 'TEST_DEALER_C', id: '715', name: 'Test User', alt: ['NGI'], type: 'dealer' },
-];
-const namesOf = (u) => [u.name, ...(u.alt || [])];
+  dealer: { model: 'DealerSearch', filters: { status: 'active', is_documents_reviewed: 'yes' } },
+};
+/** Names an account may show as (a Dealer's app header and Sold row can show its company name). */
+const namesOf = (u) => u.names;
 const TEST_SUPPLIER = /شركة تجريبية-\d+/;
 const VIN_RE = /\b[A-HJ-NPR-Z0-9]{17}\b/;
 
@@ -127,26 +126,24 @@ const SEED = {
     'MR2BE9B30R0059514',
     'LJD0AA294N0168387',
   ],
+  // Back-office IDs of accounts already used as bidders (IDs only, never credentials).
+  usedAccounts: [],
   runs: [],
 };
 const loadState = () => {
+  let s;
   try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    s = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
   } catch {
-    return structuredClone(SEED);
+    s = structuredClone(SEED);
   }
+  s.usedAccounts ||= [];
+  return s;
 };
 const saveState = (s) => {
   fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
   fs.writeFileSync(STATE_FILE, `${JSON.stringify(s, null, 2)}\n`);
 };
-const lastUsedAt = (state, id) =>
-  state.runs
-    .filter((r) => r.users?.includes(id))
-    .map((r) => r.at)
-    .sort()
-    .pop() || '';
-
 const sleep = (s) => new Promise((r) => setTimeout(r, s * 1000));
 const money = (v) => Number(v).toLocaleString('en-US');
 const num = (s) => Number(String(s).replace(/[^\d.]/g, '')) || 0;
@@ -178,113 +175,103 @@ async function openBackOffice(browser) {
   return page;
 }
 
-async function isHeld(page, user) {
-  await page.goto(`/backend/users/${user.type}/update?id=${user.id}`);
-  const name = (await page.locator('input[name="Admin[name_en]"]').inputValue()).trim();
-  if (name !== user.name)
-    throw new Error(`${user.type} ${user.id} is "${name}", expected "${user.name}".`);
-  return page.locator('input[type=checkbox][name="Admin[is_hold]"]').isChecked();
-}
-
-/** QA-AUTO sales (Waiting Transfer) of a user on the first Sold pages. */
-async function openSalesOf(page, user) {
-  const vins = [];
-  for (let n = 1; n <= 3; n++) {
-    await page.goto(`/backend/auction/sold/index?page=${n}`);
-    const rows = await page
-      .locator('tbody tr[data-key]')
-      .evaluateAll((rs) => rs.map((r) => r.innerText.replace(/\s+/g, ' ')));
-    for (const t of rows) {
-      if (
-        namesOf(user).some((x) => t.includes(`Name ${x} Title`)) &&
-        t.includes('Waiting Transfer') &&
-        t.includes('QA-AUTO')
-      ) {
-        const vin = (t.match(VIN_RE) || [])[0];
-        if (vin) vins.push(vin);
-      }
-    }
-  }
-  return vins;
-}
-
-/** Marks one Sold row Failed: "Cancellation upon request by the customer", Penalty 0, Block User off. */
-async function markSaleFailed(page, vin, user) {
-  await page.goto(
-    '/backend/auction/sold/index?' + new URLSearchParams({ 'SoldListViewSearch[vin_number]': vin }),
-  );
-  const row = page.locator('tbody tr[data-key]').filter({ hasText: vin });
-  const text = (await row.innerText()).replace(/\s+/g, ' ');
-  if (
-    !text.includes('Waiting Transfer') ||
-    !namesOf(user).some((x) => text.includes(`Name ${x} Title`))
-  )
-    throw new Error(`Sold row of ${vin} is not a Waiting Transfer sale to ${user.name}.`);
-  await row.locator('a.failed-btn').first().click();
-  const modal = page
-    .locator('.modal.show')
-    .filter({ has: page.locator('#remaininginsuranceamount-remaining_insurance_amount') });
-  await modal.waitFor();
-  await modal
-    .locator('label')
-    .filter({ hasText: 'Cancellation upon request by the customer' })
-    .first()
-    .click();
-  await modal.locator('#remaininginsuranceamount-remaining_insurance_amount').fill('0');
-  const block = modal.locator('input[name="block-user"]');
-  if (await block.isChecked()) await block.uncheck({ force: true });
-  if (await block.isChecked()) throw new Error('Block User would be on; not submitted.');
-  const done = page.waitForResponse(
-    (r) => r.request().method() === 'POST' && r.url().includes('/ajax/failed-auction-item'),
-  );
-  await modal.locator('button[type="submit"]').click();
-  await done;
-}
-
-async function pickBidders(page, state) {
-  const candidates = USER_IDS
-    ? USER_IDS.map((id) => {
-        const u = USERS.find((x) => x.id === id);
-        if (!u)
-          throw new Error(
-            `--user ${id} is not a known test account (${USERS.map((x) => x.id).join(', ')}).`,
-          );
-        return u;
-      })
-    : USERS.filter((u) => u.type === ROLE).sort((a, b) =>
-        lastUsedAt(state, a.id).localeCompare(lastUsedAt(state, b.id)),
-      );
-  const free = [];
-  const held = [];
-  for (const u of candidates) {
-    if (!DOTENV[`${u.prefix}_PHONE`] || !DOTENV[`${u.prefix}_PASSWORD`]) {
-      log(`  ${u.name}: no credentials in .env, skipped`);
-      continue;
-    }
-    ((await isHeld(page, u)) ? held : free).push(u);
-  }
-  log(
-    `  free: ${free.map((u) => u.name).join(', ') || 'none'} | on hold: ${held.map((u) => u.name).join(', ') || 'none'}`,
-  );
-  while (free.length < 2 && held.length) {
-    const u = held.shift();
-    if (!FAIL_HELD) {
-      log(`  ${u.name} is on hold; rerun with --fail-held-sales to free it`);
-      continue;
-    }
-    const vins = await openSalesOf(page, u);
-    log(
-      `  ${u.name}: open sale(s) ${vins.join(', ') || 'none found'}${GO ? ' -> Failed' : ' (would be marked Failed)'}`,
+/** Reads an account's View page: names, phone (the 9 digits after +966) and whether it can bid. */
+async function readAccount(page, id) {
+  await page.goto(`/backend/users/${ROLE}/view?id=${id}`);
+  const field = async (label) =>
+    norm(
+      await page
+        .locator('label', { hasText: new RegExp(`^\\s*${label}\\s*$`) })
+        .first()
+        .locator('xpath=following-sibling::input[1]')
+        .inputValue()
+        .catch(() => ''),
     );
-    if (!GO) {
-      free.push(u);
-      continue;
-    }
-    for (const v of vins) await markSaleFailed(page, v, u);
-    if (!(await isHeld(page, u))) free.push(u);
+  const a = {
+    id,
+    type: ROLE,
+    name: await field('English Name'),
+    status: await field('Status'),
+    hold: await field('Is Hold'),
+    phone: (await field('Phone')).replace(/\D/g, '').replace(/^(966|0)/, ''),
+  };
+  a.names = [a.name];
+  if (ROLE === 'dealer') {
+    const company = await field('Company Name En');
+    if (company && company !== a.name) a.names.push(company);
+    a.verified = await page
+      .locator('label.form-check-label', { hasText: 'Documents are reviewed?' })
+      .locator('xpath=preceding-sibling::input[1]')
+      .isChecked()
+      .catch(() => false);
+  } else {
+    a.verified =
+      (await field('Is Verified')) === 'Yes' && (await field('Registration Type')) === 'Deposit';
   }
-  if (free.length < 2) throw new Error(`Need 2 bidders without a hold, found ${free.length}.`);
-  return free.slice(0, 2); // [android, ios]
+  a.canBid = a.status === 'active' && a.hold === 'No' && a.verified && /^5\d{8}$/.test(a.phone);
+  return a;
+}
+
+/**
+ * Two NEW bidders [android, ios]: the --accounts IDs (checked again), or else the first two accounts of the role's
+ * filtered list that can bid and were never used by this script.
+ */
+async function pickNewAccounts(page, state) {
+  const used = new Set(state.usedAccounts);
+  const picked = [];
+  if (ACCOUNT_IDS) {
+    if (ACCOUNT_IDS[0] === ACCOUNT_IDS[1]) throw new Error('--accounts needs two different IDs.');
+    for (const id of ACCOUNT_IDS) {
+      if (used.has(id))
+        throw new Error(`${ROLE} ${id} was used by an earlier run; every run needs new accounts.`);
+      const a = await readAccount(page, id);
+      if (!a.canBid)
+        throw new Error(
+          `${ROLE} ${id} cannot bid (status ${a.status || '?'}, hold ${a.hold || '?'}, verified ${a.verified}).`,
+        );
+      picked.push(a);
+    }
+    return picked;
+  }
+  const { model, filters } = ACCOUNT_LISTS[ROLE];
+  const params = Object.fromEntries(Object.entries(filters).map(([k, v]) => [`${model}[${k}]`, v]));
+  for (let n = 1; n <= 10 && picked.length < 2; n++) {
+    await page.goto(
+      `/backend/users/${ROLE}/index?` + new URLSearchParams({ ...params, page: String(n) }),
+    );
+    const ids = await page
+      .locator('tbody tr[data-key]')
+      .evaluateAll((rs) => rs.map((r) => r.getAttribute('data-key')));
+    if (!ids.length) break;
+    for (const id of ids) {
+      if (picked.length === 2) break;
+      if (used.has(id)) continue;
+      const a = await readAccount(page, id);
+      if (a.canBid) picked.push(a);
+    }
+  }
+  if (picked.length < 2)
+    throw new Error(`Found ${picked.length} new ${ROLE} account(s) that can bid; 2 are needed.`);
+  return picked;
+}
+
+/** Sets a new random password on the account (Update form). It is kept in memory only: never saved or printed. */
+async function resetPassword(page, acct) {
+  const password = `Qa!${crypto.randomBytes(6).toString('hex')}X1`;
+  await page.goto(`/backend/users/${acct.type}/update?id=${acct.id}`);
+  const name = norm(await page.locator('input[name="Admin[name_en]"]').inputValue());
+  if (name !== acct.name)
+    throw new Error(
+      `${acct.type} ${acct.id} is "${name}", expected "${acct.name}"; password not changed.`,
+    );
+  const form = page.locator('form', { has: page.locator('input[name="Admin[new_password]"]') });
+  await form.locator('input[name="Admin[new_password]"]').fill(password);
+  await form.locator('input[name="Admin[passwordConfirm]"]').fill(password);
+  await form.locator('button[type="submit"]').first().click();
+  await page.waitForURL((u) => !u.pathname.endsWith('/update'), { timeout: 30000 }).catch(() => {});
+  if (new URL(page.url()).pathname.endsWith('/update'))
+    throw new Error(`${acct.type} ${acct.id}: the new password was not saved.`);
+  acct.password = password;
 }
 
 /** Pricing of a vehicle: starting price, min increment, reserve, admin fee, and the bids needed to the reserve. */
@@ -324,6 +311,8 @@ async function pickCar(page, state) {
         const supplier = (text.match(TEST_SUPPLIER) || [])[0];
         if (!vin || !supplier || state.usedVins.includes(vin) || found.some((c) => c.vin === vin))
           continue;
+        // A car whose last auction was a QA-AUTO one was used by another QA script (e.g. Buy Now runs).
+        if (/QA-AUTO/.test(text)) continue;
         if (CAR_VIN && vin !== CAR_VIN) continue;
         const vehicleId = link
           ? (
@@ -352,9 +341,12 @@ async function pickCar(page, state) {
         : 'No unused test-supplier car in Failed or Pricing Done.',
     );
   for (const c of found.slice(0, 12)) Object.assign(c, await pricing(page, c.vehicleId));
+  // Standard: fewest bids to the reserve. Price Offering: the lowest reserve (smaller offers).
   const car = found
     .filter((c) => c.reserve && c.inc)
-    .sort((a, b) => a.bids - b.bids || (a.source === 'Failed' ? -1 : 1))[0];
+    .sort(
+      (a, b) => (PO ? a.reserve - b.reserve : a.bids - b.bids) || (a.source === 'Failed' ? -1 : 1),
+    )[0];
   if (!car) throw new Error('No candidate car has a reserve price and a min increment.');
   return car;
 }
@@ -646,10 +638,19 @@ async function androidEnsureUser(user) {
   s = await screen();
   tap(findId(s, 'edit_text_phone_number'));
   await sleep(0.7);
-  typeText(DOTENV[`${user.prefix}_PHONE`]);
+  // The field (after +966) drops digits typed in one go: type the 9 digits one by one and check them.
+  adb('shell', 'input', 'keyevent', ...Array(12).fill('KEYCODE_DEL'));
+  for (const digit of user.phone) {
+    typeText(digit);
+    await sleep(0.25);
+  }
+  await sleep(0.8);
+  s = await screen();
+  if (findId(s, 'edit_text_phone_number')?.text.replace(/\D/g, '') !== user.phone)
+    throw new Error(`Android: the phone of ${user.name} was not typed correctly; not logging in`);
   tap(findId(s, 'edit_text_password'));
   await sleep(0.7);
-  typeText(DOTENV[`${user.prefix}_PASSWORD`]);
+  typeText(user.password);
   if (adb('shell', 'dumpsys input_method | grep -c mInputShown=true || true').trim() !== '0')
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await sleep(1);
@@ -838,7 +839,7 @@ async function iosEnsureUser(ios, user) {
   await d.pause(2000);
   await ios.closeDialogs();
   let src = await d.getPageSource();
-  if (namesOf(user).some((n) => src.includes(`name="${n}"`))) return;
+  if (namesOf(user).some((n) => norm(src).includes(`name="${n}"`))) return;
   if (!src.includes('Login/ Create an account')) {
     await d.execute('mobile: swipe', { direction: 'up' });
     await d.pause(1500);
@@ -862,10 +863,16 @@ async function iosEnsureUser(ios, user) {
   await d.pause(2500);
   const phone = await d.$('-ios predicate string:type == "XCUIElementTypeTextField"');
   await phone.click();
-  await phone.setValue(DOTENV[`${user.prefix}_PHONE`]);
+  await phone.setValue(`0${user.phone}`);
+  if (
+    !String((await phone.getAttribute('value')) || '')
+      .replace(/\D/g, '')
+      .endsWith(user.phone)
+  )
+    throw new Error(`iOS: the phone of ${user.name} was not typed correctly; not logging in`);
   const pass = await d.$('-ios predicate string:type == "XCUIElementTypeSecureTextField"');
   await pass.click();
-  await pass.setValue(DOTENV[`${user.prefix}_PASSWORD`]);
+  await pass.setValue(user.password);
   // The Log In button has no label (nil): the wide unlabeled button right under the password field.
   const passY = JSON.parse(await pass.getAttribute('rect')).y;
   let login = null;
@@ -879,7 +886,7 @@ async function iosEnsureUser(ios, user) {
   await d.pause(6000);
   await ios.closeDialogs();
   src = await d.getPageSource();
-  if (!namesOf(user).some((n) => src.includes(`name="${n}"`)))
+  if (!namesOf(user).some((n) => norm(src).includes(`name="${n}"`)))
     throw new Error(`iOS: not signed in as ${user.name}`);
 }
 
@@ -1078,16 +1085,16 @@ async function watchWebsite(browser, itemId, stopAt) {
 // ---------- run ----------
 (async () => {
   log(
-    `Live auction run on ${BASE} | role ${USER_IDS ? 'by --user' : ROLE} | bidding ${BIDDING} | ${GO ? 'EXECUTE' : 'DRY RUN (nothing is changed; add --go to execute)'}`,
+    `Live auction run on ${BASE} | role ${ROLE} | bidding ${BIDDING} | ${GO ? 'EXECUTE' : 'DRY RUN (nothing is changed)'}`,
   );
   const state = loadState();
   const browser = await chromium.launch({ headless: !SHOW });
   let ios;
   try {
     const page = await openBackOffice(browser);
-    log('\n1. Bidders (Android, iOS)');
-    const [aUser, iUser] = await pickBidders(page, state);
-    log(`  Android: ${aUser.name} | iOS: ${iUser.name}`);
+    log(`\n1. New ${ROLE} accounts (Android, iOS)`);
+    const [aUser, iUser] = await pickNewAccounts(page, state);
+    log(`  Android: ${aUser.name} (${aUser.id}) | iOS: ${iUser.name} (${iUser.id})`);
 
     log('\n2. Car');
     const car = await pickCar(page, state);
@@ -1109,9 +1116,21 @@ async function watchWebsite(browser, itemId, stopAt) {
         `  plan: ${plan.map((b) => `${b.device} +${b.increase}`).join(', ')} -> bid ${money(car.start + car.steps * car.inc)}`,
       );
     }
-    if (!GO) return;
+    if (!GO) {
+      log(
+        `\nTo run: add --go --accounts ${aUser.id},${iUser.id} (approves setting a new password on both accounts).`,
+      );
+      return;
+    }
 
     log('\n3. Devices');
+    // From here on these accounts count as used, even if a later step fails.
+    for (const u of [aUser, iUser]) {
+      await resetPassword(page, u);
+      state.usedAccounts.push(u.id);
+      saveState(state);
+    }
+    log('  new passwords set on both accounts (kept in memory only)');
     await androidEnsureUser(aUser);
     log(`  Android signed in as ${aUser.name}`);
     ios = await iosSession();
@@ -1284,7 +1303,9 @@ async function watchWebsite(browser, itemId, stopAt) {
         `highest bid ${money(highest - car.admin)} (+${money(car.admin)} fees = ${money(highest)}) >= reserve ${money(car.reserve)}`,
       );
       check(
-        namesOf(lastBidder).includes(g(/Name (.+?) Title/)),
+        namesOf(lastBidder)
+          .map(norm)
+          .includes(norm(g(/Name (.+?) Title/))),
         `winner ${lastBidder.name} (${g(/Name (.+?) Title/)})`,
       );
       log(`    Sold ID ${g(/ID (\d+)/)} at ${g(/Sale Date ([\d-]+ [\d:]+)/)}`);

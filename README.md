@@ -142,16 +142,17 @@ The Sold flow is checked in three places, each with its own project:
 
 Nothing in these suites creates, edits or deletes data. The ERP client can only read (and log in and out). Known application defects are marked with `test.fail` and a description, so they show as expected failures until they are fixed.
 
-## Live auction runs (Standard bidding, Android + iOS + web)
+## Live auction runs (Standard or Price Offering, Android + iOS + web)
 
-`scripts/live-auction-run.mjs` creates a short Standard auction for a **new** car and has two test users bid on it alternately from the Android app and the iOS app until the price reaches the car's Reserve Price, while the website is followed as a guest; then it checks the back office. Staging only (`TEST_ENV=stg-154`), saved Dev Root session (`.auth/dev-root.json`).
+`scripts/live-auction-run.mjs` creates a short Standard auction for a **new** car and has two **new** accounts bid on it from the Android app and the iOS app (Standard: alternately until the price reaches the car's Reserve Price; Price Offering: one sealed offer each), while the website is followed as a guest; then it checks the back office. Staging only (`TEST_ENV=stg-154`), saved Dev Root session (`.auth/dev-root.json`).
 
 ```bash
-TEST_ENV=stg-154 npm run live-auction                                     # dry run: bidders, car and bid plan only
-TEST_ENV=stg-154 npm run live-auction -- --go                             # Individuals
-TEST_ENV=stg-154 npm run live-auction -- --go --role dealer               # Dealers
-TEST_ENV=stg-154 npm run live-auction -- --go --user 3038,715             # pick the Android and iOS bidders
-TEST_ENV=stg-154 npm run live-auction -- --go --bidding price-offering   # sealed offers (Price Offering)
+# 1. Dry run: prints the two new accounts, the car and the plan; changes nothing
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role individual
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role dealer
+# 2. Run with the two IDs the dry run printed (approves setting a new password on them)
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role dealer --go --accounts <androidId>,<iosId>
+# Standard bidding: leave out --bidding (or --bidding standard)
 ```
 
 - **Car:** a test-supplier car never used by the script (`reports/live-auction/state.json`, gitignored), from the Failed list or Pricing Done (moved to Upcoming), choosing the fewest bids to the reserve. `--car <VIN>` picks one.
@@ -160,8 +161,8 @@ TEST_ENV=stg-154 npm run live-auction -- --go --bidding price-offering   # seale
 - **Checks:** all bids placed; the car in Sold after the end (Waiting Transfer, Type Auction, both bidders, highest bid minus fees >= reserve, winner = last bidder; a Dealer shows its company name); the website showed the car live, the bid count, and the ended auction. Not reaching the reserve sends the car to Failed.
 - **Price Offering (`--bidding price-offering`):** an auction's Bidding Type comes from its supplier, so the car's supplier is set to Price Offering only while the auction is created and always set back to Standard right after. These items have no Auto Extend switch. When live, each device submits one sealed offer ("Place a Bid" > Bid Amount > "Submit Bid"): by default the reserve + admin fee + 500, rounded up to 500, on Android and 1,000 more on iOS (`--offers <android>,<ios>` sets both; offers below the reserve expect Failed). Checks: both offers placed, the auction and the Sold row show Bidding Type Price Offering, Highest Price = the higher offer, and its bidder is the winner. On iOS, never tap outside the bid sheet (that closes it); its "Submit Bid" button has no label.
 - **Winners are blocked at once:** the app refuses a bidder who has just won ("Sorry, you cannot participate in auctions at this time") before the back office ticks its hold box, so a winner cannot bid again in the next run.
-- **Users:** test Individuals (default) or Dealers with a deposit and no hold. A winner goes on hold while its sale is Waiting Transfer; `--fail-held-sales` frees a held candidate by marking its QA-AUTO sale Failed (Penalty 0, Block User off). The website cannot bid (a live car shows "Get the App"), and signing an account in on the website signs it out of the app.
-- **Devices:** the Android emulator through adb (screen reads time out after 20 s and retry; restart a frozen emulator with `adb -s <serial> emu kill` and `npm run emulator:start`) and the iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL`). Credentials only in `.env` (see `.env.example`).
+- **Accounts: new every run, never saved.** Two accounts of `--role` (individual by default, or dealer) taken from the back-office list: Individuals that are active, Verified and registered by Deposit; Dealers that are active with "Documents are reviewed?" ticked; not on hold and never used by an earlier run. On `--go` each gets a new random password that lives only in the running process (not in `.env`, not in any file, never printed) and is used to sign in on the device. Only the IDs are recorded (`usedAccounts` in the state file) so no account is used twice. `--go` needs `--accounts <androidId>,<iosId>`: the IDs from the dry run, as approval to change their passwords. A Dealer created in the back office is not verified (no control sets "Documents are reviewed?") and gets no bid button, so existing verified accounts are used. The website cannot bid (a live car shows "Get the App"), and signing an account in on the website signs it out of the app.
+- **Devices:** the Android emulator through adb (screen reads time out after 20 s and retry; restart a frozen emulator with `adb -s <serial> emu kill` and `npm run emulator:start`) and the iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL` in `.env`). The Android phone field drops digits typed in one go, so the 9 digits after +966 are typed one by one and checked.
 
 ## Mobile (Android)
 
