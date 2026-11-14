@@ -15,6 +15,7 @@ import { androidNetworkProblem } from '@mobile/network-preflight';
 import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
 import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
+import { EndedAuctionsScreen } from '@mobile/screens/ended-auctions.screen';
 import { EnvironmentScreen } from '@mobile/screens/environment.screen';
 import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
@@ -49,6 +50,7 @@ interface MobileFixtures {
   contactFormScreen: ContactFormScreen;
   moreScreen: MoreScreen;
   staticPageScreen: StaticPageScreen;
+  endedAuctionsScreen: EndedAuctionsScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
 }
@@ -138,6 +140,9 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   staticPageScreen: async ({ driver }, use) => {
     await use(new StaticPageScreen(driver));
+  },
+  endedAuctionsScreen: async ({ driver }, use) => {
+    await use(new EndedAuctionsScreen(driver));
   },
   // eslint-disable-next-line no-empty-pattern
   buyer: async ({}, use, testInfo) => {

@@ -248,6 +248,8 @@ function declaredTitles(): string[] {
     // are listed here for their titles but not in the safe-test-first structure check below.
     'tests-ios/faq.spec.ts',
     'tests-ios/faq.backoffice.spec.ts',
+    // Ended auctions: guest display tests only, like the FAQ files.
+    'tests-ios/past-auctions.spec.ts',
   ]) {
     const source = read(file);
     const pattern =

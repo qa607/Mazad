@@ -69,6 +69,12 @@ const SCREENS: Record<string, string[]> = {
     'openForgotPassword.click', // navigation
   ],
   'src/mobile/ios/screens/guest-tabs.screen.ts': ['openTab.click', 'openHeaderIcon.click'], // navigation: a tab-bar button, a header icon
+  // navigation: the Ended Auctions button, an ended auction card, a car of that auction
+  'src/mobile/ios/screens/ended-auctions.screen.ts': [
+    'openFromHome.click',
+    'openAuction.click',
+    'openCar.click',
+  ],
   'src/mobile/ios/screens/help-center.screen.ts': [
     'openHelpCenter.click', // navigation: More -> Help Center
     'openCategory.click', // navigation: a category by exact label
@@ -111,6 +117,7 @@ const OUTSIDE: Record<string, number> = {
   'tests-ios/signed-in.inspect.ts': 2, // authorized signed-in inspection: logout item and its confirmation, exact known label only
   'tests-ios/guest-extra.inspect.ts': 5, // read-only inspection: tabs, prompt, registration choice, field focus, show/hide, Close (never a submit)
   'ui-tests/ios/login-flow.ios.ui.spec.ts': 3, // simulator UI tests: field focus and Close
+  'tests-ios/past-auctions.spec.ts': 1, // the WEBSITE tab only (an ended auction card), never the app
 };
 
 test.describe('iOS interaction inventory: no new tap or typing path without review (selfcheck)', () => {
@@ -243,7 +250,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(11);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(12);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);
