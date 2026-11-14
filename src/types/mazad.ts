@@ -27,6 +27,8 @@ export interface EmptyState {
 export interface AppConfiguration {
   home: ConfigTab[];
   my_bids: ConfigTab[];
+  /** The Favorite Auctions tabs (live, upcoming, past) and their empty states. */
+  favorite: ConfigTab[];
   listings: ConfigTab[];
   notification: { empty?: { logged?: EmptyState; guest?: EmptyState } }[];
 }
@@ -63,6 +65,12 @@ export interface AuctionListItem {
   year: number;
   city: string;
   mileage: string;
+  /** How many customers have the auction item in their favourites (served to guests too). */
+  count_favourite_users?: number;
+  /** Whether the caller has it in their favourites (always false for a guest call). */
+  is_favorite?: boolean;
+  /** Countdown of the card: server time and the auction's end (live) or start, in epoch seconds. */
+  timer_object?: { current_time: number; end_time: number | null; started: boolean };
   price_object: {
     administrative_expenses: number;
     bids_amount: number;

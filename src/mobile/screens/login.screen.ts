@@ -95,6 +95,22 @@ export class MazadLoginScreen extends MobileScreen {
     await choice.click();
   }
 
+  /**
+   * Taps the welcome sheet's "Log In" choice and waits for the login form. The sheet opens from
+   * the More tab's guest prompt and from guest-only actions (e.g. a car card's heart).
+   */
+  async chooseLogin(loginLabel: string): Promise<void> {
+    const choice = this.loginChoice(loginLabel);
+    await choice.waitForDisplayed({ timeout: 15_000 });
+    await choice.click();
+    await this.phoneInput.waitForDisplayed({ timeout: 15_000 });
+  }
+
+  /** The digits in the phone field, so a caller can check the whole number went in. */
+  async phoneDigits(): Promise<string> {
+    return (await this.phoneInput.getText()).replace(/\D/g, '');
+  }
+
   async login(phone: string, password: string): Promise<void> {
     await this.phoneInput.setValue(phone);
     await this.passwordInput.setValue(password);

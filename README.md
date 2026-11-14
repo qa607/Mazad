@@ -152,6 +152,23 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - The app keeps its own backend setting (a hidden menu: long press on the More tab), and the 8.2.2-stage build defaults to `mazad-v3.motory.dev`, another environment. Before any test, the session sets it to the selected environment's approved origin and reads it back (`src/mobile/ensure-app-backend.ts`); if it still differs, every Android test fails. The setting is kept on the device after the run.
 - Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
 
+### Favourites (Android and iOS)
+
+`tests/mobile/android/favourites.spec.ts` and `tests-ios/favourites.spec.ts` run the same two tests in English and Arabic, on any car the app already lists (picked from the app API at run time: no favourites yet, a unique title, at least 15 minutes left; no car is created):
+
+- **A car a guest adds to favourites is in Favorite Auctions after signing in**: as a guest, tap the car's heart, sign in from the welcome sheet it opens, then the car must be in Favorite Auctions (and the API favourite count one higher). Fails on both apps since 2026-11-14: after signing in the car is not added.
+- **A signed-in customer adds a car to Favorite Auctions with its heart**: the same check with the heart tapped after signing in (passes on both apps).
+
+Each test starts signed out (a signed-in app is logged out), signs in with the platform's Individual test account from `.env` (`ANDROID_TEST_INDIVIDUAL_*`, `IOS_TEST_INDIVIDUAL_*`) and removes the favourite again at the end.
+
+```bash
+TEST_ENV=stg-154 MAZAD_ALLOW_LOGOUT=true npx playwright test --project=android tests/mobile/android/favourites.spec.ts --workers=1
+TEST_ENV=stg-154 IOS_ALLOW_FAVOURITES=true MAZAD_ALLOW_LOGOUT=true IOS_TARGET=device IOS_UDID=<udid> IOS_WDA_URL=<wda url> IOS_BUNDLE_ID=com.motory.dealer \
+  npx playwright test -c playwright.ios.config.ts --project=ios tests-ios/favourites.spec.ts
+```
+
+On iOS these tests have their own approval (`IOS_ALLOW_FAVOURITES`, QA owner 2026-11-14), outside the account-run gates: only their two titles pass the text gate, and the favourites-only login in `IosLoginScreen` refuses to type or tap without it.
+
 ### Emulator and NetBird
 
 Staging is reachable only through the NetBird VPN. NetBird's DNS resolves the staging host to an internal IP, while public DNS returns an endpoint that rejects the request (403). The Android emulator does not use NetBird's DNS on its own, so start it with:

@@ -619,12 +619,14 @@ test.describe('iOS login authorization: no way to tap Log In unguarded (selfchec
       }
     }
     // Inside the screens each raw submit button is tapped exactly once, in its guarded method.
+    // Log In has a second, separately approved one: submitFavouritesLogin (IOS_ALLOW_FAVOURITES,
+    // QA owner 2026-11-14), checked to call iosFavouritesBlocked first (ios-interactions selfcheck).
     const taps = (file: string, name: string) =>
       (
         stripComments(read(file)).match(new RegExp(`${name}\\([^)]*\\)\\)\\.click\\(\\)`, 'g')) ??
         []
       ).length;
-    expect(taps('src/mobile/ios/screens/login.screen.ts', 'loginButtonElement')).toBe(1);
+    expect(taps('src/mobile/ios/screens/login.screen.ts', 'loginButtonElement')).toBe(2);
     expect(taps('src/mobile/ios/screens/forgot-password.screen.ts', 'sendButtonElement')).toBe(1);
     expect(taps('src/mobile/ios/screens/otp.screen.ts', 'verifyButtonElement')).toBe(1);
     // new-password.screen.ts's Save/Login button is tapped by coordinate (tapAtCenterOf), not

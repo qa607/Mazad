@@ -15,7 +15,8 @@ export type Feature =
   | 'Guest tabs'
   | 'Contact Us'
   | 'More'
-  | 'Help Center FAQs';
+  | 'Help Center FAQs'
+  | 'Favourites';
 export type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
 export type Platform = 'web' | 'android' | 'ios';
 

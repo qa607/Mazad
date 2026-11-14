@@ -43,7 +43,7 @@ export class IosMoreScreen extends IosScreen {
    * Back). Stops at the first one: long pages (Terms) have hundreds of texts.
    */
   async hasTextBesides(excluded: readonly string[]): Promise<boolean> {
-    for (const element of await this.allOfType('StaticText')) {
+    for (const element of await this.allOfType('StaticText').getElements()) {
       const label = (await element.getAttribute('label')) ?? '';
       if (label && !excluded.includes(label)) return true;
     }

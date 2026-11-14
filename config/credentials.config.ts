@@ -129,6 +129,20 @@ export function getAndroidTestIndividual(): BackendAccount | null {
   return phone && password ? new BackendAccount(phone, password) : null;
 }
 
+/**
+ * The iOS Individual test account, or null when it is not configured in .env. Used only by the iOS
+ * favourites tests, behind their own approval switch (IOS_ALLOW_FAVOURITES, see ios-preflight.ts).
+ */
+export function getIosTestIndividual(): BackendAccount | null {
+  const phone = localEnv.IOS_TEST_INDIVIDUAL_PHONE?.trim();
+  const password = localEnv.IOS_TEST_INDIVIDUAL_PASSWORD;
+  return phone && password ? new BackendAccount(phone, password) : null;
+}
+
+export const IOS_TEST_INDIVIDUAL_MISSING_REASON =
+  'The iOS Individual test account is not set: add IOS_TEST_INDIVIDUAL_PHONE and ' +
+  'IOS_TEST_INDIVIDUAL_PASSWORD to the local .env file.';
+
 export const ANDROID_TEST_INDIVIDUAL_MISSING_REASON =
   'The Android Individual test account is not set: add ANDROID_TEST_INDIVIDUAL_PHONE and ' +
   'ANDROID_TEST_INDIVIDUAL_PASSWORD to the local .env file (see registration-e2e.spec.ts).';
