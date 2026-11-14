@@ -6,6 +6,7 @@
  * is followed as a guest, and the back office is checked.
  *
  *   TEST_ENV=stg-154 node scripts/live-auction-run.mjs [--go] [--role individual|dealer] [--user <androidId>,<iosId>]
+ *       [--bidding standard|price-offering] [--offers <android>,<ios>]
  *       [--car <VIN>] [--start-in 3] [--duration 5] [--fail-held-sales] [--keep-auto-extend] [--show]
  *
  * - Default is a DRY RUN: prints the bidders, the car and the bid plan; changes nothing.
@@ -16,6 +17,12 @@
  *   Min Increment, at most 6 steps per bid, "Confirm Bid") until the bid reaches the Reserve Price, (5) checks the
  *   back office (bids table, Highest >= Reserve, Sold row: Waiting Transfer, Type Auction, winner) and what the
  *   website showed (Live listing, car page price and bid count, ended).
+ * - --bidding price-offering: a sealed-bid run. An auction's Bidding Type comes from its supplier, so the car's
+ *   supplier is set to "Price Offering" just for creating the auction and always set back to "Standard" right after.
+ *   Price Offering items have no Auto Extend switch. When live, each device submits ONE offer ("Place a Bid" > Bid
+ *   Amount > "Submit Bid"): by default reserve + admin fee + 500 rounded up to 500 on Android and 1,000 more on iOS
+ *   (--offers sets both). Checks: both offers placed, Sold (Bidding Type Price Offering), Highest = the higher
+ *   offer, winner = its bidder.
  * - Bidders: two verified test accounts with a deposit and no hold (--role individual by default, or dealer), least
  *   recently used first; --user picks them. A winner goes on hold while its sale is Waiting Transfer;
  *   --fail-held-sales frees a held candidate by marking its QA-AUTO sale Failed (Penalty 0, Block User off).
@@ -49,6 +56,11 @@ const CAR_VIN = opt('--car', null);
 const START_IN = Number(opt('--start-in', 3));
 const DURATION = Number(opt('--duration', 5));
 const MAX_STEPS = 6; // "Your Increase" stops at 6 x Min Increment per bid
+const BIDDING = opt('--bidding', 'standard');
+const PO = BIDDING === 'price-offering';
+const OFFERS = opt('--offers', null)
+  ?.split(',')
+  .map((v) => Number(v.replace(/[^\d]/g, '')));
 
 const ENV_ID = process.env.TEST_ENV;
 if (ENV_ID !== 'stg-154')
@@ -60,6 +72,10 @@ const BASE = new URL(
 if (!/^https:\/\/stg-/.test(BASE)) throw new Error(`Refusing ${BASE}: not a staging URL.`);
 if (!['individual', 'dealer'].includes(ROLE))
   throw new Error('--role must be individual or dealer');
+if (!['standard', 'price-offering'].includes(BIDDING))
+  throw new Error('--bidding must be standard or price-offering');
+if (OFFERS && (OFFERS.length !== 2 || OFFERS.some((v) => !v)))
+  throw new Error('--offers needs two amounts: <android>,<ios>');
 
 const DOTENV = Object.fromEntries(
   fs
@@ -354,6 +370,53 @@ function bidPlan(car) {
   }));
 }
 
+/**
+ * Price Offering: sealed offers, Android first, iOS higher. Default: reserve + admin fee + 500, rounded up to 500,
+ * and 1,000 more on iOS; --offers overrides both.
+ */
+function offerPlan(car) {
+  const base = Math.ceil((car.reserve + car.admin + 500) / 500) * 500;
+  const [android, ios] = OFFERS || [base, base + 1000];
+  return [
+    { device: 'android', amount: android },
+    { device: 'ios', amount: ios },
+  ];
+}
+
+/**
+ * Sets the Bid Type of the car's supplier (Update Supplier > Auction Info, its own form) and reads it back. The
+ * supplier ID is the number in the test supplier's name (شركة تجريبية-782 -> 782), confirmed against its name field.
+ */
+async function setSupplierBidType(page, supplier, type) {
+  const id = (supplier.match(/-(\d+)$/) || [])[1];
+  if (!id) throw new Error(`Cannot tell the supplier ID of "${supplier}".`);
+  const open = async () => {
+    await page.goto(`/backend/users/supplier/update?id=${id}`);
+    const name = (await page.locator('input[name="Supplier[supplier_name]"]').inputValue()).trim();
+    if (name !== supplier) throw new Error(`Supplier ${id} is "${name}", expected "${supplier}".`);
+    await page.locator('a[href="#pane-auction"]').click();
+    await page.locator('#supplier-bid_type').waitFor({ state: 'attached' });
+  };
+  const read = () =>
+    page.locator('#supplier-bid_type').evaluate((s) => s.selectedOptions[0]?.text.trim());
+  await open();
+  if ((await read()) === type) return type;
+  const form = page.locator('#form-supplier-auction');
+  await form.locator('#supplier-bid_type + .select2 .select2-selection').click();
+  await page
+    .locator('.select2-container--open .select2-results__option')
+    .filter({ hasText: new RegExp(`^\\s*${type}\\s*$`) })
+    .click();
+  await form.locator('button[type="submit"]').click();
+  const ok = page.locator('.swal2-popup .swal2-confirm');
+  await ok.waitFor({ timeout: 15000 });
+  await ok.click();
+  await open();
+  const now = await read();
+  if (now !== type) throw new Error(`Supplier ${id} Bid Type is "${now}", expected "${type}".`);
+  return now;
+}
+
 async function moveToUpcoming(page, car) {
   await page.goto(
     '/backend/auction/pricing-done/index?' +
@@ -442,12 +505,10 @@ async function createLiveAuction(page, car, source) {
       await sleep(1.5);
     }
   }
-  const itemId = await page
-    .locator('tbody tr[data-key]')
-    .filter({ hasText: car.vin })
-    .first()
-    .getAttribute('data-key');
-  return { title, start, end, itemId };
+  const awaiting = page.locator('tbody tr[data-key]').filter({ hasText: car.vin }).first();
+  const itemId = await awaiting.getAttribute('data-key');
+  const rowText = norm(await awaiting.innerText());
+  return { title, start, end, itemId, rowText };
 }
 
 /** Turns the item's Auto Extend switch OFF in the Live list (waits for it to go live) and reads it back. */
@@ -509,6 +570,7 @@ async function screen() {
         return {
           text: decode(g('text')),
           id: g('resource-id').split('/').pop(),
+          cls: g('class'),
           clickable: g('clickable') === 'true',
           x: (b[0] + b[2]) >> 1,
           y: (b[1] + b[3]) >> 1,
@@ -670,6 +732,41 @@ async function androidBid(increase) {
   return i >= 0 ? s.slice(i + 1, i + 4).find((n) => /^[0-9,]+$/.test(n.text))?.text : '?';
 }
 
+/** Price Offering, on the open car page: Place a Bid, Bid Amount = <amount>, hide the keyboard, Submit Bid. */
+async function androidOffer(amount) {
+  let s = await androidCloseDialogs();
+  for (let t = 0; t < 20 && !findText(s, 'Place a Bid'); t++) {
+    await sleep(3);
+    s = await androidCloseDialogs();
+  }
+  if (!findText(s, 'Place a Bid')) throw new Error('Android: no "Place a Bid" on the car page');
+  tap(findText(s, 'Place a Bid'));
+  await sleep(2.5);
+  s = await androidCloseDialogs();
+  const field = () => s.find((n) => n.cls.endsWith('EditText'));
+  if (!field()) throw new Error('Android: no Bid Amount field');
+  tap(field());
+  await sleep(1);
+  adb('shell', 'input', 'keyevent', ...Array(12).fill('KEYCODE_DEL'));
+  typeText(String(amount));
+  await sleep(1);
+  // Back only while the keyboard is up: with it hidden, Back closes the sheet.
+  if (adb('shell', 'dumpsys input_method | grep -c mInputShown=true || true').trim() !== '0')
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+  await sleep(1.5);
+  s = await screen();
+  if (num(field()?.text) !== amount)
+    throw new Error(
+      `Android: Bid Amount shows "${field()?.text}", expected ${money(amount)}; not submitted`,
+    );
+  if (!findText(s, 'Submit Bid')) throw new Error('Android: no "Submit Bid"; not submitted');
+  tap(findText(s, 'Submit Bid'));
+  await sleep(4);
+  s = await androidCloseDialogs();
+  if (!findText(s, 'Your Bid Amount') && !findText(s, 'Bid submitted successfully!'))
+    throw new Error('Android: the offer was not confirmed ("Your Bid Amount" not shown)');
+}
+
 // ---------- iOS (Appium + WebDriverAgent) ----------
 const parseSource = (src) =>
   [...src.matchAll(/<XCUIElementType(\w+) ([^>]*?)\/?>/g)].map((m) => {
@@ -804,8 +901,9 @@ async function iosOpenCar(ios, title) {
   }
   await d.pause(3500);
   for (let i = 0; i < 6; i++) {
+    // Standard cards show "Opening/Highest Price"; Price Offering cards only "Auction Status".
     for (const b of await d.$$(
-      '-ios predicate string:type == "XCUIElementTypeButton" AND label CONTAINS "Price"',
+      '-ios predicate string:type == "XCUIElementTypeButton" AND (label CONTAINS "Price" OR label CONTAINS "Auction Status")',
     )) {
       if (norm(await b.getAttribute('label')).includes(norm(title))) {
         await b.click();
@@ -863,6 +961,69 @@ async function iosBid(ios, increase) {
     : '?';
 }
 
+/**
+ * Price Offering, on the open car page: Place a Bid, Bid Amount = <amount>, Submit Bid. Never tap outside the sheet
+ * (that closes it). "Submit Bid" has no label (nil or ""): the wide button right under the amount field, above the
+ * number pad, enabled once an amount is typed.
+ */
+async function iosOffer(ios, amount) {
+  const { d } = ios;
+  const tapIfShown = async (labels) => {
+    for (const l of labels) {
+      const b = await ios.button(l);
+      if (await b.isExisting()) {
+        await b.click();
+        await d.pause(1000);
+      }
+    }
+  };
+  let place;
+  for (let t = 0; t < 15; t++) {
+    place = await ios.button('Place a Bid');
+    if (await place.isExisting()) break;
+    await d.pause(2000);
+  }
+  if (!(await place.isExisting())) throw new Error('iOS: no "Place a Bid" on the car page');
+  await place.click();
+  await d.pause(2500);
+  await tapIfShown(['Continue', 'Ok']);
+  const field = await d.$(
+    '-ios predicate string:type == "XCUIElementTypeTextField" AND visible == 1',
+  );
+  await field.click();
+  await field.clearValue().catch(() => {});
+  await field.setValue(String(amount));
+  await d.pause(800);
+  const typed = num(await field.getAttribute('value'));
+  if (typed !== amount)
+    throw new Error(
+      `iOS: Bid Amount shows ${money(typed)}, expected ${money(amount)}; not submitted`,
+    );
+  const fr = JSON.parse(await field.getAttribute('rect'));
+  let submit = null;
+  for (const b of await d.$$(
+    '-ios predicate string:type == "XCUIElementTypeButton" AND visible == 1',
+  )) {
+    if (await b.getAttribute('label')) continue;
+    const r = JSON.parse(await b.getAttribute('rect'));
+    if (r.y > fr.y + fr.height && r.y < fr.y + fr.height + 120 && r.width > 300) {
+      submit = { b, r };
+      break;
+    }
+  }
+  if (!submit) throw new Error('iOS: "Submit Bid" not found under the amount field; not submitted');
+  if (String(await submit.b.getAttribute('enabled')) !== 'true')
+    throw new Error('iOS: "Submit Bid" is disabled; not submitted');
+  await d.execute('mobile: tap', {
+    x: submit.r.x + submit.r.width / 2,
+    y: submit.r.y + submit.r.height / 2,
+  });
+  await d.pause(3000);
+  await tapIfShown(['Continue', 'Ok']);
+  if (!(await ios.els()).some((e) => e.visible && e.label === 'Your Bid Amount'))
+    throw new Error('iOS: the offer was not confirmed ("Your Bid Amount" not shown)');
+}
+
 // ---------- website (guest) ----------
 /** Follows the car on the website until it shows the auction ended; returns what was seen. */
 async function watchWebsite(browser, itemId, stopAt) {
@@ -892,7 +1053,7 @@ async function watchWebsite(browser, itemId, stopAt) {
     const state = /Auction was held on/.test(t)
       ? 'ended'
       : /\d{2} : \d{2} : \d{2} : \d{2}/.test(t)
-        ? /Opening Price|Highest Price/.test(t)
+        ? /Opening Price|Highest Price|Bidding Started|Sealed Bidding/.test(t)
           ? 'live'
           : 'upcoming'
         : '?';
@@ -917,7 +1078,7 @@ async function watchWebsite(browser, itemId, stopAt) {
 // ---------- run ----------
 (async () => {
   log(
-    `Live auction run on ${BASE} | role ${USER_IDS ? 'by --user' : ROLE} | ${GO ? 'EXECUTE' : 'DRY RUN (nothing is changed; add --go to execute)'}`,
+    `Live auction run on ${BASE} | role ${USER_IDS ? 'by --user' : ROLE} | bidding ${BIDDING} | ${GO ? 'EXECUTE' : 'DRY RUN (nothing is changed; add --go to execute)'}`,
   );
   const state = loadState();
   const browser = await chromium.launch({ headless: !SHOW });
@@ -931,12 +1092,23 @@ async function watchWebsite(browser, itemId, stopAt) {
     log('\n2. Car');
     const car = await pickCar(page, state);
     const plan = bidPlan(car);
-    log(
-      `  ${car.vin} (${car.source}, ${car.supplier}) | start ${money(car.start)} | min increment ${money(car.inc)} | reserve ${money(car.reserve)} | ${car.steps} steps -> ${plan.length} bids`,
-    );
-    log(
-      `  plan: ${plan.map((b) => `${b.device} +${b.increase}`).join(', ')} -> bid ${money(car.start + car.steps * car.inc)}`,
-    );
+    const offers = offerPlan(car);
+    const topOffer = Math.max(...offers.map((o) => o.amount));
+    if (PO) {
+      log(
+        `  ${car.vin} (${car.source}, ${car.supplier}) | start ${money(car.start)} | reserve ${money(car.reserve)} | admin fee ${money(car.admin)}`,
+      );
+      log(
+        `  plan: sealed offers ${offers.map((o) => `${o.device} ${money(o.amount)}`).join(', ')} -> expect ${topOffer - car.admin >= car.reserve ? 'Sold' : 'Failed (below the reserve)'}`,
+      );
+    } else {
+      log(
+        `  ${car.vin} (${car.source}, ${car.supplier}) | start ${money(car.start)} | min increment ${money(car.inc)} | reserve ${money(car.reserve)} | ${car.steps} steps -> ${plan.length} bids`,
+      );
+      log(
+        `  plan: ${plan.map((b) => `${b.device} +${b.increase}`).join(', ')} -> bid ${money(car.start + car.steps * car.inc)}`,
+      );
+    }
     if (!GO) return;
 
     log('\n3. Devices');
@@ -948,19 +1120,32 @@ async function watchWebsite(browser, itemId, stopAt) {
 
     log('\n4. Auction');
     if (car.source === 'Pricing Done') await moveToUpcoming(page, car);
-    const auction = await createLiveAuction(
-      page,
-      car,
-      car.source === 'Failed' ? 'Failed' : 'Upcoming',
-    );
+    let auction;
+    if (PO)
+      log(`  supplier Bid Type: ${await setSupplierBidType(page, car.supplier, 'Price Offering')}`);
+    try {
+      auction = await createLiveAuction(page, car, car.source === 'Failed' ? 'Failed' : 'Upcoming');
+    } finally {
+      // Always back to Standard, even when creating the auction failed.
+      if (PO)
+        log(
+          `  supplier Bid Type restored: ${await setSupplierBidType(page, car.supplier, 'Standard')}`,
+        );
+    }
     log(
       `  "${auction.title}" item ${auction.itemId} | ${clock(auction.start)} -> ${clock(auction.end)}`,
     );
+    if (PO)
+      check(
+        /Price Offering/.test(auction.rowText),
+        'auction created with Bidding Type Price Offering',
+      );
     state.usedVins.push(car.vin);
     const run = {
       at: new Date().toISOString(),
       vin: car.vin,
       itemId: auction.itemId,
+      bidding: BIDDING,
       users: [aUser.id, iUser.id],
       bids: [],
     };
@@ -987,13 +1172,28 @@ async function watchWebsite(browser, itemId, stopAt) {
       .newContext({ baseURL: BASE, storageState: path.join(ROOT, '.auth/dev-root.json') })
       .then((c) => c.newPage());
     const [ae] = await Promise.all([
-      KEEP_AUTO_EXTEND ? Promise.resolve('kept') : autoExtendOff(aePage, car.vin),
+      // Price Offering items have no Auto Extend switch.
+      PO || KEEP_AUTO_EXTEND
+        ? Promise.resolve(PO ? 'n/a' : 'kept')
+        : autoExtendOff(aePage, car.vin),
       androidOpenCar(appTitle),
       iosOpenCar(ios, appTitle),
     ]);
     log(`  car open on both devices | item Auto Extend: ${ae}`);
     let placed = 0;
-    for (const b of plan) {
+    // Each device submits one sealed offer; a failure on one does not stop the other.
+    for (const o of PO ? offers : []) {
+      try {
+        if (o.device === 'android') await androidOffer(o.amount);
+        else await iosOffer(ios, o.amount);
+        placed++;
+        run.bids.push({ at: ts(), device: o.device, offer: o.amount });
+        log(`  ${ts()} ${o.device} offer ${money(o.amount)} submitted`);
+      } catch (e) {
+        log(`  ${ts()} ${o.device} offer FAILED: ${e.message}`);
+      }
+    }
+    for (const b of PO ? [] : plan) {
       try {
         const price =
           b.device === 'android' ? await androidBid(b.increase) : await iosBid(ios, b.increase);
@@ -1030,15 +1230,23 @@ async function watchWebsite(browser, itemId, stopAt) {
       await sleep(15);
     }
     const seen = await web;
+    const expected = PO && topOffer - car.admin < car.reserve ? 'failed' : 'sold';
+    if (PO) {
+      check(placed === offers.length, `both sealed offers placed, Android and iOS (${placed})`);
+    } else {
+      check(
+        ae === 'OFF' || KEEP_AUTO_EXTEND,
+        `item Auto Extend ${KEEP_AUTO_EXTEND ? 'kept' : 'turned OFF'} (${ae})`,
+      );
+      check(
+        placed === plan.length,
+        `all ${plan.length} bids placed alternately Android/iOS (${placed})`,
+      );
+    }
     check(
-      ae === 'OFF' || KEEP_AUTO_EXTEND,
-      `item Auto Extend ${KEEP_AUTO_EXTEND ? 'kept' : 'turned OFF'} (${ae})`,
+      where === expected,
+      `car went to ${expected === 'sold' ? 'Sold' : 'Failed'} after the end (${where})`,
     );
-    check(
-      placed === plan.length,
-      `all ${plan.length} bids placed alternately Android/iOS (${placed})`,
-    );
-    check(where === 'sold', `car went to Sold after the end (${where})`);
     if (where === 'sold') {
       await page.goto(
         '/backend/auction/sold/index?' +
@@ -1047,7 +1255,21 @@ async function watchWebsite(browser, itemId, stopAt) {
       const t = (await page.locator('tbody tr[data-key]').first().innerText()).replace(/\s+/g, ' ');
       const g = (re) => (t.match(re) || [])[1] || '?';
       const highest = num(g(/Highest Price ([\d,]+)/));
-      const lastBidder = plan.length % 2 ? aUser : iUser;
+      // Standard: the last bid wins. Price Offering: the higher offer wins.
+      const lastBidder = PO
+        ? offers.find((o) => o.amount === topOffer).device === 'android'
+          ? aUser
+          : iUser
+        : plan.length % 2
+          ? aUser
+          : iUser;
+      if (PO) {
+        check(/Bidding Type Price Offering/.test(t), 'Sold row: Bidding Type Price Offering');
+        check(
+          highest === topOffer,
+          `Highest Price ${money(highest)} = the higher offer ${money(topOffer)}`,
+        );
+      }
       check(
         g(/Status (.+?) Type/) === 'Waiting Transfer',
         `Status Waiting Transfer (${g(/Status (.+?) Type/)})`,
