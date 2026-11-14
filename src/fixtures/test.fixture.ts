@@ -49,6 +49,10 @@ import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.pag
 import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
 import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
+import { WaitingQcInspectionListPage } from '@pages/backend/inspection/waiting-qc-inspection-list.page';
+import { OngoingInspectionListPage } from '@pages/backend/inspection/ongoing-inspection-list.page';
+import { QcCompletedInspectionListPage } from '@pages/backend/inspection/qc-completed-inspection-list.page';
+import { MazadVehicleEditPage } from '@pages/backend/mazad-vehicle-edit.page';
 import { MazadVehicleViewPage } from '@pages/backend/mazad-vehicle-view.page';
 import { AuctionClosedReportPage } from '@pages/backend/reports/auction-closed-report.page';
 import { PurchaseSurveyReportPage } from '@pages/backend/reports/purchase-survey-report.page';
@@ -117,6 +121,10 @@ export interface BackendPages {
   operationFormPage: OperationFormPage;
   mazadSoldListPage: MazadSoldListPage;
   mazadVehicleViewPage: MazadVehicleViewPage;
+  mazadVehicleEditPage: MazadVehicleEditPage;
+  waitingQcInspectionListPage: WaitingQcInspectionListPage;
+  ongoingInspectionListPage: OngoingInspectionListPage;
+  qcCompletedInspectionListPage: QcCompletedInspectionListPage;
   suspendedVehiclesPage: SuspendedVehiclesPage;
   readyForPricingPage: ReadyForPricingPage;
   pricingDonePage: PricingDonePage;
@@ -178,6 +186,10 @@ function createBackendPages(page: Page): BackendPages {
     operationFormPage: new OperationFormPage(page),
     mazadSoldListPage: new MazadSoldListPage(page),
     mazadVehicleViewPage: new MazadVehicleViewPage(page),
+    mazadVehicleEditPage: new MazadVehicleEditPage(page),
+    waitingQcInspectionListPage: new WaitingQcInspectionListPage(page),
+    ongoingInspectionListPage: new OngoingInspectionListPage(page),
+    qcCompletedInspectionListPage: new QcCompletedInspectionListPage(page),
     suspendedVehiclesPage: new SuspendedVehiclesPage(page),
     readyForPricingPage: new ReadyForPricingPage(page),
     pricingDonePage: new PricingDonePage(page),
@@ -359,6 +371,18 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   mazadVehicleViewPage: async ({ page }, use) => {
     await use(new MazadVehicleViewPage(page));
+  },
+  mazadVehicleEditPage: async ({ page }, use) => {
+    await use(new MazadVehicleEditPage(page));
+  },
+  waitingQcInspectionListPage: async ({ page }, use) => {
+    await use(new WaitingQcInspectionListPage(page));
+  },
+  ongoingInspectionListPage: async ({ page }, use) => {
+    await use(new OngoingInspectionListPage(page));
+  },
+  qcCompletedInspectionListPage: async ({ page }, use) => {
+    await use(new QcCompletedInspectionListPage(page));
   },
   suspendedVehiclesPage: async ({ page }, use) => {
     await use(new SuspendedVehiclesPage(page));
