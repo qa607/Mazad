@@ -17,7 +17,9 @@ export class StaticPageScreen extends MobileScreen {
 
   /** True when at least one content WebView is displayed. */
   async isContentShown(): Promise<boolean> {
-    for (const view of await this.contentViews) if (await view.isDisplayed()) return true;
+    for (const view of await this.contentViews.getElements()) {
+      if (await view.isDisplayed()) return true;
+    }
     return false;
   }
 

@@ -243,7 +243,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(11);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(12);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);

@@ -53,6 +53,12 @@ interface WebsiteFixtures {
    * after the test, passed or failed, they are deleted there (questions first).
    */
   devRootFaqCleanup: FaqTracker;
+  /**
+   * Records the app versions (device type and version) a test adds through devRootBackend; after
+   * the test, passed or failed, every App Versions row with that device type and version is
+   * deleted there. A test that deletes its row itself leaves nothing for this to do.
+   */
+  appVersionCleanup: { track: (deviceType: string, appVersion: string) => void };
   /** A dedicated Individual test account from the back office (name contains the test filter). */
   individualAccount: DirectoryAccount;
   /** A dedicated Dealer test account from the back office (name contains the test filter). */
@@ -229,6 +235,20 @@ export const test = base.extend<WebsiteFixtures & WebsiteOptions, WebsiteWorkerF
     const cleanup = faqCleanup(devRootBackend);
     await use(cleanup.tracker);
     await cleanup.run();
+  },
+  appVersionCleanup: async ({ devRootBackend }, use) => {
+    const tracked: { deviceType: string; appVersion: string }[] = [];
+    await use({ track: (deviceType, appVersion) => tracked.push({ deviceType, appVersion }) });
+    const list = devRootBackend.appVersionListPage;
+    for (const { deviceType, appVersion } of tracked) {
+      await list.gotoFiltered(deviceType, appVersion);
+      for (const row of await list.readRows()) {
+        if (row.deviceType === deviceType && row.appVersion === appVersion) {
+          await list.deleteRow(row.id);
+          await list.gotoFiltered(deviceType, appVersion);
+        }
+      }
+    }
   },
   websiteContactUsPage: async ({ page, language, isMobile }, use, testInfo) => {
     await use(new WebsiteContactUsPage(page, language, isMobile));

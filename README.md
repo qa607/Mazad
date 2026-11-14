@@ -152,6 +152,20 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - The app keeps its own backend setting (a hidden menu: long press on the More tab), and the 8.2.2-stage build defaults to `mazad-v3.motory.dev`, another environment. Before any test, the session sets it to the selected environment's approved origin and reads it back (`src/mobile/ensure-app-backend.ts`); if it still differs, every Android test fails. The setting is kept on the device after the run.
 - Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
 
+### App version control (force update)
+
+`tests/mobile/android/app-version.backoffice.spec.ts` (project `android-backoffice`, after `backend-setup`), in English and Arabic: the back office adds an Android app version above the installed build (`99.0.0`, Active, Force Update on) in **App Versions**, the app shows its update dialog at the next launch ("New Update", "A newer version of the app is available now!", Update; no way to close it), then the test deletes the version in the back office and the app opens normally again.
+
+While that row exists **every staging Android app** shows the dialog, so the test keeps the window to about a minute and runs only when approved for the run; the `appVersionCleanup` fixture deletes the row after the test if a step failed first.
+
+```bash
+TEST_ENV=stg-154 MAZAD_ALLOW_FORCE_UPDATE=true npx playwright test --project=android-backoffice tests/mobile/android/app-version.backoffice.spec.ts --workers=1
+TEST_ENV=stg-154 MAZAD_ALLOW_FORCE_UPDATE=true IOS_TARGET=device IOS_UDID=<udid> IOS_WDA_URL=<wda url> IOS_BUNDLE_ID=com.motory.dealer \
+  npx playwright test -c playwright.ios.config.ts --project=ios-backoffice tests-ios/app-version.backoffice.spec.ts
+```
+
+iOS (`tests-ios/app-version.backoffice.spec.ts`, project `ios-backoffice`) runs the same scenario in Arabic only, with an iOS row (`99.0.0`); the dialog shows the same words as Android's. With `MAZAD_ALLOW_FORCE_UPDATE` set, only this test title passes the iOS text gate; in the app it only switches language and reads (Update is never tapped).
+
 ### Emulator and NetBird
 
 Staging is reachable only through the NetBird VPN. NetBird's DNS resolves the staging host to an internal IP, while public DNS returns an endpoint that rejects the request (403). The Android emulator does not use NetBird's DNS on its own, so start it with:
