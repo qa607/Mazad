@@ -1,6 +1,7 @@
 import { accountContext } from '@mobile/ios/account/account-context';
 import { type ActionAuthorization, authorizeAccountAction } from '@mobile/ios/account/action-guard';
 import { LOGIN_KINDS } from '@mobile/ios/account/account-preflight';
+import { iosFavouritesBlocked } from '@mobile/ios/ios-preflight';
 import { IOS_ACCESSIBILITY_IDS as IDS } from '@mobile/ios/ios-selectors';
 import { IosScreen, type ReadOnlyElement } from '@mobile/ios/screens/ios.screen';
 
@@ -109,6 +110,55 @@ export class IosLoginScreen extends IosScreen {
       `Welcome sheet: the "${loginChoiceLabel}" button`,
     );
     await choice.click();
+  }
+
+  /**
+   * The welcome sheet's "Log In" choice, for presence checks. The sheet opens from More's guest
+   * prompt and from guest-only actions (a car card's heart).
+   */
+  loginChoice(label: string) {
+    return this.button(label);
+  }
+
+  /** Taps the welcome sheet's "Log In" choice (the ONE Button with that label), then waits for the form. */
+  async chooseLogin(loginChoiceLabel: string): Promise<void> {
+    const choice = await this.only(
+      this.buttonSelector(loginChoiceLabel),
+      `Welcome sheet: the "${loginChoiceLabel}" button`,
+    );
+    await choice.click();
+    await this.waitForForm();
+  }
+
+  /** The digits in the phone field, so a caller can check the whole number went in. */
+  async phoneDigits(): Promise<string> {
+    return ((await (await this.onlyPhoneInput()).getAttribute('value')) ?? '').replace(/\D/g, '');
+  }
+
+  /**
+   * Submits a login for the favourites tests ONLY, under their own approval (iosFavouritesBlocked:
+   * IOS_ALLOW_FAVOURITES), not the account-run guard used by login(): without it nothing is typed
+   * or tapped. One attempt; the caller checks the phone went in before calling submitLogin.
+   */
+  async enterFavouritesLogin(phone: string, password: string): Promise<void> {
+    const blocked = iosFavouritesBlocked();
+    if (blocked) throw new Error(blocked);
+    await this.enterPhone(phone);
+    await this.enterPassword(password);
+  }
+
+  /** Taps Log In after enterFavouritesLogin(), under the same approval. */
+  async submitFavouritesLogin(): Promise<void> {
+    const blocked = iosFavouritesBlocked();
+    if (blocked) throw new Error(blocked);
+    await this.hideKeyboard();
+    await (await this.loginButtonElement()).click();
+  }
+
+  /** Dismisses a one-off prompt by its dismiss Button's exact label, if shown (e.g. biometrics). */
+  async dismissPromptIfPresent(label: string): Promise<void> {
+    const button = this.button(label);
+    if (await button.isExisting().catch(() => false)) await button.click();
   }
 
   async enterPhone(phone: string): Promise<void> {
