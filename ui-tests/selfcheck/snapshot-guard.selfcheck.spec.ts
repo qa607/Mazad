@@ -56,20 +56,20 @@ test.describe('Snapshot guard (selfcheck)', () => {
 });
 
 test.describe('Staging target assertion (selfcheck)', () => {
-  test('accepts only https://stg-mazad-v3-224.motory.dev', () => {
-    expect(assertStagingTarget('https://stg-mazad-v3-224.motory.dev', 'stg-154')).toBe(
-      'https://stg-mazad-v3-224.motory.dev',
+  test('accepts only https://stg-mazad-v3-154.motory.dev', () => {
+    expect(assertStagingTarget('https://stg-mazad-v3-154.motory.dev', 'stg-154')).toBe(
+      'https://stg-mazad-v3-154.motory.dev',
     );
-    expect(assertStagingTarget('https://stg-mazad-v3-224.motory.dev/en/')).toBe(
-      'https://stg-mazad-v3-224.motory.dev',
+    expect(assertStagingTarget('https://stg-mazad-v3-154.motory.dev/en/')).toBe(
+      'https://stg-mazad-v3-154.motory.dev',
     );
     for (const bad of [
       'https://mazad.motory.com',
       'https://motorymazad.com',
-      'http://stg-mazad-v3-224.motory.dev',
-      'https://stg-mazad-v3-224.motory.dev:8443',
-      'https://stg-mazad-v3-224.motory.dev.evil.invalid',
-      'https://www.stg-mazad-v3-224.motory.dev',
+      'http://stg-mazad-v3-154.motory.dev',
+      'https://stg-mazad-v3-154.motory.dev:8443',
+      'https://stg-mazad-v3-154.motory.dev.evil.invalid',
+      'https://www.stg-mazad-v3-154.motory.dev',
       'https://stg-mazad-v3-155.motory.dev',
       '',
       undefined,
@@ -80,7 +80,7 @@ test.describe('Staging target assertion (selfcheck)', () => {
 
   test('refuses any TEST_ENV that is not an approved staging environment', () => {
     for (const env of ['prod', 'dev', 'production', '', 'staging', 'stg-155']) {
-      expect(() => assertStagingTarget('https://stg-mazad-v3-224.motory.dev', env)).toThrow(
+      expect(() => assertStagingTarget('https://stg-mazad-v3-154.motory.dev', env)).toThrow(
         /TEST_ENV/,
       );
     }
