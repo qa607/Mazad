@@ -18,6 +18,7 @@ import { IosAccountScreen } from '@mobile/ios/screens/account.screen';
 import { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
 import { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
 import { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
+import { IosAdvertisementSheetScreen } from '@mobile/ios/screens/advertisement.screen';
 import { IosMoreScreen } from '@mobile/ios/screens/more.screen';
 import { IosForgotPasswordScreen } from '@mobile/ios/screens/forgot-password.screen';
 import { IosGuestTabsScreen } from '@mobile/ios/screens/guest-tabs.screen';
@@ -56,6 +57,7 @@ interface IosFixtures {
   accountScreen: IosAccountScreen;
   contactFormScreen: IosContactFormScreen;
   helpCenterScreen: IosHelpCenterScreen;
+  advertisementSheet: IosAdvertisementSheetScreen;
   moreScreen: IosMoreScreen;
   /**
    * The dedicated dealer test account from .env (IOS_TEST_DEALER_*; redacted when printed).
@@ -203,6 +205,9 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   },
   moreScreen: async ({ screenDriver }, use) => {
     await use(new IosMoreScreen(screenDriver));
+  },
+  advertisementSheet: async ({ screenDriver }, use) => {
+    await use(new IosAdvertisementSheetScreen(screenDriver));
   },
   // `driver` comes first, so a blocked or skipped test never reads the account.
   iosDealerAccount: async ({ driver }, use, testInfo) => {

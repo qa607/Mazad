@@ -53,6 +53,10 @@ const SCREENS: Record<string, string[]> = {
     'openLogoutConfirmation.click',
     'confirmLogout.click',
   ], // logout by exact verified labels, only when signing out is authorized
+  'src/mobile/ios/screens/advertisement.screen.ts': [
+    'tapButton.click', // the advertisement's own button, by its exact label (MAZAD_ALLOW_ADVERTISEMENT)
+    'closeIfOpen.click', // navigation: the close button of a sheet left open, by its observed name
+  ],
   'src/mobile/ios/screens/app-shell.screen.ts': ['openMore.click', 'setLanguage.click'], // navigation
   'src/mobile/ios/screens/forgot-password.screen.ts': [
     'enterPhone.setValue', // typing only: Send cannot be tapped from here
@@ -243,7 +247,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(11);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(12);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);

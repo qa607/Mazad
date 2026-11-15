@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { approvedOrigin } from '@config/staging-environments';
+import { advertisementTestTitles } from '@test-data/advertisement.data';
 import { IOS_TEXT_VERIFIED } from '@test-data/ios-app.data';
 import {
   GUEST_FORM_TEST_TITLES,
@@ -54,6 +55,19 @@ export const IOS_GATES: IosGates = {
   textVerified: IOS_TEXT_VERIFIED,
   guestFormTextVerified: guestFormTextProblem() === undefined,
 };
+
+/**
+ * The iOS advertisement test (tests-ios/advertisement.backoffice.spec.ts) has its OWN approval, the
+ * same switch as Android's (MAZAD_ALLOW_ADVERTISEMENT, QA owner 2026-11-15): while its QA-AUTO
+ * advertisement is published every staging app opens it at launch. In the app it reads the sheet
+ * and taps only the advertisement's own button (or the close button of a sheet left open), never a
+ * form or an account action. With it, only that test's title passes the text gate.
+ */
+export function iosAdvertisementBlocked(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.MAZAD_ALLOW_ADVERTISEMENT === 'true'
+    ? undefined
+    : 'Blocked: publishing a QA-AUTO advertisement on staging (every staging app opens it at launch) is not approved for this run (MAZAD_ALLOW_ADVERTISEMENT).';
+}
 
 /**
  * forInspection: the first guest-screen inspection, whose job is to verify the text, skips only
@@ -132,6 +146,8 @@ export function outOfTextScopeReason(
 ): string | undefined {
   if (!TEXT_GATED_PROJECTS.includes(projectName)) return undefined;
   if ((GUEST_FORM_TEST_TITLES as readonly string[]).includes(title)) return undefined;
+  // The advertisement test: its own approval (iosAdvertisementBlocked), still under every other gate.
+  if (title === advertisementTestTitles.ios && !iosAdvertisementBlocked(env)) return undefined;
   const problem = iosStaticProblem(env, {}, gates, readConfig);
   return problem
     ? `${problem} (this test is outside the narrow guest display text scope)`

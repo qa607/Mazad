@@ -33,6 +33,21 @@ export class AppShellScreen extends MobileScreen {
     }
   }
 
+  /**
+   * After a launch: waits for Home or a sheet opened over it at launch (an announcement or
+   * advertisement hides Home), closes the sheet by tapping outside it (nothing in it is chosen),
+   * then waits for Home.
+   */
+  async waitUntilReadyClosingSheet(timeout = 30_000): Promise<void> {
+    await this.driver.waitUntil(
+      async () =>
+        (await this.tab('home').isDisplayed()) || (await this.bottomSheetScrim.isExisting()),
+      { timeout, timeoutMsg: `Neither Home nor a sheet over it showed within ${timeout} ms.` },
+    );
+    await this.dismissAnnouncement();
+    await this.waitUntilReady(timeout);
+  }
+
   async open(tab: MainTab): Promise<void> {
     await this.tab(tab).click();
   }
