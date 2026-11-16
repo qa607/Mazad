@@ -23,6 +23,7 @@
     "test:frontend": "playwright test --project=frontend-*",
     "emulator:start": "bash scripts/android-emulator.sh start",
     "emulator:check": "bash scripts/android-emulator.sh check",
+    "buy-now": "node scripts/buy-now-run.mjs",
     "ios:sim": "bash scripts/ios-sim.sh",
     "test:ios": "playwright test -c playwright.ios.config.ts --project=ios",
     "test:ios:backoffice": "playwright test -c playwright.ios.config.ts --project=ios-backoffice",
