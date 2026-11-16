@@ -5,6 +5,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { approvedOrigin } from '@config/staging-environments';
 import { appVersionTestTitles } from '@test-data/app-version.data';
+import { advertisementTestTitles } from '@test-data/advertisement.data';
 import { IOS_TEXT_VERIFIED } from '@test-data/ios-app.data';
 import { favouritesTestTitles } from '@test-data/mobile-favourites.data';
 import {
@@ -80,6 +81,19 @@ export function iosForceUpdateBlocked(env: NodeJS.ProcessEnv = process.env): str
   return env.MAZAD_ALLOW_FORCE_UPDATE === 'true'
     ? undefined
     : 'Blocked: adding a force-update app version on staging (blocks every staging iOS app until it is deleted) is not approved for this run (MAZAD_ALLOW_FORCE_UPDATE).';
+}
+
+/**
+ * The iOS advertisement test (tests-ios/advertisement.backoffice.spec.ts) has its OWN approval, the
+ * same switch as Android's (MAZAD_ALLOW_ADVERTISEMENT, QA owner 2026-11-15): while its QA-AUTO
+ * advertisement is published every staging app opens it at launch. In the app it reads the sheet
+ * and taps only the advertisement's own button (or the close button of a sheet left open), never a
+ * form or an account action. With it, only that test's title passes the text gate.
+ */
+export function iosAdvertisementBlocked(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.MAZAD_ALLOW_ADVERTISEMENT === 'true'
+    ? undefined
+    : 'Blocked: publishing a QA-AUTO advertisement on staging (every staging app opens it at launch) is not approved for this run (MAZAD_ALLOW_ADVERTISEMENT).';
 }
 
 /**
@@ -168,6 +182,8 @@ export function outOfTextScopeReason(
   }
   // The force-update test: its own approval (iosForceUpdateBlocked), still under every other gate.
   if (title === appVersionTestTitles.forceUpdate && !iosForceUpdateBlocked(env)) return undefined;
+  // The advertisement test: its own approval (iosAdvertisementBlocked), still under every other gate.
+  if (title === advertisementTestTitles.ios && !iosAdvertisementBlocked(env)) return undefined;
   const problem = iosStaticProblem(env, {}, gates, readConfig);
   return problem
     ? `${problem} (this test is outside the narrow guest display text scope)`

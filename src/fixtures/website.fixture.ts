@@ -18,6 +18,12 @@ import { LiveAuctionsPage } from '@pages/frontend/auctions/live-auctions.page';
 import { WebsiteContactUsPage } from '@pages/frontend/contact/contact-us.page';
 import { FaqWebPage } from '@pages/frontend/help-center/faq-web.page';
 import { faqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
+import {
+  advertisementCleanup,
+  type AdvertisementTracker,
+  appVersionPause,
+  type AppVersionPause,
+} from '@fixtures/advertisement-cleanup';
 import { installGuestGuard, type NetworkEvent } from '../network/request-guard';
 import {
   deleteFirebaseAnonymousUser,
@@ -67,6 +73,17 @@ interface WebsiteFixtures {
    * deleted there. A test that deletes its row itself leaves nothing for this to do.
    */
   appVersionCleanup: { track: (deviceType: string, appVersion: string) => void };
+  /**
+   * Records the advertisements a test creates through devRootBackend and the one published before;
+   * after the test, passed or failed, its own are unpublished and deleted, and the earlier one is
+   * published again.
+   */
+  advertisementCleanup: AdvertisementTracker;
+  /**
+   * Pauses App Versions rows through devRootBackend; every paused row gets its status back when
+   * the test calls restore() and, in any case, after the test.
+   */
+  appVersionPause: AppVersionPause;
   /** A dedicated Individual test account from the back office (name contains the test filter). */
   individualAccount: DirectoryAccount;
   /** A dedicated Dealer test account from the back office (name contains the test filter). */
@@ -269,6 +286,16 @@ export const test = base.extend<WebsiteFixtures & WebsiteOptions, WebsiteWorkerF
         }
       }
     }
+  },
+  advertisementCleanup: async ({ devRootBackend }, use) => {
+    const cleanup = advertisementCleanup(devRootBackend.advertisementPage);
+    await use(cleanup.tracker);
+    await cleanup.run();
+  },
+  appVersionPause: async ({ devRootBackend }, use) => {
+    const pause = appVersionPause(devRootBackend);
+    await use(pause.tracker);
+    await pause.run();
   },
   websiteContactUsPage: async ({ page, language, isMobile }, use, testInfo) => {
     await use(new WebsiteContactUsPage(page, language, isMobile));

@@ -45,6 +45,17 @@ export class AppVersionFormPage extends BackendPage {
     await this.page.goto(AppVersionFormPage.createPath);
   }
 
+  /** Opens the Update form of one row (the same form, filled with the row). */
+  async gotoUpdate(id: string): Promise<void> {
+    await this.page.goto(`/backend/appVersionControl/app-version-control/update?id=${id}`);
+  }
+
+  /** Changes only the Status of the open form and saves it ("Active", "In Active"...). */
+  async saveStatus(status: string): Promise<void> {
+    await this.choose('status', status);
+    await this.save();
+  }
+
   /** Picks an option of one of the form's select2 boxes, as a user does. */
   private async choose(field: string, option: string): Promise<void> {
     await this.form.locator(`.field-appversioncontrol-${field} .select2-selection`).click();

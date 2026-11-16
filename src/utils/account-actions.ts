@@ -64,6 +64,17 @@ export const LIVE_AUCTION_BLOCKED = blocked(
   'creating an auction that goes live and notifies every staging app user',
 );
 
+/**
+ * Publishes a QA-AUTO advertisement on staging: while it is published EVERY staging app opens it at
+ * launch, so a run keeps that window to a few minutes and unpublishes and deletes it after.
+ * On Android it also sets the App Versions row that keeps an update pending In Active while the
+ * app opens, then back (QA owner, 2026-11-15; see test-data/advertisement.data.ts).
+ */
+export const ADVERTISEMENT_BLOCKED = blocked(
+  'MAZAD_ALLOW_ADVERTISEMENT',
+  'publishing a QA-AUTO advertisement that every staging app opens at launch',
+);
+
 /** The first reason a test needing these operations is blocked, if any. */
 export function firstBlocked(...reasons: (string | undefined)[]): string | undefined {
   return reasons.find(Boolean);

@@ -31,6 +31,22 @@ export interface AppConfiguration {
   favorite: ConfigTab[];
   listings: ConfigTab[];
   notification: { empty?: { logged?: EmptyState; guest?: EmptyState } }[];
+  /** The published advertisement the apps open at launch; null when none is published. */
+  advertisement: AppAdvertisement | null;
+}
+
+/** An advertisement as GET /v1/configuration gives it (texts in the request language). */
+export interface AppAdvertisement {
+  id: number;
+  title: string;
+  subTitle: string;
+  btnText: string;
+  btnLink: string;
+  /** "internal" (opened inside the app) or "external". */
+  linkType: string;
+  isExternalLink: boolean;
+  image: string | null;
+  color: string;
 }
 
 /** A Help Center category from GET /v1/faq-list (the apps list exactly these, in this order). */
