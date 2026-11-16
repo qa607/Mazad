@@ -277,3 +277,92 @@ export function getSupplierAccount(): BackendAccount | null {
   const password = localEnv.SUPPLIER_PASSWORD;
   return phone && password ? new BackendAccount(phone, password) : null;
 }
+
+/**
+ * Mazad Inspection backend account: a mobile number and a 4-digit PIN (confirmed 2026-11-11 on
+ * stg-224-inspection), not the phone+password shape of the main Backend's accounts. Same
+ * redaction as BackendAccount.
+ */
+export class InspectionAccount {
+  readonly #mobileNumber: string;
+  readonly #pin: string;
+
+  constructor(mobileNumber: string, pin: string) {
+    this.#mobileNumber = mobileNumber;
+    this.#pin = pin;
+  }
+
+  get mobileNumber(): string {
+    return this.#mobileNumber;
+  }
+
+  get pin(): string {
+    return this.#pin;
+  }
+
+  toString(): string {
+    return '[redacted]';
+  }
+
+  toJSON(): string {
+    return '[redacted]';
+  }
+
+  [inspect.custom](): string {
+    return '[redacted]';
+  }
+}
+
+export const INSPECTION_ADMIN_MISSING_REASON =
+  'Inspection Admin account is not set: add INSPECTION_ADMIN_MOBILE and INSPECTION_ADMIN_PIN to the local .env file.';
+
+/** The Mazad Inspection backend's Admin (Super Admin) account, or null when not set in .env. */
+export function getInspectionAdminAccount(): InspectionAccount | null {
+  const mobileNumber = localEnv.INSPECTION_ADMIN_MOBILE?.trim();
+  const pin = localEnv.INSPECTION_ADMIN_PIN;
+  return mobileNumber && pin ? new InspectionAccount(mobileNumber, pin) : null;
+}
+
+export const INSPECTION_QA_MISSING_REASON =
+  'Inspection QA account is not set: add INSPECTION_QA_MOBILE and INSPECTION_QA_PIN to the local .env file.';
+
+/**
+ * A staging Inspection backend account with QA-level access, for login/permission checks. Null
+ * until the QA owner provides one (not yet available as of this module's first milestone).
+ */
+export function getInspectionQaAccount(): InspectionAccount | null {
+  const mobileNumber = localEnv.INSPECTION_QA_MOBILE?.trim();
+  const pin = localEnv.INSPECTION_QA_PIN;
+  return mobileNumber && pin ? new InspectionAccount(mobileNumber, pin) : null;
+}
+
+export const INSPECTION_QC_TEST_MISSING_REASON =
+  'Inspection QC test account is not set: add INSPECTION_QC_TEST_MOBILE and INSPECTION_QC_TEST_PIN to the local .env file.';
+
+/**
+ * A dedicated, automation-created QC User account (id 5480, "QA-AUTO QC TEST", created via the
+ * Admin-facing Create form on stg-224-inspection, 2026-11-11), kept persistently for QC-login and
+ * QC-permission tests — unlike the disposable "QA-AUTO QC <digits>" records QC CRUD tests create
+ * and delete per run. Never used by CRUD tests; never edited or deleted by them either.
+ */
+export function getInspectionQcTestAccount(): InspectionAccount | null {
+  const mobileNumber = localEnv.INSPECTION_QC_TEST_MOBILE?.trim();
+  const pin = localEnv.INSPECTION_QC_TEST_PIN;
+  return mobileNumber && pin ? new InspectionAccount(mobileNumber, pin) : null;
+}
+
+export const INSPECTION_INSPECTOR_TEST_MISSING_REASON =
+  'Inspection Inspector test account is not set: add INSPECTION_INSPECTOR_TEST_MOBILE and INSPECTION_INSPECTOR_TEST_PIN to the local .env file.';
+
+/**
+ * A dedicated, persistent Inspector account (id 5485, "QA-AUTO INSPECTOR TEST", created via the
+ * Admin-facing Create form on stg-224-inspection, 2026-11-11), kept for Inspector backend-to-
+ * Android login integration and PIN-change tests — separate from the disposable "QA-AUTO
+ * INSPECTOR <digits>" records Inspector CRUD tests create and delete per run, and separate from
+ * the real, pre-existing "QA TEST" Inspector (id 5464), which automation never modifies.
+ */
+export function getInspectionInspectorTestAccount(): InspectionAccount | null {
+  const mobileNumber = localEnv.INSPECTION_INSPECTOR_TEST_MOBILE?.trim();
+  const pin = localEnv.INSPECTION_INSPECTOR_TEST_PIN;
+  return mobileNumber && pin ? new InspectionAccount(mobileNumber, pin) : null;
+}

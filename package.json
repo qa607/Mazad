@@ -49,7 +49,9 @@
     "allure:open": "allure open allure-report",
     "ios:otp-ledger-init": "node scripts/ios-otp-ledger-init.mjs",
     "ios:journal": "node scripts/ios-journal.mjs",
-    "ios:dealer-config": "cross-env IOS_ACCOUNT_REPORT=true IOS_DEALER_CONFIG=true playwright test -c playwright.ios.config.ts --project=ios-account-report tests-ios/ios-dealer-config.report.ts"
+    "ios:dealer-config": "cross-env IOS_ACCOUNT_REPORT=true IOS_DEALER_CONFIG=true playwright test -c playwright.ios.config.ts --project=ios-account-report tests-ios/ios-dealer-config.report.ts",
+    "test:inspection:backend": "cross-env TEST_ENV=stg-224-inspection playwright test -c playwright.inspection.config.ts --project=inspection-backend",
+    "test:inspection:android": "cross-env TEST_ENV=stg-224-inspection playwright test -c playwright.inspection.config.ts --project=inspection-android --workers=1"
   },
   "devDependencies": {
     "@e965/xlsx": "0.20.3",
