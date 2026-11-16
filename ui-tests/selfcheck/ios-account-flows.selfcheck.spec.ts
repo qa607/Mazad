@@ -353,6 +353,9 @@ test.describe('iOS guest-state cleanup (selfcheck)', () => {
     );
     expect(callers.sort()).toEqual([
       'src/mobile/ios/account/guest-state.ts',
+      // Logs the iOS Individual test account out to start as a guest (own approval: needs
+      // IOS_ALLOW_FAVOURITES and MAZAD_ALLOW_LOGOUT; QA owner, 2026-11-14).
+      'tests-ios/favourites.spec.ts',
       'tests-ios/ios-account-helpers.ts',
       'tests-ios/login.spec.ts',
     ]);

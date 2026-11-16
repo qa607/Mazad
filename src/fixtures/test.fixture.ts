@@ -50,6 +50,8 @@ import { QcViewPage } from '@pages/backend/qc/qc-view.page';
 import { InspectorListPage } from '@pages/backend/inspector/inspector-list.page';
 import { InspectorViewPage } from '@pages/backend/inspector/inspector-view.page';
 import { ConfigPage } from '@pages/backend/config/config.page';
+import { AppVersionFormPage } from '@pages/backend/app-version/app-version-form.page';
+import { AppVersionListPage } from '@pages/backend/app-version/app-version-list.page';
 import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
@@ -173,6 +175,8 @@ export interface BackendPages {
   inspectorListPage: InspectorListPage;
   inspectorViewPage: InspectorViewPage;
   configPage: ConfigPage;
+  appVersionListPage: AppVersionListPage;
+  appVersionFormPage: AppVersionFormPage;
   taxonomyTypesPage: TaxonomyTypesPage;
   taxonomyListPage: TaxonomyListPage;
   taxonomyFormPage: TaxonomyFormPage;
@@ -241,6 +245,8 @@ function createBackendPages(page: Page): BackendPages {
     inspectorListPage: new InspectorListPage(page),
     inspectorViewPage: new InspectorViewPage(page),
     configPage: new ConfigPage(page),
+    appVersionListPage: new AppVersionListPage(page),
+    appVersionFormPage: new AppVersionFormPage(page),
     taxonomyTypesPage: new TaxonomyTypesPage(page),
     taxonomyListPage: new TaxonomyListPage(page),
     taxonomyFormPage: new TaxonomyFormPage(page),

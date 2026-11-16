@@ -43,6 +43,27 @@ export const MOBILE_CONTACT_SUBMIT_BLOCKED = blocked(
   'sending a Contact Us message from the Android app',
 );
 
+/**
+ * Adds an app version above the installed build with Force Update on (back office App Versions).
+ * Not an account change, but while that row exists EVERY staging app of that platform shows the
+ * non-dismissable update dialog, so it waits for the QA owner's sign-off for the run; the test
+ * deletes the row again within about a minute.
+ */
+export const FORCE_UPDATE_BLOCKED = blocked(
+  'MAZAD_ALLOW_FORCE_UPDATE',
+  'adding a force-update app version on staging (blocks every staging app of that platform until it is deleted)',
+);
+
+/**
+ * Creates a short back-office auction that goes live within minutes. Not an account change, but
+ * staging sends its "starting soon" and "started" notifications to every app user who has
+ * notifications on, so it waits for the QA owner's sign-off.
+ */
+export const LIVE_AUCTION_BLOCKED = blocked(
+  'MAZAD_ALLOW_LIVE_AUCTION',
+  'creating an auction that goes live and notifies every staging app user',
+);
+
 /** The first reason a test needing these operations is blocked, if any. */
 export function firstBlocked(...reasons: (string | undefined)[]): string | undefined {
   return reasons.find(Boolean);
