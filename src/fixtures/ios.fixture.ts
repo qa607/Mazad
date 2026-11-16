@@ -17,7 +17,9 @@ import { restrictDriver, type SpecDriver } from '@mobile/ios/spec-driver';
 import { IosAccountScreen } from '@mobile/ios/screens/account.screen';
 import { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
 import { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
+import { IosFavouritesScreen } from '@mobile/ios/screens/favourites.screen';
 import { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
+import { IosHomeScreen } from '@mobile/ios/screens/home.screen';
 import { IosMoreScreen } from '@mobile/ios/screens/more.screen';
 import { IosForceUpdateScreen } from '@mobile/ios/screens/force-update.screen';
 import { IosForgotPasswordScreen } from '@mobile/ios/screens/forgot-password.screen';
@@ -58,6 +60,8 @@ interface IosFixtures {
   contactFormScreen: IosContactFormScreen;
   helpCenterScreen: IosHelpCenterScreen;
   moreScreen: IosMoreScreen;
+  homeScreen: IosHomeScreen;
+  favouritesScreen: IosFavouritesScreen;
   forceUpdateScreen: IosForceUpdateScreen;
   /**
    * The dedicated dealer test account from .env (IOS_TEST_DEALER_*; redacted when printed).
@@ -205,6 +209,12 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   },
   moreScreen: async ({ screenDriver }, use) => {
     await use(new IosMoreScreen(screenDriver));
+  },
+  homeScreen: async ({ screenDriver }, use) => {
+    await use(new IosHomeScreen(screenDriver));
+  },
+  favouritesScreen: async ({ screenDriver }, use) => {
+    await use(new IosFavouritesScreen(screenDriver));
   },
   forceUpdateScreen: async ({ screenDriver }, use) => {
     await use(new IosForceUpdateScreen(screenDriver));
