@@ -16,7 +16,8 @@ export type Feature =
   | 'Contact Us'
   | 'More'
   | 'Help Center FAQs'
-  | 'Favourites';
+  | 'Favourites'
+  | 'App Version Control';
 export type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
 export type Platform = 'web' | 'android' | 'ios';
 

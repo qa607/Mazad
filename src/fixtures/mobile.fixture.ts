@@ -19,6 +19,7 @@ import { AppShellScreen } from '@mobile/screens/app-shell.screen';
 import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
 import { EnvironmentScreen } from '@mobile/screens/environment.screen';
 import { FavouritesScreen } from '@mobile/screens/favourites.screen';
+import { ForceUpdateScreen } from '@mobile/screens/force-update.screen';
 import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
 import { HomeScreen } from '@mobile/screens/home.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
@@ -45,6 +46,7 @@ interface MobileFixtures {
   appShell: AppShellScreen;
   homeScreen: HomeScreen;
   favouritesScreen: FavouritesScreen;
+  forceUpdateScreen: ForceUpdateScreen;
   myBidsScreen: MyBidsScreen;
   myActionsScreen: MyActionsScreen;
   notificationsScreen: NotificationsScreen;
@@ -125,6 +127,9 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   favouritesScreen: async ({ driver }, use) => {
     await use(new FavouritesScreen(driver));
+  },
+  forceUpdateScreen: async ({ driver }, use) => {
+    await use(new ForceUpdateScreen(driver));
   },
   myBidsScreen: async ({ driver }, use) => {
     await use(new MyBidsScreen(driver));

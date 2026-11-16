@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { approvedOrigin } from '@config/staging-environments';
+import { appVersionTestTitles } from '@test-data/app-version.data';
 import { IOS_TEXT_VERIFIED } from '@test-data/ios-app.data';
 import { favouritesTestTitles } from '@test-data/mobile-favourites.data';
 import {
@@ -67,6 +68,18 @@ export function iosFavouritesBlocked(env: NodeJS.ProcessEnv = process.env): stri
   return env.IOS_ALLOW_FAVOURITES === 'true'
     ? undefined
     : 'Blocked: the iOS favourites tests (sign out and in with the iOS Individual test account, add and remove one favourite) are not approved for this run (IOS_ALLOW_FAVOURITES).';
+}
+
+/**
+ * The iOS force-update test (tests-ios/app-version.backoffice.spec.ts) has its OWN approval, the
+ * same switch as Android's (MAZAD_ALLOW_FORCE_UPDATE, QA owner 2026-11-14): while its back-office
+ * row exists every staging iOS app shows the update dialog. It types nothing and taps nothing in
+ * the app (navigation and reading only). With it, only that test's title passes the text gate.
+ */
+export function iosForceUpdateBlocked(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.MAZAD_ALLOW_FORCE_UPDATE === 'true'
+    ? undefined
+    : 'Blocked: adding a force-update app version on staging (blocks every staging iOS app until it is deleted) is not approved for this run (MAZAD_ALLOW_FORCE_UPDATE).';
 }
 
 /**
@@ -153,6 +166,8 @@ export function outOfTextScopeReason(
   ) {
     return undefined;
   }
+  // The force-update test: its own approval (iosForceUpdateBlocked), still under every other gate.
+  if (title === appVersionTestTitles.forceUpdate && !iosForceUpdateBlocked(env)) return undefined;
   const problem = iosStaticProblem(env, {}, gates, readConfig);
   return problem
     ? `${problem} (this test is outside the narrow guest display text scope)`
