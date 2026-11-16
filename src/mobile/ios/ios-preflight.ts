@@ -5,6 +5,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { approvedOrigin } from '@config/staging-environments';
 import { IOS_TEXT_VERIFIED } from '@test-data/ios-app.data';
+import { favouritesTestTitles } from '@test-data/mobile-favourites.data';
 import {
   GUEST_FORM_TEST_TITLES,
   GUEST_FORM_TEXT_SCOPE,
@@ -54,6 +55,19 @@ export const IOS_GATES: IosGates = {
   textVerified: IOS_TEXT_VERIFIED,
   guestFormTextVerified: guestFormTextProblem() === undefined,
 };
+
+/**
+ * The iOS favourites tests (tests-ios/favourites.spec.ts) have their OWN approval, outside the
+ * account-run matrix (account-preflight.ts): approved by the QA owner on 2026-11-14 for signing the
+ * app out and in with the iOS Individual test account (IOS_TEST_INDIVIDUAL_* in .env) and adding
+ * then removing one favourite. Blocked unless IOS_ALLOW_FAVOURITES is "true" for the run; signing
+ * out also needs MAZAD_ALLOW_LOGOUT. With it, only those test titles pass the text gate.
+ */
+export function iosFavouritesBlocked(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.IOS_ALLOW_FAVOURITES === 'true'
+    ? undefined
+    : 'Blocked: the iOS favourites tests (sign out and in with the iOS Individual test account, add and remove one favourite) are not approved for this run (IOS_ALLOW_FAVOURITES).';
+}
 
 /**
  * forInspection: the first guest-screen inspection, whose job is to verify the text, skips only
@@ -132,6 +146,13 @@ export function outOfTextScopeReason(
 ): string | undefined {
   if (!TEXT_GATED_PROJECTS.includes(projectName)) return undefined;
   if ((GUEST_FORM_TEST_TITLES as readonly string[]).includes(title)) return undefined;
+  // The favourites tests: their own approval (iosFavouritesBlocked), still under every other gate.
+  if (
+    (Object.values(favouritesTestTitles) as string[]).includes(title) &&
+    !iosFavouritesBlocked(env)
+  ) {
+    return undefined;
+  }
   const problem = iosStaticProblem(env, {}, gates, readConfig);
   return problem
     ? `${problem} (this test is outside the narrow guest display text scope)`

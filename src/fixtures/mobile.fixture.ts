@@ -1,6 +1,8 @@
 import {
+  ANDROID_TEST_INDIVIDUAL_MISSING_REASON,
   type BackendAccount,
   BUYER_MISSING_REASON,
+  getAndroidTestIndividual,
   getBuyerAccount,
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
@@ -16,7 +18,9 @@ import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
 import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
 import { EnvironmentScreen } from '@mobile/screens/environment.screen';
+import { FavouritesScreen } from '@mobile/screens/favourites.screen';
 import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
+import { HomeScreen } from '@mobile/screens/home.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
 import { MoreScreen } from '@mobile/screens/more.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
@@ -39,6 +43,8 @@ interface MobileWorkerFixtures {
 interface MobileFixtures {
   driver: AndroidDriver;
   appShell: AppShellScreen;
+  homeScreen: HomeScreen;
+  favouritesScreen: FavouritesScreen;
   myBidsScreen: MyBidsScreen;
   myActionsScreen: MyActionsScreen;
   notificationsScreen: NotificationsScreen;
@@ -51,6 +57,11 @@ interface MobileFixtures {
   staticPageScreen: StaticPageScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
+  /**
+   * The Android Individual test account from .env (ANDROID_TEST_INDIVIDUAL_*; redacted when
+   * printed). Tests using it are skipped when it is not set.
+   */
+  androidIndividual: BackendAccount;
 }
 
 async function appiumReady(url: string): Promise<boolean> {
@@ -109,6 +120,12 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   appShell: async ({ driver }, use) => {
     await use(new AppShellScreen(driver));
   },
+  homeScreen: async ({ driver }, use) => {
+    await use(new HomeScreen(driver));
+  },
+  favouritesScreen: async ({ driver }, use) => {
+    await use(new FavouritesScreen(driver));
+  },
   myBidsScreen: async ({ driver }, use) => {
     await use(new MyBidsScreen(driver));
   },
@@ -143,6 +160,13 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   buyer: async ({}, use, testInfo) => {
     const account = getBuyerAccount();
     testInfo.skip(!account, BUYER_MISSING_REASON);
+    if (!account) return; // Not reached: skip() ends the test.
+    await use(account);
+  },
+  // eslint-disable-next-line no-empty-pattern
+  androidIndividual: async ({}, use, testInfo) => {
+    const account = getAndroidTestIndividual();
+    testInfo.skip(!account, ANDROID_TEST_INDIVIDUAL_MISSING_REASON);
     if (!account) return; // Not reached: skip() ends the test.
     await use(account);
   },
