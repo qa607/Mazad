@@ -85,6 +85,12 @@ export const GUEST_FORM_TEST_TITLES = [
   'Two published FAQ questions of a category are both listed',
   'A category whose only FAQ question is unpublished is not listed',
   'An edited FAQ question shows its new text, and unpublishing it removes the category',
+  // Ended auctions (Home -> Ended Auctions -> an auction -> a car): navigation and display only. The
+  // text used (Ended Auctions, Ended Auction, "Auction was held on") was observed on the device on
+  // 2026-11-14 in Arabic (test-data/past-auctions.data.ts); auction names and car titles come from
+  // the website's ended auctions at run time.
+  'Home ends with Ended Auctions, listing the latest ended auctions the website shows',
+  'An ended auction shows that it ended, and its car shows when the auction was held',
 ] as const;
 
 export const IOS_GUEST_FORM_TEXT = {

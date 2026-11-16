@@ -11,6 +11,10 @@ import path from 'node:path';
 import { approvedOrigin } from '@config/staging-environments';
 import { envConfig } from '@config/env.config';
 import { type BackendPages, test as base } from '@fixtures/test.fixture';
+import { AuctionDetailsPage } from '@pages/frontend/auctions/auction-details.page';
+import { CarDetailsPage } from '@pages/frontend/auctions/car-details.page';
+import { EndedAuctionsPage } from '@pages/frontend/auctions/ended-auctions.page';
+import { LiveAuctionsPage } from '@pages/frontend/auctions/live-auctions.page';
 import { WebsiteContactUsPage } from '@pages/frontend/contact/contact-us.page';
 import { FaqWebPage } from '@pages/frontend/help-center/faq-web.page';
 import { faqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
@@ -48,6 +52,10 @@ interface WebsiteFixtures {
    */
   devRootBackend: BackendPages;
   faqWebPage: FaqWebPage;
+  liveAuctionsPage: LiveAuctionsPage;
+  endedAuctionsPage: EndedAuctionsPage;
+  auctionDetailsPage: AuctionDetailsPage;
+  carDetailsPage: CarDetailsPage;
   /**
    * Records the FAQ categories and questions a website test creates through devRootBackend;
    * after the test, passed or failed, they are deleted there (questions first).
@@ -230,6 +238,18 @@ export const test = base.extend<WebsiteFixtures & WebsiteOptions, WebsiteWorkerF
   // one of the website tab here; the form only ever holds synthetic test values.
   faqWebPage: async ({ page, language }, use) => {
     await use(new FaqWebPage(page, language));
+  },
+  liveAuctionsPage: async ({ page, language }, use) => {
+    await use(new LiveAuctionsPage(page, language));
+  },
+  endedAuctionsPage: async ({ page, language }, use) => {
+    await use(new EndedAuctionsPage(page, language));
+  },
+  auctionDetailsPage: async ({ page, language }, use) => {
+    await use(new AuctionDetailsPage(page, language));
+  },
+  carDetailsPage: async ({ page, language }, use) => {
+    await use(new CarDetailsPage(page, language));
   },
   devRootFaqCleanup: async ({ devRootBackend }, use) => {
     const cleanup = faqCleanup(devRootBackend);

@@ -59,6 +59,15 @@ export const en = {
   helpCenterHeading: 'Help Center',
   /** Shown under Send for 5 seconds after the server accepts the message; the form is cleared. */
   contactUsSent: 'Your message was sent successfully!',
+  // Website ended auctions: the Live & Upcoming page's section, /<lang>/auctions/, an ended
+  // auction and its cars (recorded from staging stg-154, 2026-11-14).
+  latestEndedAuctions: 'Latest Ended Auctions',
+  allEndedAuctions: 'All Ended Auctions',
+  endedAuctionsHeading: 'Ended Auctions',
+  endedAuctionStatus: 'Ended Auction',
+  auctionCarsCount: 'Cars',
+  auctionHeldOn: 'Auction was held on',
+  getTheApp: 'Get the App',
 } satisfies Record<string, string>;
 
 export type TranslationKey = keyof typeof en;
