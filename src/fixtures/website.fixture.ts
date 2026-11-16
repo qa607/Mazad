@@ -11,6 +11,10 @@ import path from 'node:path';
 import { approvedOrigin } from '@config/staging-environments';
 import { envConfig } from '@config/env.config';
 import { type BackendPages, test as base } from '@fixtures/test.fixture';
+import { AuctionDetailsPage } from '@pages/frontend/auctions/auction-details.page';
+import { CarDetailsPage } from '@pages/frontend/auctions/car-details.page';
+import { EndedAuctionsPage } from '@pages/frontend/auctions/ended-auctions.page';
+import { LiveAuctionsPage } from '@pages/frontend/auctions/live-auctions.page';
 import { WebsiteContactUsPage } from '@pages/frontend/contact/contact-us.page';
 import { FaqWebPage } from '@pages/frontend/help-center/faq-web.page';
 import { faqCleanup, type FaqTracker } from '@fixtures/faq-cleanup';
@@ -48,11 +52,21 @@ interface WebsiteFixtures {
    */
   devRootBackend: BackendPages;
   faqWebPage: FaqWebPage;
+  liveAuctionsPage: LiveAuctionsPage;
+  endedAuctionsPage: EndedAuctionsPage;
+  auctionDetailsPage: AuctionDetailsPage;
+  carDetailsPage: CarDetailsPage;
   /**
    * Records the FAQ categories and questions a website test creates through devRootBackend;
    * after the test, passed or failed, they are deleted there (questions first).
    */
   devRootFaqCleanup: FaqTracker;
+  /**
+   * Records the app versions (device type and version) a test adds through devRootBackend; after
+   * the test, passed or failed, every App Versions row with that device type and version is
+   * deleted there. A test that deletes its row itself leaves nothing for this to do.
+   */
+  appVersionCleanup: { track: (deviceType: string, appVersion: string) => void };
   /** A dedicated Individual test account from the back office (name contains the test filter). */
   individualAccount: DirectoryAccount;
   /** A dedicated Dealer test account from the back office (name contains the test filter). */
@@ -225,10 +239,36 @@ export const test = base.extend<WebsiteFixtures & WebsiteOptions, WebsiteWorkerF
   faqWebPage: async ({ page, language }, use) => {
     await use(new FaqWebPage(page, language));
   },
+  liveAuctionsPage: async ({ page, language }, use) => {
+    await use(new LiveAuctionsPage(page, language));
+  },
+  endedAuctionsPage: async ({ page, language }, use) => {
+    await use(new EndedAuctionsPage(page, language));
+  },
+  auctionDetailsPage: async ({ page, language }, use) => {
+    await use(new AuctionDetailsPage(page, language));
+  },
+  carDetailsPage: async ({ page, language }, use) => {
+    await use(new CarDetailsPage(page, language));
+  },
   devRootFaqCleanup: async ({ devRootBackend }, use) => {
     const cleanup = faqCleanup(devRootBackend);
     await use(cleanup.tracker);
     await cleanup.run();
+  },
+  appVersionCleanup: async ({ devRootBackend }, use) => {
+    const tracked: { deviceType: string; appVersion: string }[] = [];
+    await use({ track: (deviceType, appVersion) => tracked.push({ deviceType, appVersion }) });
+    const list = devRootBackend.appVersionListPage;
+    for (const { deviceType, appVersion } of tracked) {
+      await list.gotoFiltered(deviceType, appVersion);
+      for (const row of await list.readRows()) {
+        if (row.deviceType === deviceType && row.appVersion === appVersion) {
+          await list.deleteRow(row.id);
+          await list.gotoFiltered(deviceType, appVersion);
+        }
+      }
+    }
   },
   websiteContactUsPage: async ({ page, language, isMobile }, use, testInfo) => {
     await use(new WebsiteContactUsPage(page, language, isMobile));

@@ -7,6 +7,7 @@ import {
   IOS_GATES,
   iosStaticProblem,
   outOfTextScopeReason,
+  TEXT_GATED_PROJECTS,
 } from '../../src/mobile/ios/ios-preflight';
 import type { IosDriver } from '../../src/mobile/ios/ios.session';
 import { IosForgotPasswordScreen } from '../../src/mobile/ios/screens/forgot-password.screen';
@@ -92,6 +93,18 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       contactMobilePlaceholder: 'e.g. 0554235678',
       contactMessagePlaceholder: 'Enter your message',
       contactMobilePrefix: '+966',
+      moreTitle: 'More',
+      moreSettings: 'Settings',
+      moreLanguage: 'Language',
+      moreSocialHeading: 'Follow us on Social Media',
+      moreImportantLinks: 'Important Links',
+      moreAboutUs: 'About Us',
+      moreTerms: 'Terms & Conditions',
+      morePrivacy: 'Privacy Policy',
+      moreRateUs: 'Rate us in the App Store',
+      moreChangeEnvironment: 'Change Environment',
+      moreBack: 'Back',
+      moreVersionLabel: 'Version',
     });
     expect(IOS_GUEST_FORM_TEXT.ar).toEqual({
       homeTab: 'الرئيسية',
@@ -147,6 +160,18 @@ test.describe('iOS narrow text gate (selfcheck)', () => {
       contactMobilePlaceholder: 'مثال: 0554235678',
       contactMessagePlaceholder: 'أدخل رسالتك',
       contactMobilePrefix: '+966',
+      moreTitle: 'المزيد',
+      moreSettings: 'الإعدادات',
+      moreLanguage: 'اللغة',
+      moreSocialHeading: 'تابعنا على وسائل التواصل الاجتماعي',
+      moreImportantLinks: 'روابط مهمة',
+      moreAboutUs: 'من نحن',
+      moreTerms: 'الشروط و الأحكام',
+      morePrivacy: 'سياسة الخصوصية',
+      moreRateUs: 'قيّم التطبيق في المتجر',
+      moreChangeEnvironment: 'تغيير البيئة',
+      moreBack: 'عودة',
+      moreVersionLabel: 'الإصدار',
     });
     expect(guestFormTextProblem()).toBeUndefined();
   });
@@ -218,6 +243,13 @@ function declaredTitles(): string[] {
     'tests-ios/registration.spec.ts',
     'tests-ios/guest-tabs.spec.ts',
     'tests-ios/contact-us.spec.ts',
+    'tests-ios/more.spec.ts',
+    // Help Center FAQs: every test is a guest display test (no full-gate section), so these files
+    // are listed here for their titles but not in the safe-test-first structure check below.
+    'tests-ios/faq.spec.ts',
+    'tests-ios/faq.backoffice.spec.ts',
+    // Ended auctions: guest display tests only, like the FAQ files.
+    'tests-ios/past-auctions.spec.ts',
   ]) {
     const source = read(file);
     const pattern =
@@ -268,6 +300,7 @@ test.describe('iOS narrow text gate cannot unblock other tests (selfcheck)', () 
       'tests-ios/registration.spec.ts',
       'tests-ios/guest-tabs.spec.ts',
       'tests-ios/contact-us.spec.ts',
+      'tests-ios/more.spec.ts',
     ]) {
       const source = read(file);
       expect(source, file).toContain(
@@ -318,9 +351,17 @@ test.describe('iOS narrow text gate cannot unblock other tests (selfcheck)', () 
     expect(fixture).toMatch(
       /textScopeGuard:\s*\[[\s\S]*outOfTextScopeReason\([\s\S]*\{ auto: true \}/,
     );
-    expect(fixture).toContain(
-      "textScope: workerInfo.project.name === 'ios' ? GUEST_FORM_TEXT_SCOPE : undefined",
+    expect(fixture).toMatch(
+      /textScope: TEXT_GATED_PROJECTS\.includes\(workerInfo\.project\.name\)\s*\?\s*GUEST_FORM_TEXT_SCOPE\s*:\s*undefined/,
     );
+    // Exactly the two functional projects; the back-office one is gated like the guest one.
+    expect([...TEXT_GATED_PROJECTS].sort()).toEqual(['ios', 'ios-backoffice']);
+    for (const project of TEXT_GATED_PROJECTS) {
+      expect(
+        outOfTextScopeReason(project, 'not a guest display test', STG, gates({}), verifiedDevice),
+        project,
+      ).toMatch(/outside the narrow guest display text scope/);
+    }
   });
 });
 

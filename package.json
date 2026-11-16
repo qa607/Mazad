@@ -16,6 +16,7 @@
     "test:integration": "playwright test --project=integration",
     "test:android": "playwright test --project=android",
     "test:android:backoffice": "playwright test --project=android-backoffice --workers=1",
+    "live-auction": "node scripts/live-auction-run.mjs",
     "test:customer-group": "playwright test --project=backend tests/backend/customer-group.spec.ts",
     "test:taxonomy": "playwright test --project=backend tests/backend/taxonomy.spec.ts",
     "test:traffic-office": "playwright test --project=backend tests/backend/traffic-office.spec.ts",
@@ -23,8 +24,10 @@
     "test:frontend": "playwright test --project=frontend-*",
     "emulator:start": "bash scripts/android-emulator.sh start",
     "emulator:check": "bash scripts/android-emulator.sh check",
+    "buy-now": "node scripts/buy-now-run.mjs",
     "ios:sim": "bash scripts/ios-sim.sh",
     "test:ios": "playwright test -c playwright.ios.config.ts --project=ios",
+    "test:ios:backoffice": "playwright test -c playwright.ios.config.ts --project=ios-backoffice",
     "test:ios:inspect": "cross-env IOS_INSPECT=true playwright test -c playwright.ios.config.ts --project=ios-inspect",
     "ios:account-report": "cross-env IOS_ACCOUNT_REPORT=true playwright test -c playwright.ios.config.ts --project=ios-account-report",
     "ios:guarded-launch": "cross-env IOS_GUARDED_LAUNCH=true playwright test -c playwright.ios.config.ts --project=ios-guarded-launch",
@@ -51,6 +54,7 @@
     "test:inspection:android": "cross-env TEST_ENV=stg-224-inspection playwright test -c playwright.inspection.config.ts --project=inspection-android --workers=1"
   },
   "devDependencies": {
+    "@e965/xlsx": "0.20.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",

@@ -53,4 +53,11 @@ export const ar: Translations = {
   contactUsMobileMustStartWith05: 'يجب أن يبدأ رقم الجوال بـ "05"',
   contactUsMobileLength: 'يجب أن يكون رقم الجوال 10 أرقام فقط',
   contactUsSent: 'تم إرسال رسالتك بنجاح!',
+  latestEndedAuctions: 'آخر المزادات المنتهية',
+  allEndedAuctions: 'جميع المزادات المنتهية',
+  endedAuctionsHeading: 'المزادات المنتهية',
+  endedAuctionStatus: 'مزاد منتهي',
+  auctionCarsCount: 'السيارات',
+  auctionHeldOn: 'تم عقد المزاد بتاريخ',
+  getTheApp: 'حمّل التطبيق',
 };

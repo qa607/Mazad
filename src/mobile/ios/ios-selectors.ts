@@ -49,4 +49,14 @@ export const IOS_ACCESSIBILITY_IDS = {
   contactForm: {
     sendButton: '',
   },
+  // More tab (guest), inspected 2026-11-11: the Favorites/Notifications header icons and the four
+  // social icons are Buttons with no accessible name or label; id-only until the iOS team adds ids.
+  more: {
+    favoritesIcon: '',
+    notificationsIcon: '',
+    facebookIcon: '',
+    instagramIcon: '',
+    tiktokIcon: '',
+    linkedinIcon: '',
+  },
 } as const satisfies Record<string, Record<string, string>>;

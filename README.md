@@ -13,16 +13,17 @@ Before running tests, set `TEST_ENV` to an approved staging environment (current
 
 ## Running tests
 
-| Command                               | What it does                                                   |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `npm test`                            | All tests (website in English and Arabic, back office), headed |
-| `npm run test:en` / `npm run test:ar` | Customer website, one language only                            |
-| `npm run test:backend`                | Back office only                                               |
-| `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)        |
-| `npm run test:android`                | Mazad Android app through Appium (see Mobile below)            |
-| `npm run test:android:backoffice`     | Android app sends checked in the back office (approval needed) |
-| `npm run test:headless`               | All tests, headless                                            |
-| `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)    |
+| Command                               | What it does                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| `npm test`                            | All tests (website in English and Arabic, back office), headed                   |
+| `npm run test:en` / `npm run test:ar` | Customer website, one language only                                              |
+| `npm run test:backend`                | Back office only                                                                 |
+| `npm run test:integration`            | App API and cross-system checks (back office, API, ERP)                          |
+| `npm run test:android`                | Mazad Android app through Appium (see Mobile below)                              |
+| `npm run test:android:backoffice`     | Android app checks of back-office records (FAQs; Contact Us sends need approval) |
+| `npm run test:ios:backoffice`         | iOS app checks of FAQs the back office creates, then deletes                     |
+| `npm run test:headless`               | All tests, headless                                                              |
+| `TEST_ENV=stg-154 npm test`           | Use the approved staging environment `stg-154` (no default)                      |
 
 Local overrides go in `.env` (copy `.env.example`). Supported variables:
 
@@ -141,6 +142,28 @@ The Sold flow is checked in three places, each with its own project:
 
 Nothing in these suites creates, edits or deletes data. The ERP client can only read (and log in and out). Known application defects are marked with `test.fail` and a description, so they show as expected failures until they are fixed.
 
+## Live auction runs (Standard or Price Offering, Android + iOS + web)
+
+`scripts/live-auction-run.mjs` creates a short Standard auction for a **new** car and has two **new** accounts bid on it from the Android app and the iOS app (Standard: alternately until the price reaches the car's Reserve Price; Price Offering: one sealed offer each), while the website is followed as a guest; then it checks the back office. Staging only (`TEST_ENV=stg-154`), saved Dev Root session (`.auth/dev-root.json`).
+
+```bash
+# 1. Dry run: prints the two new accounts, the car and the plan; changes nothing
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role individual
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role dealer
+# 2. Run with the two IDs the dry run printed (approves setting a new password on them)
+TEST_ENV=stg-154 npm run live-auction -- --bidding price-offering --role dealer --go --accounts <androidId>,<iosId>
+# Standard bidding: leave out --bidding (or --bidding standard)
+```
+
+- **Car:** a test-supplier car never used by the script (`reports/live-auction/state.json`, gitignored), from the Failed list or Pricing Done (moved to Upcoming), choosing the fewest bids to the reserve. `--car <VIN>` picks one.
+- **Auction:** `QA-AUTO Live <n>`, Normal, Bidding Type Standard, starting `--start-in` minutes from now (default 3) for `--duration` minutes (default 5). When it goes live the item's **Auto Extend** switch in the Live list is turned off (`--keep-auto-extend` leaves it); auctions were still seen closing 1-2 minutes after their end while the global `auto_extend` setting is ON.
+- **Bids:** "Increase Price" > "Your Increase" (+ in Min Increment steps, at most 6 per bid) > "Confirm Bid" (bids cannot be cancelled). One-time dialogs ("Thank you for participating in your first auction" > Continue, tips > Ok) are closed.
+- **Checks:** all bids placed; the car in Sold after the end (Waiting Transfer, Type Auction, both bidders, highest bid minus fees >= reserve, winner = last bidder; a Dealer shows its company name); the website showed the car live, the bid count, and the ended auction. Not reaching the reserve sends the car to Failed.
+- **Price Offering (`--bidding price-offering`):** an auction's Bidding Type comes from its supplier, so the car's supplier is set to Price Offering only while the auction is created and always set back to Standard right after. These items have no Auto Extend switch. When live, each device submits one sealed offer ("Place a Bid" > Bid Amount > "Submit Bid"): by default the reserve + admin fee + 500, rounded up to 500, on Android and 1,000 more on iOS (`--offers <android>,<ios>` sets both; offers below the reserve expect Failed). Checks: both offers placed, the auction and the Sold row show Bidding Type Price Offering, Highest Price = the higher offer, and its bidder is the winner. On iOS, never tap outside the bid sheet (that closes it); its "Submit Bid" button has no label.
+- **Winners are blocked at once:** the app refuses a bidder who has just won ("Sorry, you cannot participate in auctions at this time") before the back office ticks its hold box, so a winner cannot bid again in the next run.
+- **Accounts: new every run, never saved.** Two accounts of `--role` (individual by default, or dealer) taken from the back-office list: Individuals that are active, Verified and registered by Deposit; Dealers that are active with "Documents are reviewed?" ticked; not on hold and never used by an earlier run. On `--go` each gets a new random password that lives only in the running process (not in `.env`, not in any file, never printed) and is used to sign in on the device. Only the IDs are recorded (`usedAccounts` in the state file) so no account is used twice. `--go` needs `--accounts <androidId>,<iosId>`: the IDs from the dry run, as approval to change their passwords. A Dealer created in the back office is not verified (no control sets "Documents are reviewed?") and gets no bid button, so existing verified accounts are used. The website cannot bid (a live car shows "Get the App"), and signing an account in on the website signs it out of the app.
+- **Devices:** the Android emulator through adb (screen reads time out after 20 s and retry; restart a frozen emulator with `adb -s <serial> emu kill` and `npm run emulator:start`) and the iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL` in `.env`). The Android phone field drops digits typed in one go, so the 9 digits after +966 are typed one by one and checked.
+
 ## Mobile (Android)
 
 - Needs an Android device or emulator with the Mazad staging app installed (`com.app.motory.dealer.staging`), and an Appium 3 server with the UiAutomator2 driver.
@@ -150,6 +173,37 @@ Nothing in these suites creates, edits or deletes data. The ERP client can only 
 - One device per run: the mobile spec runs in serial mode.
 - The app keeps its own backend setting (a hidden menu: long press on the More tab), and the 8.2.2-stage build defaults to `mazad-v3.motory.dev`, another environment. Before any test, the session sets it to the selected environment's approved origin and reads it back (`src/mobile/ensure-app-backend.ts`); if it still differs, every Android test fails. The setting is kept on the device after the run.
 - Contact Us (`tests/mobile/android/contact-us.spec.ts`) is reached through More → Help Center → a category → Contact Us; it never presses Send. Sending a message and finding it in the back office (`contact-us.backoffice.spec.ts`, project `android-backoffice`, after `backend-setup`) is skipped unless the QA owner approves it for the run with `MAZAD_ALLOW_MOBILE_CONTACT_SUBMIT=true`.
+
+### Favourites (Android and iOS)
+
+`tests/mobile/android/favourites.spec.ts` and `tests-ios/favourites.spec.ts` run the same two tests in English and Arabic, on any car the app already lists (picked from the app API at run time: no favourites yet, a unique title, at least 15 minutes left; no car is created):
+
+- **A car a guest adds to favourites is in Favorite Auctions after signing in**: as a guest, tap the car's heart, sign in from the welcome sheet it opens, then the car must be in Favorite Auctions (and the API favourite count one higher). Known bug on both apps since 2026-11-14 (after signing in the car is not added): tagged `@known-bug` with `test.fail()`, so it passes while the bug exists and fails once it is fixed; replace `BUG-PENDING` in `test-data/mobile-favourites.data.ts` with the ticket ID.
+- **A signed-in customer adds a car to Favorite Auctions with its heart**: the same check with the heart tapped after signing in (passes on both apps).
+
+Each test starts signed out (a signed-in app is logged out), signs in with the platform's Individual test account from `.env` (`ANDROID_TEST_INDIVIDUAL_*`, `IOS_TEST_INDIVIDUAL_*`) and removes the favourite again at the end.
+
+```bash
+TEST_ENV=stg-154 MAZAD_ALLOW_LOGOUT=true npx playwright test --project=android tests/mobile/android/favourites.spec.ts --workers=1
+TEST_ENV=stg-154 IOS_ALLOW_FAVOURITES=true MAZAD_ALLOW_LOGOUT=true IOS_TARGET=device IOS_UDID=<udid> IOS_WDA_URL=<wda url> IOS_BUNDLE_ID=com.motory.dealer \
+  npx playwright test -c playwright.ios.config.ts --project=ios tests-ios/favourites.spec.ts
+```
+
+On iOS these tests have their own approval (`IOS_ALLOW_FAVOURITES`, QA owner 2026-11-14), outside the account-run gates: only their two titles pass the text gate, and the favourites-only login in `IosLoginScreen` refuses to type or tap without it.
+
+### App version control (force update)
+
+`tests/mobile/android/app-version.backoffice.spec.ts` (project `android-backoffice`, after `backend-setup`), in English and Arabic: the back office adds an Android app version above the installed build (`99.0.0`, Active, Force Update on) in **App Versions**, the app shows its update dialog at the next launch ("New Update", "A newer version of the app is available now!", Update; no way to close it), then the test deletes the version in the back office and the app opens normally again.
+
+While that row exists **every staging Android app** shows the dialog, so the test keeps the window to about a minute and runs only when approved for the run; the `appVersionCleanup` fixture deletes the row after the test if a step failed first.
+
+```bash
+TEST_ENV=stg-154 MAZAD_ALLOW_FORCE_UPDATE=true npx playwright test --project=android-backoffice tests/mobile/android/app-version.backoffice.spec.ts --workers=1
+TEST_ENV=stg-154 MAZAD_ALLOW_FORCE_UPDATE=true IOS_TARGET=device IOS_UDID=<udid> IOS_WDA_URL=<wda url> IOS_BUNDLE_ID=com.motory.dealer \
+  npx playwright test -c playwright.ios.config.ts --project=ios-backoffice tests-ios/app-version.backoffice.spec.ts
+```
+
+iOS (`tests-ios/app-version.backoffice.spec.ts`, project `ios-backoffice`) runs the same scenario in Arabic only, with an iOS row (`99.0.0`); the dialog shows the same words as Android's. With `MAZAD_ALLOW_FORCE_UPDATE` set, only this test title passes the iOS text gate; in the app it only switches language and reads (Update is never tapped).
 
 ### Emulator and NetBird
 
@@ -165,6 +219,24 @@ npm run emulator:check   # any time, e.g. before npm run test:android
 - `emulator:check` is read-only. It compares how the Mac and the emulator resolve the staging host and checks the emulator clock.
 - If NetBird disconnects while the emulator runs, the emulator loses all DNS. Reconnect NetBird, or restart the emulator (`adb -s <serial> emu kill`, then `npm run emulator:start`).
 - An emulator started from Android Studio's Device Manager does not use NetBird DNS. When the Mac reaches staging through the VPN but the device resolves it to the public endpoint, the Android tests are skipped with that reason instead of failing.
+
+## Buy Now runs (Upcoming, Individual and Dealer)
+
+`scripts/buy-now-run.mjs` buys an Upcoming car with Buy Now in the apps and checks it everywhere. Every run uses a **new car** and a **free user** (not on hold, least recently used); the cars and purchases already used are kept in `reports/buy-now/state.json` (gitignored). Staging only (`TEST_ENV=stg-154`); the back office is read with the saved Dev Root session (`.auth/dev-root.json`).
+
+```bash
+TEST_ENV=stg-154 npm run buy-now -- --platform both                       # dry run: prints the plan only
+TEST_ENV=stg-154 npm run buy-now -- --platform both --go                  # Individuals, Android + iOS
+TEST_ENV=stg-154 npm run buy-now -- --platform both --role dealer --go    # Dealers
+TEST_ENV=stg-154 npm run buy-now -- --push 2                              # only put 2 new cars in Awaiting
+TEST_ENV=stg-154 npm run buy-now -- --ui-only                             # only the website listing (add --app for the apps)
+```
+
+- **Car:** an unused Upcoming car with `buy_now = true`, otherwise the next Pricing Done car of a test supplier (`شركة تجريبية-<n>`): Buy Now price set above its reserve and supplier price, "Show Buy Now?" ticked, moved to Upcoming and put in a `QA-AUTO Buy Now <n>` auction (Awaiting). Buy Now only shows while a car is Upcoming.
+- **Checks per purchase:** website as a guest (Live & Upcoming Auctions > Upcoming, the auction page, `/en/car/<id>` with `buy_now` data and "Get the App"), the app (Upcoming > Cars, the car page, Buy it now sheet total), Bids > Won after the purchase, and the back office Sold row (Waiting Transfer, Buy Now, buyer, Sale Price). A Dealer's Sold row shows its company name.
+- **Holds:** a buyer is put on hold shortly after a purchase while the sale is Waiting Transfer. `--fail-held-sales` marks that user's QA-AUTO Buy Now sale Failed (Penalty 0, Block User off) to free it; the car moves to Failed and its history stays in the Failed Report.
+- **Options:** `--user <id[,id]>` picks the buyers, `--role individual|dealer` the rotation (Individuals by default).
+- **Devices:** Android emulator through adb (`ANDROID_UDID`, default `emulator-5554`, app pointed at the environment); iOS device through Appium + WebDriverAgent (`IOS_UDID`, `IOS_WDA_URL`). Credentials only in `.env` (see `.env.example`).
 
 ## UI design and localization (website)
 

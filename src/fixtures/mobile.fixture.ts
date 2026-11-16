@@ -1,6 +1,8 @@
 import {
+  ANDROID_TEST_INDIVIDUAL_MISSING_REASON,
   type BackendAccount,
   BUYER_MISSING_REASON,
+  getAndroidTestIndividual,
   getBuyerAccount,
 } from '@config/credentials.config';
 import { envConfig } from '@config/env.config';
@@ -15,13 +17,19 @@ import { androidNetworkProblem } from '@mobile/network-preflight';
 import { MazadAccountScreen } from '@mobile/screens/account.screen';
 import { AppShellScreen } from '@mobile/screens/app-shell.screen';
 import { ContactFormScreen } from '@mobile/screens/contact-form.screen';
+import { EndedAuctionsScreen } from '@mobile/screens/ended-auctions.screen';
 import { EnvironmentScreen } from '@mobile/screens/environment.screen';
+import { FavouritesScreen } from '@mobile/screens/favourites.screen';
+import { ForceUpdateScreen } from '@mobile/screens/force-update.screen';
 import { HelpCenterScreen } from '@mobile/screens/help-center.screen';
+import { HomeScreen } from '@mobile/screens/home.screen';
 import { MazadLoginScreen } from '@mobile/screens/login.screen';
+import { MoreScreen } from '@mobile/screens/more.screen';
 import { MyActionsScreen } from '@mobile/screens/my-actions.screen';
 import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
 import { NotificationsScreen } from '@mobile/screens/notifications.screen';
 import { MazadRegistrationScreen } from '@mobile/screens/registration.screen';
+import { StaticPageScreen } from '@mobile/screens/static-page.screen';
 
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
@@ -37,6 +45,9 @@ interface MobileWorkerFixtures {
 interface MobileFixtures {
   driver: AndroidDriver;
   appShell: AppShellScreen;
+  homeScreen: HomeScreen;
+  favouritesScreen: FavouritesScreen;
+  forceUpdateScreen: ForceUpdateScreen;
   myBidsScreen: MyBidsScreen;
   myActionsScreen: MyActionsScreen;
   notificationsScreen: NotificationsScreen;
@@ -45,8 +56,16 @@ interface MobileFixtures {
   accountScreen: MazadAccountScreen;
   helpCenterScreen: HelpCenterScreen;
   contactFormScreen: ContactFormScreen;
+  moreScreen: MoreScreen;
+  staticPageScreen: StaticPageScreen;
+  endedAuctionsScreen: EndedAuctionsScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
   buyer: BackendAccount;
+  /**
+   * The Android Individual test account from .env (ANDROID_TEST_INDIVIDUAL_*; redacted when
+   * printed). Tests using it are skipped when it is not set.
+   */
+  androidIndividual: BackendAccount;
 }
 
 async function appiumReady(url: string): Promise<boolean> {
@@ -105,6 +124,15 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   appShell: async ({ driver }, use) => {
     await use(new AppShellScreen(driver));
   },
+  homeScreen: async ({ driver }, use) => {
+    await use(new HomeScreen(driver));
+  },
+  favouritesScreen: async ({ driver }, use) => {
+    await use(new FavouritesScreen(driver));
+  },
+  forceUpdateScreen: async ({ driver }, use) => {
+    await use(new ForceUpdateScreen(driver));
+  },
   myBidsScreen: async ({ driver }, use) => {
     await use(new MyBidsScreen(driver));
   },
@@ -129,10 +157,26 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   contactFormScreen: async ({ driver }, use) => {
     await use(new ContactFormScreen(driver));
   },
+  moreScreen: async ({ driver }, use) => {
+    await use(new MoreScreen(driver));
+  },
+  staticPageScreen: async ({ driver }, use) => {
+    await use(new StaticPageScreen(driver));
+  },
+  endedAuctionsScreen: async ({ driver }, use) => {
+    await use(new EndedAuctionsScreen(driver));
+  },
   // eslint-disable-next-line no-empty-pattern
   buyer: async ({}, use, testInfo) => {
     const account = getBuyerAccount();
     testInfo.skip(!account, BUYER_MISSING_REASON);
+    if (!account) return; // Not reached: skip() ends the test.
+    await use(account);
+  },
+  // eslint-disable-next-line no-empty-pattern
+  androidIndividual: async ({}, use, testInfo) => {
+    const account = getAndroidTestIndividual();
+    testInfo.skip(!account, ANDROID_TEST_INDIVIDUAL_MISSING_REASON);
     if (!account) return; // Not reached: skip() ends the test.
     await use(account);
   },

@@ -55,6 +55,15 @@ export class MazadApiClient {
     return this.get<FaqCategory[]>('faq-list', lang);
   }
 
+  /**
+   * GET /v1/faq-list?id=<id>: one Help Center category with its published questions and answers
+   * (the call the app makes when a category is opened). Undefined when the API does not return it.
+   */
+  async getFaqCategory(lang: Language, id: number): Promise<FaqCategory | undefined> {
+    const { body } = await this.get<FaqCategory[]>('faq-list', lang, { id });
+    return body.data.find((category) => category.id === id);
+  }
+
   /** GET /v1/auction/list for one section and tab. */
   getAuctionList(query: AuctionListQuery) {
     const params: Record<string, string | number> = { section: query.section, tabs: query.tab };

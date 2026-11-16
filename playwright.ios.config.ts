@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 import { envConfig } from './config/env.config';
 import type { LanguageOptions } from './src/fixtures/test.fixture';
 import { assertStagingTarget } from './ui-tests/support/ui-run';
@@ -39,9 +39,30 @@ export default defineConfig<LanguageOptions>({
     ],
   ],
   outputDir: 'reports/ios/test-results',
-  use: { trace: 'off', screenshot: 'off', video: 'off' },
+  // baseURL: the read-only API calls the specs make for expected values (GET /v1/faq-list) and the
+  // back-office sign-in below; envConfig only ever holds the approved staging origin.
+  use: { trace: 'off', screenshot: 'off', video: 'off', baseURL: envConfig.baseURL },
   projects: [
-    { name: 'ios', testMatch: '**/*.spec.ts', use: { language: 'en' } },
+    {
+      name: 'ios',
+      testMatch: '**/*.spec.ts',
+      testIgnore: '**/*.backoffice.spec.ts',
+      use: { language: 'en' },
+    },
+    // Guest app checks of records the back office creates (as Dev Root) and deletes after each
+    // test: it signs in once first (tests/backend/auth.setup.ts, the same step as the main config).
+    {
+      name: 'ios-backend-setup',
+      testDir: './tests/backend',
+      testMatch: '**/*.setup.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'ios-backoffice',
+      testMatch: '**/*.backoffice.spec.ts',
+      dependencies: ['ios-backend-setup'],
+      use: { language: 'en' },
+    },
     // First guest-screen inspection (records selectors and text; no typing, no submission).
     // Present only when requested explicitly: IOS_INSPECT=true (npm run test:ios:inspect).
     ...(process.env.IOS_INSPECT === 'true'

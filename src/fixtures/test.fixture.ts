@@ -26,6 +26,12 @@ import { SuperAdminListPage } from '@pages/backend/admins/super-admin-list.page'
 import { AwaitingPage } from '@pages/backend/auctions/awaiting.page';
 import { CreateAuctionPage } from '@pages/backend/auctions/create-auction.page';
 import { FailedPage } from '@pages/backend/auctions/failed.page';
+import { FailedInvoicePage } from '@pages/backend/invoice/failed-invoice.page';
+import { PricingUpdatePage } from '@pages/backend/vehicle/pricing-update.page';
+import { DeliveryCompanyFormPage } from '@pages/backend/delivery/delivery-company-form.page';
+import { DeliveryCompanyListPage } from '@pages/backend/delivery/delivery-company-list.page';
+import { DeliveryCompanyViewPage } from '@pages/backend/delivery/delivery-company-view.page';
+import { DeliveryTrackingPage } from '@pages/backend/delivery/delivery-tracking.page';
 import { LivePage } from '@pages/backend/auctions/live.page';
 import { PricingDonePage } from '@pages/backend/auctions/pricing-done.page';
 import { ReadyForPricingPage } from '@pages/backend/auctions/ready-for-pricing.page';
@@ -43,6 +49,9 @@ import { QcListPage } from '@pages/backend/qc/qc-list.page';
 import { QcViewPage } from '@pages/backend/qc/qc-view.page';
 import { InspectorListPage } from '@pages/backend/inspector/inspector-list.page';
 import { InspectorViewPage } from '@pages/backend/inspector/inspector-view.page';
+import { ConfigPage } from '@pages/backend/config/config.page';
+import { AppVersionFormPage } from '@pages/backend/app-version/app-version-form.page';
+import { AppVersionListPage } from '@pages/backend/app-version/app-version-list.page';
 import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
@@ -133,6 +142,12 @@ export interface BackendPages {
   awaitingPage: AwaitingPage;
   livePage: LivePage;
   failedPage: FailedPage;
+  failedInvoicePage: FailedInvoicePage;
+  pricingUpdatePage: PricingUpdatePage;
+  deliveryTrackingPage: DeliveryTrackingPage;
+  deliveryCompanyListPage: DeliveryCompanyListPage;
+  deliveryCompanyFormPage: DeliveryCompanyFormPage;
+  deliveryCompanyViewPage: DeliveryCompanyViewPage;
   waitingApprovalPage: WaitingApprovalPage;
   auctionClosedReportPage: AuctionClosedReportPage;
   purchaseSurveyReportPage: PurchaseSurveyReportPage;
@@ -167,6 +182,9 @@ export interface BackendPages {
   qcViewPage: QcViewPage;
   inspectorListPage: InspectorListPage;
   inspectorViewPage: InspectorViewPage;
+  configPage: ConfigPage;
+  appVersionListPage: AppVersionListPage;
+  appVersionFormPage: AppVersionFormPage;
   taxonomyTypesPage: TaxonomyTypesPage;
   taxonomyListPage: TaxonomyListPage;
   taxonomyFormPage: TaxonomyFormPage;
@@ -198,6 +216,12 @@ function createBackendPages(page: Page): BackendPages {
     awaitingPage: new AwaitingPage(page),
     livePage: new LivePage(page),
     failedPage: new FailedPage(page),
+    failedInvoicePage: new FailedInvoicePage(page),
+    pricingUpdatePage: new PricingUpdatePage(page),
+    deliveryTrackingPage: new DeliveryTrackingPage(page),
+    deliveryCompanyListPage: new DeliveryCompanyListPage(page),
+    deliveryCompanyFormPage: new DeliveryCompanyFormPage(page),
+    deliveryCompanyViewPage: new DeliveryCompanyViewPage(page),
     waitingApprovalPage: new WaitingApprovalPage(page),
     auctionClosedReportPage: new AuctionClosedReportPage(page),
     purchaseSurveyReportPage: new PurchaseSurveyReportPage(page),
@@ -232,6 +256,9 @@ function createBackendPages(page: Page): BackendPages {
     qcViewPage: new QcViewPage(page),
     inspectorListPage: new InspectorListPage(page),
     inspectorViewPage: new InspectorViewPage(page),
+    configPage: new ConfigPage(page),
+    appVersionListPage: new AppVersionListPage(page),
+    appVersionFormPage: new AppVersionFormPage(page),
     taxonomyTypesPage: new TaxonomyTypesPage(page),
     taxonomyListPage: new TaxonomyListPage(page),
     taxonomyFormPage: new TaxonomyFormPage(page),
@@ -408,6 +435,24 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   failedPage: async ({ page }, use) => {
     await use(new FailedPage(page));
   },
+  failedInvoicePage: async ({ page }, use) => {
+    await use(new FailedInvoicePage(page));
+  },
+  pricingUpdatePage: async ({ page }, use) => {
+    await use(new PricingUpdatePage(page));
+  },
+  deliveryTrackingPage: async ({ page }, use) => {
+    await use(new DeliveryTrackingPage(page));
+  },
+  deliveryCompanyListPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyListPage(page));
+  },
+  deliveryCompanyFormPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyFormPage(page));
+  },
+  deliveryCompanyViewPage: async ({ page }, use) => {
+    await use(new DeliveryCompanyViewPage(page));
+  },
   supplierListPage: async ({ page }, use) => {
     await use(new SupplierListPage(page));
   },
@@ -509,6 +554,9 @@ export const test = base.extend<LanguageOptions & SessionOptions & MazadFixtures
   },
   inspectorViewPage: async ({ page }, use) => {
     await use(new InspectorViewPage(page));
+  },
+  configPage: async ({ page }, use) => {
+    await use(new ConfigPage(page));
   },
   taxonomyTypesPage: async ({ page }, use) => {
     await use(new TaxonomyTypesPage(page));
