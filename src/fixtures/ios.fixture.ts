@@ -17,9 +17,13 @@ import { restrictDriver, type SpecDriver } from '@mobile/ios/spec-driver';
 import { IosAccountScreen } from '@mobile/ios/screens/account.screen';
 import { IosAppShellScreen } from '@mobile/ios/screens/app-shell.screen';
 import { IosContactFormScreen } from '@mobile/ios/screens/contact-form.screen';
+import { IosFavouritesScreen } from '@mobile/ios/screens/favourites.screen';
+import { IosEndedAuctionsScreen } from '@mobile/ios/screens/ended-auctions.screen';
 import { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
+import { IosHomeScreen } from '@mobile/ios/screens/home.screen';
 import { IosAdvertisementSheetScreen } from '@mobile/ios/screens/advertisement.screen';
 import { IosMoreScreen } from '@mobile/ios/screens/more.screen';
+import { IosForceUpdateScreen } from '@mobile/ios/screens/force-update.screen';
 import { IosForgotPasswordScreen } from '@mobile/ios/screens/forgot-password.screen';
 import { IosGuestTabsScreen } from '@mobile/ios/screens/guest-tabs.screen';
 import { IosRegistrationScreen } from '@mobile/ios/screens/registration.screen';
@@ -59,6 +63,10 @@ interface IosFixtures {
   helpCenterScreen: IosHelpCenterScreen;
   advertisementSheet: IosAdvertisementSheetScreen;
   moreScreen: IosMoreScreen;
+  homeScreen: IosHomeScreen;
+  favouritesScreen: IosFavouritesScreen;
+  forceUpdateScreen: IosForceUpdateScreen;
+  endedAuctionsScreen: IosEndedAuctionsScreen;
   /**
    * The dedicated dealer test account from .env (IOS_TEST_DEALER_*; redacted when printed).
    * It is never looked up in the back office, and only reached after the iOS session is
@@ -188,6 +196,9 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   guestTabsScreen: async ({ screenDriver }, use) => {
     await use(new IosGuestTabsScreen(screenDriver));
   },
+  endedAuctionsScreen: async ({ screenDriver }, use) => {
+    await use(new IosEndedAuctionsScreen(screenDriver));
+  },
   otpScreen: async ({ screenDriver }, use) => {
     await use(new IosOtpScreen(screenDriver));
   },
@@ -205,6 +216,15 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   },
   moreScreen: async ({ screenDriver }, use) => {
     await use(new IosMoreScreen(screenDriver));
+  },
+  homeScreen: async ({ screenDriver }, use) => {
+    await use(new IosHomeScreen(screenDriver));
+  },
+  favouritesScreen: async ({ screenDriver }, use) => {
+    await use(new IosFavouritesScreen(screenDriver));
+  },
+  forceUpdateScreen: async ({ screenDriver }, use) => {
+    await use(new IosForceUpdateScreen(screenDriver));
   },
   advertisementSheet: async ({ screenDriver }, use) => {
     await use(new IosAdvertisementSheetScreen(screenDriver));

@@ -67,12 +67,33 @@ const SCREENS: Record<string, string[]> = {
   'src/mobile/ios/screens/login.screen.ts': [
     'openLoginForm.click', // navigation
     'openLoginForm.click',
+    'chooseLogin.click', // navigation: the welcome sheet's Log In choice
+    'submitFavouritesLogin.click', // GUARDED: favourites approval (iosFavouritesBlocked)
+    'dismissPromptIfPresent.click', // a prompt button by exact label
     'enterPhone.setValue', // typing only
     'enterPassword.setValue',
     'login.click', // GUARDED: central guard
     'openForgotPassword.click', // navigation
   ],
   'src/mobile/ios/screens/guest-tabs.screen.ts': ['openTab.click', 'openHeaderIcon.click'], // navigation: a tab-bar button, a header icon
+  // Favourites (own approval, IOS_ALLOW_FAVOURITES; QA owner, 2026-11-14).
+  'src/mobile/ios/screens/favourites.screen.ts': [
+    'openFromBids.click', // navigation: the Bids tab, then its named header heart
+    'openFromBids.click',
+    'openTab.click', // navigation: a Favorite Auctions tab by exact label
+    'removeFavourite.click', // the heart of one favourite car (removes it from favourites)
+  ],
+  'src/mobile/ios/screens/home.screen.ts': [
+    'openCars.click', // navigation: a Home tab, then the Cars switch
+    'openCars.click',
+    'tapFavourite.click', // a car card's heart (favourite; a guest gets the welcome sheet)
+  ],
+  // navigation: the Ended Auctions button, an ended auction card, a car of that auction
+  'src/mobile/ios/screens/ended-auctions.screen.ts': [
+    'openFromHome.click',
+    'openAuction.click',
+    'openCar.click',
+  ],
   'src/mobile/ios/screens/help-center.screen.ts': [
     'openHelpCenter.click', // navigation: More -> Help Center
     'openCategory.click', // navigation: a category by exact label
@@ -115,6 +136,7 @@ const OUTSIDE: Record<string, number> = {
   'tests-ios/signed-in.inspect.ts': 2, // authorized signed-in inspection: logout item and its confirmation, exact known label only
   'tests-ios/guest-extra.inspect.ts': 5, // read-only inspection: tabs, prompt, registration choice, field focus, show/hide, Close (never a submit)
   'ui-tests/ios/login-flow.ios.ui.spec.ts': 3, // simulator UI tests: field focus and Close
+  'tests-ios/past-auctions.spec.ts': 1, // the WEBSITE tab only (an ended auction card), never the app
 };
 
 test.describe('iOS interaction inventory: no new tap or typing path without review (selfcheck)', () => {
@@ -129,6 +151,8 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
   test('the GUARDED methods call the guard or consume a permit before they type or tap', () => {
     const guarded: [string, string, string][] = [
       ['src/mobile/ios/screens/login.screen.ts', 'login', 'authorizeAccountAction('],
+      ['src/mobile/ios/screens/login.screen.ts', 'enterFavouritesLogin', 'iosFavouritesBlocked('],
+      ['src/mobile/ios/screens/login.screen.ts', 'submitFavouritesLogin', 'iosFavouritesBlocked('],
       ['src/mobile/ios/screens/otp.screen.ts', 'verifyOtp', 'authorizeAccountAction('],
       [
         'src/mobile/ios/screens/new-password.screen.ts',
@@ -247,7 +271,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(12);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(16);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);

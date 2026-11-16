@@ -34,6 +34,31 @@ export class AppShellScreen extends MobileScreen {
   }
 
   /**
+   * Button of the app's update dialog. The app opens that dialog over every screen when an API
+   * reply carries update_available (1 = optional, with "Later"; 2 = forced, no "Later") and fills
+   * it from the version-update reply, so it shows empty when the backend sends no text.
+   */
+  get updateDialogButton() {
+    return this.byId('text_view_update_button');
+  }
+
+  async isUpdateDialogShown(): Promise<boolean> {
+    return this.updateDialogButton.isExisting();
+  }
+
+  /** "Close" of the "technical error" dialog the app shows when a request fails. */
+  get errorDialogCloseButton() {
+    return this.byId('textview_close_button');
+  }
+
+  /** Waits for the "technical error" dialog and closes it. */
+  async closeErrorDialog(timeout = 20_000): Promise<void> {
+    await this.errorDialogCloseButton.waitForDisplayed({ timeout });
+    await this.errorDialogCloseButton.click();
+    await this.errorDialogCloseButton.waitForExist({ reverse: true, timeout: 10_000 });
+  }
+
+  /**
    * After a launch: waits for Home or a sheet opened over it at launch (an announcement or
    * advertisement hides Home), closes the sheet by tapping outside it (nothing in it is chosen),
    * then waits for Home.

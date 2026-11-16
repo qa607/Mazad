@@ -93,6 +93,16 @@ export class LivePage extends BackendListPage {
     return row.locator('input.auto-extend');
   }
 
+  /**
+   * Turns the row's Auto Extend off when it is on, confirming the alert if one asks. With Auto
+   * Extend on, an item with no bids kept getting a later end time (seen 2026-11-14).
+   */
+  async turnAutoExtendOff(row: Locator): Promise<void> {
+    if (!(await this.autoExtendCheckbox(row).isChecked())) return;
+    await row.locator('.bootstrap-switch', { has: this.page.locator('input.auto-extend') }).click();
+    await this.resultAlertOkButton.click({ timeout: 10_000 }).catch(() => undefined);
+  }
+
   disableLink(row: Locator): Locator {
     return row.locator('a.failed-btn');
   }
