@@ -34,13 +34,35 @@ export class IndividualFormPage extends BackendPage {
     return (await this.phoneInput.inputValue()).replace(/\D/g, '');
   }
 
-  /** Sets a new password on the open form and saves; the form goes back to the list. */
-  async resetPassword(password: string): Promise<void> {
+  /**
+   * Sets a new password on the open form and saves; the form goes back to the list. Throws with
+   * the form's messages when the back office refuses the save (seen 2026-11-17: an account whose
+   * ID / Iqama number another account also has cannot be saved at all).
+   */
+  async resetPassword(password: string, timeout = 30_000): Promise<void> {
     await this.newPasswordInput.fill(password);
     await this.confirmPasswordInput.fill(password);
-    await Promise.all([
-      this.page.waitForURL((url) => !url.pathname.endsWith('/update')),
-      this.saveButton.click(),
+    await this.saveButton.click();
+    const outcome = await Promise.race([
+      this.page
+        .waitForURL((url) => !url.pathname.endsWith('/update'), { timeout })
+        .then(
+          () => 'saved' as const,
+          () => 'no answer' as const,
+        ),
+      this.fieldErrors
+        .first()
+        .waitFor({ state: 'visible', timeout })
+        .then(
+          () => 'refused' as const,
+          () => 'no answer' as const,
+        ),
     ]);
+    if (outcome !== 'saved') {
+      const messages = await this.fieldErrors.allInnerTexts().catch(() => []);
+      throw new Error(
+        `The back office did not save the account (${outcome}): ${messages.join(' ') || 'no message'}`,
+      );
+    }
   }
 }
