@@ -52,11 +52,13 @@ import { InspectorViewPage } from '@pages/backend/inspector/inspector-view.page'
 import { ConfigPage } from '@pages/backend/config/config.page';
 import { AppVersionFormPage } from '@pages/backend/app-version/app-version-form.page';
 import { AppVersionListPage } from '@pages/backend/app-version/app-version-list.page';
+import { IndividualFormPage } from '@pages/backend/customers/individual-form.page';
 import { IndividualListPage } from '@pages/backend/customers/individual-list.page';
 import { CustomerGroupViewPage } from '@pages/backend/customer-group/customer-group-view.page';
 import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.page';
 import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
 import { OperationListPage } from '@pages/backend/operations/operation-list.page';
+import { MazadDeliveredListPage } from '@pages/backend/mazad-delivered-list.page';
 import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
 import { WaitingQcInspectionListPage } from '@pages/backend/inspection/waiting-qc-inspection-list.page';
 import { OngoingInspectionListPage } from '@pages/backend/inspection/ongoing-inspection-list.page';
@@ -129,6 +131,7 @@ export interface BackendPages {
   operationListPage: OperationListPage;
   operationFormPage: OperationFormPage;
   mazadSoldListPage: MazadSoldListPage;
+  mazadDeliveredListPage: MazadDeliveredListPage;
   mazadVehicleViewPage: MazadVehicleViewPage;
   mazadVehicleEditPage: MazadVehicleEditPage;
   waitingQcInspectionListPage: WaitingQcInspectionListPage;
@@ -175,6 +178,7 @@ export interface BackendPages {
   customerGroupViewPage: CustomerGroupViewPage;
   customerGroupMembersPage: CustomerGroupMembersPage;
   individualListPage: IndividualListPage;
+  individualFormPage: IndividualFormPage;
   dealerListPage: DealerListPage;
   dealerFormPage: DealerFormPage;
   deletedUserListPage: DeletedUserListPage;
@@ -203,6 +207,7 @@ function createBackendPages(page: Page): BackendPages {
     operationListPage: new OperationListPage(page),
     operationFormPage: new OperationFormPage(page),
     mazadSoldListPage: new MazadSoldListPage(page),
+    mazadDeliveredListPage: new MazadDeliveredListPage(page),
     mazadVehicleViewPage: new MazadVehicleViewPage(page),
     mazadVehicleEditPage: new MazadVehicleEditPage(page),
     waitingQcInspectionListPage: new WaitingQcInspectionListPage(page),
@@ -249,6 +254,7 @@ function createBackendPages(page: Page): BackendPages {
     customerGroupViewPage: new CustomerGroupViewPage(page),
     customerGroupMembersPage: new CustomerGroupMembersPage(page),
     individualListPage: new IndividualListPage(page),
+    individualFormPage: new IndividualFormPage(page),
     dealerListPage: new DealerListPage(page),
     dealerFormPage: new DealerFormPage(page),
     deletedUserListPage: new DeletedUserListPage(page),

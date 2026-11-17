@@ -70,6 +70,18 @@ export const LIVE_AUCTION_BLOCKED = blocked(
  * On Android it also sets the App Versions row that keeps an update pending In Active while the
  * app opens, then back (QA owner, 2026-11-15; see test-data/advertisement.data.ts).
  */
+/**
+ * Confirms the delivery of ONE In Delivery sale as its buyer: resets that buyer's staging password
+ * (generated per run, kept in memory only), signs the app in as the buyer, confirms the delivery
+ * (the sale moves to the Delivered List, with the drawn signature) and sends the purchase survey.
+ * The sale and its buyer are named for the run in MAZAD_CONFIRM_DELIVERY_SALE ("<sale>:<account>"),
+ * as approved by the QA owner; nothing else is touched (QA owner, 2026-11-17).
+ */
+export const CONFIRM_DELIVERY_BLOCKED = blocked(
+  'MAZAD_ALLOW_CONFIRM_DELIVERY',
+  "confirming a sale's delivery as its buyer (password reset, delivery and survey)",
+);
+
 export const ADVERTISEMENT_BLOCKED = blocked(
   'MAZAD_ALLOW_ADVERTISEMENT',
   'publishing a QA-AUTO advertisement that every staging app opens at launch',

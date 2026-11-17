@@ -31,6 +31,8 @@ import { MyBidsScreen } from '@mobile/screens/my-bids.screen';
 import { NotificationsScreen } from '@mobile/screens/notifications.screen';
 import { MazadRegistrationScreen } from '@mobile/screens/registration.screen';
 import { StaticPageScreen } from '@mobile/screens/static-page.screen';
+import { ConfirmDeliveryScreen } from '@mobile/screens/confirm-delivery.screen';
+import { PurchaseSurveyScreen } from '@mobile/screens/purchase-survey.screen';
 
 interface MobileWorkerFixtures {
   /** Why the device cannot reach the environment through the VPN (tests skipped), if it cannot. */
@@ -59,6 +61,8 @@ interface MobileFixtures {
   contactFormScreen: ContactFormScreen;
   moreScreen: MoreScreen;
   staticPageScreen: StaticPageScreen;
+  confirmDeliveryScreen: ConfirmDeliveryScreen;
+  purchaseSurveyScreen: PurchaseSurveyScreen;
   endedAuctionsScreen: EndedAuctionsScreen;
   advertisementSheet: AdvertisementSheetScreen;
   /** Mazad buyer account from .env. Tests using it are skipped when it is not set. */
@@ -164,6 +168,12 @@ export const test = base.extend<MobileFixtures, MobileWorkerFixtures>({
   },
   staticPageScreen: async ({ driver }, use) => {
     await use(new StaticPageScreen(driver));
+  },
+  confirmDeliveryScreen: async ({ driver }, use) => {
+    await use(new ConfirmDeliveryScreen(driver));
+  },
+  purchaseSurveyScreen: async ({ driver }, use) => {
+    await use(new PurchaseSurveyScreen(driver));
   },
   endedAuctionsScreen: async ({ driver }, use) => {
     await use(new EndedAuctionsScreen(driver));
