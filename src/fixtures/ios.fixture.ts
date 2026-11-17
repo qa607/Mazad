@@ -22,6 +22,8 @@ import { IosEndedAuctionsScreen } from '@mobile/ios/screens/ended-auctions.scree
 import { IosHelpCenterScreen } from '@mobile/ios/screens/help-center.screen';
 import { IosHomeScreen } from '@mobile/ios/screens/home.screen';
 import { IosAdvertisementSheetScreen } from '@mobile/ios/screens/advertisement.screen';
+import { IosConfirmDeliveryScreen } from '@mobile/ios/screens/confirm-delivery.screen';
+import { IosPurchaseSurveyScreen } from '@mobile/ios/screens/purchase-survey.screen';
 import { IosMoreScreen } from '@mobile/ios/screens/more.screen';
 import { IosForceUpdateScreen } from '@mobile/ios/screens/force-update.screen';
 import { IosForgotPasswordScreen } from '@mobile/ios/screens/forgot-password.screen';
@@ -62,6 +64,8 @@ interface IosFixtures {
   contactFormScreen: IosContactFormScreen;
   helpCenterScreen: IosHelpCenterScreen;
   advertisementSheet: IosAdvertisementSheetScreen;
+  confirmDeliveryScreen: IosConfirmDeliveryScreen;
+  purchaseSurveyScreen: IosPurchaseSurveyScreen;
   moreScreen: IosMoreScreen;
   homeScreen: IosHomeScreen;
   favouritesScreen: IosFavouritesScreen;
@@ -228,6 +232,12 @@ export const test = base.extend<IosFixtures, IosWorkerFixtures>({
   },
   advertisementSheet: async ({ screenDriver }, use) => {
     await use(new IosAdvertisementSheetScreen(screenDriver));
+  },
+  confirmDeliveryScreen: async ({ screenDriver }, use) => {
+    await use(new IosConfirmDeliveryScreen(screenDriver));
+  },
+  purchaseSurveyScreen: async ({ screenDriver }, use) => {
+    await use(new IosPurchaseSurveyScreen(screenDriver));
   },
   // `driver` comes first, so a blocked or skipped test never reads the account.
   iosDealerAccount: async ({ driver }, use, testInfo) => {

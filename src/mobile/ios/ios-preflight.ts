@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { approvedOrigin } from '@config/staging-environments';
 import { appVersionTestTitles } from '@test-data/app-version.data';
 import { advertisementTestTitles } from '@test-data/advertisement.data';
+import { confirmDeliveryTestTitles } from '@test-data/confirm-delivery.data';
 import { IOS_TEXT_VERIFIED } from '@test-data/ios-app.data';
 import { favouritesTestTitles } from '@test-data/mobile-favourites.data';
 import {
@@ -69,6 +70,24 @@ export function iosFavouritesBlocked(env: NodeJS.ProcessEnv = process.env): stri
   return env.IOS_ALLOW_FAVOURITES === 'true'
     ? undefined
     : 'Blocked: the iOS favourites tests (sign out and in with the iOS Individual test account, add and remove one favourite) are not approved for this run (IOS_ALLOW_FAVOURITES).';
+}
+
+/**
+ * The iOS delivery survey test (tests-ios/confirm-delivery.backoffice.spec.ts) has its OWN approval,
+ * the same switch as Android's (MAZAD_ALLOW_CONFIRM_DELIVERY, QA owner 2026-11-17): it resets the
+ * staging password of the run's buyer, signs in as that buyer, confirms the delivery and sends the
+ * survey. It also needs MAZAD_ALLOW_LOGOUT (the app is signed out before and after). With both,
+ * only that test's title passes the text gate.
+ */
+export function iosConfirmDeliveryBlocked(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  if (env.MAZAD_ALLOW_CONFIRM_DELIVERY !== 'true') {
+    return "Blocked: confirming a sale's delivery as its buyer on iOS (password reset, delivery and survey) is not approved for this run (MAZAD_ALLOW_CONFIRM_DELIVERY).";
+  }
+  return env.MAZAD_ALLOW_LOGOUT === 'true'
+    ? undefined
+    : 'Blocked: the iOS delivery survey test signs the app out before and after; MAZAD_ALLOW_LOGOUT is not "true".';
 }
 
 /**
@@ -182,6 +201,8 @@ export function outOfTextScopeReason(
   }
   // The force-update test: its own approval (iosForceUpdateBlocked), still under every other gate.
   if (title === appVersionTestTitles.forceUpdate && !iosForceUpdateBlocked(env)) return undefined;
+  // The delivery survey test: its own approval (iosConfirmDeliveryBlocked), still under every other gate.
+  if (title === confirmDeliveryTestTitles.ios && !iosConfirmDeliveryBlocked(env)) return undefined;
   // The advertisement test: its own approval (iosAdvertisementBlocked), still under every other gate.
   if (title === advertisementTestTitles.ios && !iosAdvertisementBlocked(env)) return undefined;
   const problem = iosStaticProblem(env, {}, gates, readConfig);

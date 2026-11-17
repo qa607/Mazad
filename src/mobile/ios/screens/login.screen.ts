@@ -1,7 +1,7 @@
 import { accountContext } from '@mobile/ios/account/account-context';
 import { type ActionAuthorization, authorizeAccountAction } from '@mobile/ios/account/action-guard';
 import { LOGIN_KINDS } from '@mobile/ios/account/account-preflight';
-import { iosFavouritesBlocked } from '@mobile/ios/ios-preflight';
+import { iosConfirmDeliveryBlocked, iosFavouritesBlocked } from '@mobile/ios/ios-preflight';
 import { IOS_ACCESSIBILITY_IDS as IDS } from '@mobile/ios/ios-selectors';
 import { IosScreen, type ReadOnlyElement } from '@mobile/ios/screens/ios.screen';
 
@@ -150,6 +150,26 @@ export class IosLoginScreen extends IosScreen {
   /** Taps Log In after enterFavouritesLogin(), under the same approval. */
   async submitFavouritesLogin(): Promise<void> {
     const blocked = iosFavouritesBlocked();
+    if (blocked) throw new Error(blocked);
+    await this.hideKeyboard();
+    await (await this.loginButtonElement()).click();
+  }
+
+  /**
+   * Types a login for the delivery survey test ONLY, under its own approval
+   * (iosConfirmDeliveryBlocked: MAZAD_ALLOW_CONFIRM_DELIVERY), for the buyer of the run's sale.
+   * One attempt; the caller checks the phone went in before submitting.
+   */
+  async enterDeliveryBuyerLogin(phone: string, password: string): Promise<void> {
+    const blocked = iosConfirmDeliveryBlocked();
+    if (blocked) throw new Error(blocked);
+    await this.enterPhone(phone);
+    await this.enterPassword(password);
+  }
+
+  /** Taps Log In after enterDeliveryBuyerLogin(), under the same approval. */
+  async submitDeliveryBuyerLogin(): Promise<void> {
+    const blocked = iosConfirmDeliveryBlocked();
     if (blocked) throw new Error(blocked);
     await this.hideKeyboard();
     await (await this.loginButtonElement()).click();

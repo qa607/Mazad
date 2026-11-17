@@ -18,7 +18,8 @@ export type Feature =
   | 'Help Center FAQs'
   | 'Favourites'
   | 'App Version Control'
-  | 'Advertisements';
+  | 'Advertisements'
+  | 'Delivery survey';
 export type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
 export type Platform = 'web' | 'android' | 'ios';
 
