@@ -133,6 +133,29 @@ export class MazadSoldListPage extends BackendPage {
     return this.page.locator(`table tbody tr.sold[data-key="${auctionId}"]`);
   }
 
+  /**
+   * Finds one sale (its row key, the auction item ID) among the sales of an after-sale status
+   * ("in_delivery"…), page by page (20 rows a page). Returns the row read into values, or null
+   * when the sale is not listed under that status.
+   */
+  async findSale(
+    saleId: number,
+    afterSaleStatus: string,
+    maxPages = 25,
+  ): Promise<SoldListRow | null> {
+    for (let pageNumber = 1; pageNumber <= maxPages; pageNumber++) {
+      const query = new URLSearchParams({
+        'SoldListViewSearch[after_sale_status_string]': afterSaleStatus,
+        page: String(pageNumber),
+      });
+      await this.page.goto(`${MazadSoldListPage.path}?${query.toString()}`);
+      const row = this.rowByAuctionId(saleId);
+      if (await row.count()) return this.readRow(row);
+      if ((await this.rows.count()) < 20) return null;
+    }
+    return null;
+  }
+
   /** Auction IDs of the rows on the current page, in display order. */
   async auctionIds(): Promise<number[]> {
     const keys = await this.rows.evaluateAll((rows) => rows.map((r) => r.getAttribute('data-key')));
@@ -146,58 +169,66 @@ export class MazadSoldListPage extends BackendPage {
 
   /** Reads a row's label/value pairs (each column is a small label table). */
   async readRow(row: Locator): Promise<SoldListRow> {
-    const raw = await row.evaluate((tr) => {
-      const values: Record<string, string> = {};
-      // Customer/rep names are deliberately not read; their IDs come from links instead.
-      const skip = /^(name|rep\.?\s*name)$/i;
-      tr.querySelectorAll('td table tr').forEach((pair) => {
-        const label = pair.querySelector('th')?.textContent?.replace(/\s+/g, ' ').trim();
-        const value = pair.querySelector('td')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-        if (!label || skip.test(label)) return;
-        // Labels repeat across columns (Title, Type): keep the first and number the rest.
-        let key = label;
-        for (let n = 2; key in values; n++) key = `${label}#${n}`;
-        values[key] = value;
-      });
-      const hrefs = [...tr.querySelectorAll('a')].map((a) => ({
-        href: a.getAttribute('href') ?? '',
-        text: a.textContent?.replace(/\s+/g, ' ').trim() ?? '',
-      }));
-      return { values, hrefs, key: tr.getAttribute('data-key') };
-    });
-
-    const idFrom = (pattern: RegExp): number | null => {
-      const href = raw.hrefs.find((h) => pattern.test(h.href))?.href;
-      const id = href ? new URL(href, 'http://x').searchParams.get('id') : null;
-      return id ? Number(id) : null;
-    };
-    const v = raw.values;
-    return {
-      auctionId: Number(v.ID ?? raw.key),
-      auctionTitle: v.Title ?? '',
-      auctionType: v['Auction Type'] ?? '',
-      biddingType: v['Bidding Type'] ?? '',
-      status: v.Status ?? '',
-      saleType: v.Type ?? '',
-      customerId: idFrom(/\/backend\/users\/(dealer|individual)\/view/),
-      vehicleId: idFrom(/\/backend\/vehicle\/vehicle\/view/),
-      itemTitle: v['Title#2'] ?? '',
-      itemType: v['Type#2'] ?? '',
-      vin: v.VIN ?? '',
-      plate: v.Plate ?? '',
-      startingPrice: parseSar(v['Starting Price']),
-      reservePrice: parseSar(v['Reserve Price']),
-      highestPrice: parseSar(v['Highest Price']),
-      administrativeExpenses: parseSar(v['Administrative Expenses']),
-      salePrice: parseSar(v['Sale Price']),
-      netAmount: parseSar(v['Net Amount']),
-      startDate: v['Start Date'] ?? '',
-      saleDate: v['Sale Date'] ?? '',
-      actions: raw.hrefs
-        .filter((h) => /View Invoice|View Workflow|Failed/.test(h.text))
-        .map((h) => h.text),
-    };
+    return readSaleRow(row);
   }
+}
+
+/**
+ * Reads one row of the Sold List or the Delivered List (same layout: each column is a small
+ * label/value table). Customer and rep names are never read; the buyer's ID comes from its link.
+ */
+export async function readSaleRow(row: Locator): Promise<SoldListRow> {
+  const raw = await row.evaluate((tr) => {
+    const values: Record<string, string> = {};
+    // Customer/rep names are deliberately not read; their IDs come from links instead.
+    const skip = /^(name|rep\.?\s*name)$/i;
+    tr.querySelectorAll('td table tr').forEach((pair) => {
+      const label = pair.querySelector('th')?.textContent?.replace(/\s+/g, ' ').trim();
+      const value = pair.querySelector('td')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+      if (!label || skip.test(label)) return;
+      // Labels repeat across columns (Title, Type): keep the first and number the rest.
+      let key = label;
+      for (let n = 2; key in values; n++) key = `${label}#${n}`;
+      values[key] = value;
+    });
+    const hrefs = [...tr.querySelectorAll('a')].map((a) => ({
+      href: a.getAttribute('href') ?? '',
+      text: a.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    }));
+    return { values, hrefs, key: tr.getAttribute('data-key') };
+  });
+
+  const idFrom = (pattern: RegExp): number | null => {
+    const href = raw.hrefs.find((h) => pattern.test(h.href))?.href;
+    const id = href ? new URL(href, 'http://x').searchParams.get('id') : null;
+    return id ? Number(id) : null;
+  };
+  const v = raw.values;
+  return {
+    auctionId: Number(v.ID ?? raw.key),
+    auctionTitle: v.Title ?? '',
+    auctionType: v['Auction Type'] ?? '',
+    biddingType: v['Bidding Type'] ?? '',
+    status: v.Status ?? '',
+    saleType: v.Type ?? '',
+    customerId: idFrom(/\/backend\/users\/(dealer|individual)\/view/),
+    vehicleId: idFrom(/\/backend\/vehicle\/vehicle\/view/),
+    itemTitle: v['Title#2'] ?? '',
+    itemType: v['Type#2'] ?? '',
+    vin: v.VIN ?? '',
+    plate: v.Plate ?? '',
+    startingPrice: parseSar(v['Starting Price']),
+    reservePrice: parseSar(v['Reserve Price']),
+    highestPrice: parseSar(v['Highest Price']),
+    administrativeExpenses: parseSar(v['Administrative Expenses']),
+    salePrice: parseSar(v['Sale Price']),
+    netAmount: parseSar(v['Net Amount']),
+    startDate: v['Start Date'] ?? '',
+    saleDate: v['Sale Date'] ?? '',
+    actions: raw.hrefs
+      .filter((h) => /View Invoice|View Workflow|Failed|Signature/.test(h.text))
+      .map((h) => h.text),
+  };
 }
 
 /** "16,625 SR" -> 16625; empty or "-" -> null. */
