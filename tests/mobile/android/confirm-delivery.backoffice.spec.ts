@@ -192,6 +192,9 @@ for (const lang of confirmDeliveryLanguages) {
               `sale ${saleId} no longer ${inDeliveryStatus.label}`,
             ).toBeNull();
             await delivered.gotoVin(sale.vin);
+            await expect(delivered.row(saleId), `sale ${saleId} in the Delivered List`).toHaveCount(
+              1,
+            );
             const row = await delivered.readRow(delivered.row(saleId));
             expect(row.customerId, 'buyer account').toBe(accountId);
             expect(row.actions).toContain('Signature');
