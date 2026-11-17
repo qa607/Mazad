@@ -59,6 +59,7 @@ import { MazadDashboardPage } from '@pages/backend/dashboard/mazad-dashboard.pag
 import { OperationFormPage } from '@pages/backend/operations/operation-form.page';
 import { OperationListPage } from '@pages/backend/operations/operation-list.page';
 import { MazadDeliveredListPage } from '@pages/backend/mazad-delivered-list.page';
+import { GlobalSearchPage } from '@pages/backend/global-search.page';
 import { MazadSoldListPage } from '@pages/backend/mazad-sold-list.page';
 import { WaitingQcInspectionListPage } from '@pages/backend/inspection/waiting-qc-inspection-list.page';
 import { OngoingInspectionListPage } from '@pages/backend/inspection/ongoing-inspection-list.page';
@@ -132,6 +133,7 @@ export interface BackendPages {
   operationFormPage: OperationFormPage;
   mazadSoldListPage: MazadSoldListPage;
   mazadDeliveredListPage: MazadDeliveredListPage;
+  globalSearchPage: GlobalSearchPage;
   mazadVehicleViewPage: MazadVehicleViewPage;
   mazadVehicleEditPage: MazadVehicleEditPage;
   waitingQcInspectionListPage: WaitingQcInspectionListPage;
@@ -208,6 +210,7 @@ function createBackendPages(page: Page): BackendPages {
     operationFormPage: new OperationFormPage(page),
     mazadSoldListPage: new MazadSoldListPage(page),
     mazadDeliveredListPage: new MazadDeliveredListPage(page),
+    globalSearchPage: new GlobalSearchPage(page),
     mazadVehicleViewPage: new MazadVehicleViewPage(page),
     mazadVehicleEditPage: new MazadVehicleEditPage(page),
     waitingQcInspectionListPage: new WaitingQcInspectionListPage(page),

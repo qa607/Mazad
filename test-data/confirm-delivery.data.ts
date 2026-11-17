@@ -25,6 +25,7 @@ export const confirmDeliveryAppText = {
     pickupStep: 'Confirm Pickup',
     pickupButton: 'Confirm Pickup',
     sheetTitle: 'Confirm Delivery',
+    confirmButton: 'Confirm delivery',
     thanks: 'Thank you for your trust in Mazad by Motory!',
     rateExperience: 'Rate your purchase experience',
     surveyTitle: 'Rate Your Purchase Experience',
@@ -34,13 +35,48 @@ export const confirmDeliveryAppText = {
     send: 'Send',
     sent: 'Thank you!',
     back: 'Back',
+    signHere: 'Sign here',
+    optionalUpdateLater: 'Later',
+    myActionsTab: 'My Actions',
   },
-} as const satisfies Partial<Record<Language, Record<string, string>>>;
+  /** Recorded on the iPhone, 2026-11-17 (iOS 8.3 (1491), Arabic), with sale 24270. */
+  ar: {
+    pickupStep: 'تأكيد الاستلام',
+    pickupButton: 'تأكيد الاستلام',
+    sheetTitle: 'تأكيد الاستلام',
+    confirmButton: 'تأكيد الاستلام',
+    thanks: 'شكراً لثقتك بمزاد من موتري!',
+    rateExperience: 'تقييم تجربة الشراء',
+    surveyTitle: 'تقييم تجربة الشراء',
+    scaleLow: 'قليل جداً',
+    scaleHigh: 'عالٍ جداً',
+    optionalQuestion: 'هل لديك أي شيء ترغب بإضافته؟ (اختياري)',
+    send: 'أرسل',
+    sent: 'شكراً لك!',
+    back: 'عودة',
+    signHere: 'وقّع هنا',
+    optionalUpdateLater: 'لاحقاً',
+    myActionsTab: 'إجراءاتي',
+  },
+} as const satisfies Record<Language, Record<string, string>>;
 
-/** Languages this suite runs in (a sale is confirmed once, so one language per run). */
+/** Languages the Android suite runs in (a sale is confirmed once, so one language per run). */
 export const confirmDeliveryLanguages = [
   'en',
 ] as const satisfies readonly (keyof typeof confirmDeliveryAppText)[];
+
+/** Languages the iOS suite runs in (the iOS suites run in Arabic). */
+export const confirmDeliveryIosLanguages = [
+  'ar',
+] as const satisfies readonly (keyof typeof confirmDeliveryAppText)[];
+
+/**
+ * Test titles. The iOS one is also how its own approval lets it past the iOS text gate
+ * (iosConfirmDeliveryBlocked in src/mobile/ios/ios-preflight.ts).
+ */
+export const confirmDeliveryTestTitles = {
+  ios: 'A buyer confirms delivery and answers the survey, and the back office shows both',
+} as const;
 
 /** The score chosen on a scale: near the top, and different for each question, to be traceable. */
 export function surveyScore(index: number, to: number): number {

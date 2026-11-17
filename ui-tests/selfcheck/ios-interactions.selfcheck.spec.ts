@@ -58,6 +58,16 @@ const SCREENS: Record<string, string[]> = {
     'closeIfOpen.click', // navigation: the close button of a sheet left open, by its observed name
   ],
   'src/mobile/ios/screens/app-shell.screen.ts': ['openMore.click', 'setLanguage.click'], // navigation
+  'src/mobile/ios/screens/confirm-delivery.screen.ts': [
+    'confirmDelivery.click', // the sheet's confirm, once ticked and signed (MAZAD_ALLOW_CONFIRM_DELIVERY)
+    'chooseAfterDelivery.click', // the thank-you dialog's choice, by exact label
+    'dismissOptionalUpdate.click', // "Later" on the optional update dialog, by exact label
+  ],
+  'src/mobile/ios/screens/purchase-survey.screen.ts': [
+    'writeComment.click', // the survey's text box (a QA-AUTO comment)
+    'writeComment.setValue',
+    'close.click', // navigation: the thank-you page's back button
+  ],
   'src/mobile/ios/screens/forgot-password.screen.ts': [
     'enterPhone.setValue', // typing only: Send cannot be tapped from here
     'close.click', // navigation: Close, back to Login
@@ -69,6 +79,7 @@ const SCREENS: Record<string, string[]> = {
     'openLoginForm.click',
     'chooseLogin.click', // navigation: the welcome sheet's Log In choice
     'submitFavouritesLogin.click', // GUARDED: favourites approval (iosFavouritesBlocked)
+    'submitDeliveryBuyerLogin.click', // GUARDED: delivery survey approval (iosConfirmDeliveryBlocked)
     'dismissPromptIfPresent.click', // a prompt button by exact label
     'enterPhone.setValue', // typing only
     'enterPassword.setValue',
@@ -153,6 +164,16 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
       ['src/mobile/ios/screens/login.screen.ts', 'login', 'authorizeAccountAction('],
       ['src/mobile/ios/screens/login.screen.ts', 'enterFavouritesLogin', 'iosFavouritesBlocked('],
       ['src/mobile/ios/screens/login.screen.ts', 'submitFavouritesLogin', 'iosFavouritesBlocked('],
+      [
+        'src/mobile/ios/screens/login.screen.ts',
+        'enterDeliveryBuyerLogin',
+        'iosConfirmDeliveryBlocked(',
+      ],
+      [
+        'src/mobile/ios/screens/login.screen.ts',
+        'submitDeliveryBuyerLogin',
+        'iosConfirmDeliveryBlocked(',
+      ],
       ['src/mobile/ios/screens/otp.screen.ts', 'verifyOtp', 'authorizeAccountAction('],
       [
         'src/mobile/ios/screens/new-password.screen.ts',
@@ -271,7 +292,7 @@ test.describe('iOS interaction inventory: no new tap or typing path without revi
     // The fixture hands this to specs, and the real driver only to the screen objects.
     const fixture = stripComments(read('src/fixtures/ios.fixture.ts'));
     expect(fixture).toContain('restrictDriver(screenDriver)');
-    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(16);
+    expect(fixture.match(/new Ios\w+Screen\(screenDriver\)/g)).toHaveLength(18);
     expect(fixture).not.toMatch(/new Ios\w+Screen\(driver\)/);
     for (const file of files('tests-ios').filter((f) => !f.includes('.inspect.'))) {
       expect(stripComments(read(file)), file).not.toMatch(/screenDriver/);
