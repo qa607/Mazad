@@ -15,39 +15,41 @@ export class ConfirmDeliveryScreen extends MobileScreen {
     return `${MAZAD_ANDROID_APP.package}:id/${id}`;
   }
 
-  /** XPath of the My Actions card whose title is `title` (spaces normalised). */
-  private cardXPath(title: string): string {
+  /**
+   * XPath of the My Actions card whose title is `title` AND whose step is `step` (spaces
+   * normalised). A buyer can hold two cars with the same title at different steps (seen
+   * 2026-11-17: one "Confirm Pickup", one still "You won this auction"), so the step picks the card.
+   */
+  private cardXPath(title: string, step: string): string {
     return (
       `//*[@resource-id="${this.id('recyclerview_my_action_tab')}"]/*` +
-      `[.//*[@resource-id="${this.id('textview_title')}" and normalize-space(@text)=${xpathLiteral(title)}]]`
+      `[.//*[@resource-id="${this.id('textview_title')}" and normalize-space(@text)=${xpathLiteral(title)}]` +
+      ` and .//*[@resource-id="${this.id('materialTextView')}" and normalize-space(@text)=${xpathLiteral(step)}]]`
     );
   }
 
-  /** The My Actions card of a car, by its title. */
-  card(title: string) {
-    return this.driver.$(this.cardXPath(title));
+  /** The My Actions card of a car at a step, by its title and the step's text. */
+  card(title: string, step: string) {
+    return this.driver.$(this.cardXPath(title, step));
   }
 
-  /** The step the card shows ("Confirm Pickup"). */
-  cardStep(title: string) {
+  /** A button of that card, by its label. */
+  cardButton(title: string, step: string, label: string) {
     return this.driver.$(
-      `${this.cardXPath(title)}//*[@resource-id="${this.id('materialTextView')}"]`,
+      `${this.cardXPath(title, step)}//*[@resource-id="${this.id('linear_buttons')}"]//*[normalize-space(@text)=${xpathLiteral(label)}]`,
     );
   }
 
-  /** A button of the card, by its label. */
-  cardButton(title: string, label: string) {
-    return this.driver.$(
-      `${this.cardXPath(title)}//*[@resource-id="${this.id('linear_buttons')}"]//*[normalize-space(@text)=${xpathLiteral(label)}]`,
-    );
-  }
-
-  /** Scrolls the My Actions list until the car's card shows; false when it never does. */
-  async findCard(title: string, maxSwipes = 6): Promise<boolean> {
+  /**
+   * Scrolls the My Actions list until the card of the car at that step shows; false when it never
+   * does.
+   */
+  async findCard(title: string, step: string, maxSwipes = 6): Promise<boolean> {
     const list = this.byId('recyclerview_my_action_tab');
     await list.waitForDisplayed({ timeout: 20_000 });
     for (let swipe = 0; swipe <= maxSwipes; swipe++) {
-      if ((await this.card(title).isExisting()) && (await this.card(title).isDisplayed())) {
+      const card = this.card(title, step);
+      if ((await card.isExisting()) && (await card.isDisplayed())) {
         return true;
       }
       await this.driver.execute('mobile: swipeGesture', {
@@ -81,8 +83,8 @@ export class ConfirmDeliveryScreen extends MobileScreen {
   }
 
   /** Opens the sheet from the card's button (by label) and waits for it. */
-  async openFromCard(title: string, buttonLabel: string): Promise<void> {
-    await this.cardButton(title, buttonLabel).click();
+  async openFromCard(title: string, step: string, buttonLabel: string): Promise<void> {
+    await this.cardButton(title, step, buttonLabel).click();
     await this.receivedCheckbox.waitForDisplayed({ timeout: 15_000 });
   }
 

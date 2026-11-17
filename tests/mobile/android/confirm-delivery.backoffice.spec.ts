@@ -155,14 +155,15 @@ for (const lang of confirmDeliveryLanguages) {
 
           await test.step('My Actions offers the car for pickup', async () => {
             await appShell.open('my_actions');
-            expect(await delivery.findCard(sale.itemTitle), `card "${sale.itemTitle}"`).toBe(true);
-            expect((await delivery.cardStep(sale.itemTitle).getText()).trim()).toBe(
-              text.pickupStep,
-            );
+            // By title AND step: the buyer may hold another car with the same title, still unpaid.
+            expect(
+              await delivery.findCard(sale.itemTitle, text.pickupStep),
+              `card "${sale.itemTitle}" at "${text.pickupStep}"`,
+            ).toBe(true);
           });
 
           await test.step('the buyer confirms the delivery: received as specified, and signed', async () => {
-            await delivery.openFromCard(sale.itemTitle, text.pickupButton);
+            await delivery.openFromCard(sale.itemTitle, text.pickupStep, text.pickupButton);
             expect(await delivery.sheetTitle.getText()).toBe(text.sheetTitle);
             await delivery.confirmDelivery();
             await expect
